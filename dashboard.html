@@ -1,0 +1,211 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Potygen - Dashboard Oficial</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="style-dashboard.css">
+</head>
+<body>
+
+    <div class="app-container">
+        <aside class="sidebar">
+            <div class="sidebar-header">
+                <img src="logo.png" alt="Potygen Logo" class="logo">
+            </div>
+            
+            <nav class="nav-menu">
+                <a href="#" class="nav-link active">
+                    <i class="fa-solid fa-house"></i>
+                    <span>Dashboard</span>
+                </a>
+                <a href="#" class="nav-link">
+                    <i class="fa-solid fa-cow"></i>
+                    <span>Gestão de Animais</span>
+                </a>
+                <a href="#" class="nav-link">
+                    <i class="fa-solid fa-dna"></i>
+                    <span>Análise Genética</span>
+                </a>
+                <a href="#" class="nav-link">
+                    <i class="fa-solid fa-clipboard-list"></i>
+                    <span>Relatórios</span>
+                </a>
+                <a href="#" class="nav-link">
+                    <i class="fa-solid fa-gear"></i>
+                    <span>Configurações</span>
+                </a>
+            </nav>
+
+            <div class="sidebar-footer">
+                <div class="ai-card">
+                    <div class="ai-icon">
+                        <i class="fa-solid fa-wand-magic-sparkles"></i>
+                    </div>
+                    <div class="ai-info">
+                        <p class="ai-title">Powered by IA</p>
+                        <p class="ai-subtitle">Análise preditiva ativa</p>
+                    </div>
+                </div>
+                <a href="index.html" class="logout-button">
+                    <i class="fa-solid fa-arrow-right-from-bracket"></i>
+                    <span>Sair da conta</span>
+                </a>
+            </div>
+        </aside>
+
+        <main class="main-content">
+            <header class="top-bar">
+                <div class="search-container">
+                    <i class="fa-solid fa-magnifying-glass"></i>
+                    <input type="text" placeholder="Buscar animal, lote ou técnico...">
+                </div>
+                
+                <div class="top-bar-right">
+                    <div class="notification-bell">
+                        <i class="fa-solid fa-bell"></i>
+                        <span class="bell-dot"></span>
+                    </div>
+                    <div class="user-profile-box">
+                        <div class="user-text">
+                            <span class="user-name">Admin Potygen</span>
+                            <span class="user-farm">Fazenda Modelo</span>
+                        </div>
+                        <div class="user-avatar"></div>
+                    </div>
+                </div>
+            </header>
+
+            <div class="dashboard-body">
+                <div class="welcome-section">
+                    <div class="welcome-text">
+                        <h1>Dashboard</h1>
+                        <p>Visão geral do rebanho e monitoramento genético</p>
+                    </div>
+                    <div class="welcome-actions">
+                        <button class="btn-action-sec" onclick="abrirModal('modalAgendar')">
+                            <i class="fa-solid fa-calendar-days"></i> Agendar
+                        </button>
+                        <button class="btn-action-pri" onclick="abrirModal('modalNovoAnimal')">
+                            <i class="fa-solid fa-plus"></i> Novo Animal
+                        </button>
+                    </div>
+                </div>
+
+                <div class="stats-grid">
+                    <div class="stat-card">
+                        <div class="stat-card-header">
+                            <div class="stat-icon-bg green">
+                                <i class="fa-solid fa-cow"></i>
+                            </div>
+                            <div class="stat-trend plus">+12% <i class="fa-solid fa-arrow-up"></i></div>
+                        </div>
+                        <p class="stat-label">Total de Animais</p>
+                        <h2 class="stat-value">920</h2>
+                    </div>
+
+                    <div class="stat-card">
+                        <div class="stat-card-header">
+                            <div class="stat-icon-bg blue">
+                                <i class="fa-solid fa-heart-pulse"></i>
+                            </div>
+                            <div class="stat-trend plus">+8% <i class="fa-solid fa-arrow-up"></i></div>
+                        </div>
+                        <p class="stat-label">Taxa de Prenhez</p>
+                        <h2 class="stat-value">85%</h2>
+                    </div>
+
+                    <div class="stat-card">
+                        <div class="stat-card-header">
+                            <div class="stat-icon-bg purple">
+                                <i class="fa-solid fa-dna"></i>
+                            </div>
+                        </div>
+                        <p class="stat-label">Inseminações (Mês)</p>
+                        <h2 class="stat-value">55</h2>
+                    </div>
+
+                    <div class="stat-card">
+                        <div class="stat-card-header">
+                            <div class="stat-icon-bg orange">
+                                <i class="fa-solid fa-clock"></i>
+                            </div>
+                            <div class="stat-trend warn">Atenção</div>
+                        </div>
+                        <p class="stat-label">Eventos Pendentes</p>
+                        <h2 class="stat-value">12</h2>
+                    </div>
+                </div>
+
+                <div class="charts-row">
+                    <div class="chart-card-box main-chart">
+                        <div class="chart-header">
+                            <h3>Histórico de Inseminações e Prenhez</h3>
+                        </div>
+                        <div class="canvas-wrapper">
+                            <canvas id="lineChart"></canvas>
+                        </div>
+                    </div>
+                    <div class="chart-card-box side-chart">
+                        <div class="chart-header">
+                            <h3>Distribuição por Espécie</h3>
+                        </div>
+                        <div class="canvas-wrapper">
+                            <canvas id="pieChart"></canvas>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <div id="modalAgendar" class="modal-backdrop">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2>Agendar Inseminação</h2>
+                <button class="btn-close" onclick="fecharModal('modalAgendar')">&times;</button>
+            </div>
+            <div class="modal-body">
+                <div class="input-group">
+                    <label>Identificação do Animal</label>
+                    <input type="text" placeholder="Ex: Brinco 4050">
+                </div>
+                <div class="input-group">
+                    <label>Data Agendada</label>
+                    <input type="date">
+                </div>
+                <button class="btn-submit-pri" onclick="fecharModal('modalAgendar')">Confirmar Agendamento</button>
+            </div>
+        </div>
+    </div>
+
+    <div id="modalNovoAnimal" class="modal-backdrop">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2>Cadastrar Animal</h2>
+                <button class="btn-close" onclick="fecharModal('modalNovoAnimal')">&times;</button>
+            </div>
+            <div class="modal-body">
+                <div class="input-group">
+                    <label>Nome ou Código</label>
+                    <input type="text" placeholder="Ex: Estrela">
+                </div>
+                <div class="input-group">
+                    <label>Raça / Espécie</label>
+                    <select>
+                        <option>Bovino - Nelore</option>
+                        <option>Bovino - Angus</option>
+                        <option>Ovino</option>
+                    </select>
+                </div>
+                <button class="btn-submit-pri" onclick="fecharModal('modalNovoAnimal')">Salvar Cadastro</button>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="script-dashboard.js"></script>
+</body>
+</html>
