@@ -1,49 +1,17 @@
-// 1. Mostrar/Esconder Senha
-document.querySelectorAll('.eye-toggle').forEach(eye => {
-    eye.addEventListener('click', function() {
-        const input = this.parentElement.querySelector('input');
-        if (input.type === 'password') {
-            input.type = 'text';
-            this.classList.replace('fa-regular', 'fa-solid'); 
-            this.classList.replace('fa-eye', 'fa-eye-slash');
-        } else {
-            input.type = 'password';
-            this.classList.replace('fa-solid', 'fa-regular');
-            this.classList.replace('fa-eye-slash', 'fa-eye');
-        }
-    });
-});
-
-// 2. Máscara Telefone
-const inputTel = document.getElementById('telefone');
-if (inputTel) {
-    inputTel.addEventListener('input', e => {
-        let v = e.target.value.replace(/\D/g, "");
-        v = v.replace(/^(\d{2})(\d)/g, "($1) $2");
-        v = v.replace(/(\d{5})(\d)/, "$1-$2");
-        e.target.value = v;
-    });
-}
-
-// 3. Máscara CPF
-const inputCpf = document.getElementById('cpf');
-if (inputCpf) {
-    inputCpf.addEventListener('input', e => {
-        let v = e.target.value.replace(/\D/g, "");
-        v = v.replace(/(\d{3})(\d)/, "$1.$2");
-        v = v.replace(/(\d{3})(\d)/, "$1.$2");
-        v = v.replace(/(\d{3})(\d{1,2})$/, "$1-$2");
-        e.target.value = v;
-    });
-}
-
-// 4. Validação Geral
 const cadastroForm = document.getElementById('cadastroForm');
 if (cadastroForm) {
-    cadastroForm.addEventListener('submit', function(e) {
+    cadastroForm.addEventListener('submit', async function(e) {
+        e.preventDefault();
         const email = document.getElementById('email').value.toLowerCase();
         const senha = document.getElementById('senha').value;
         const confirma = document.getElementById('confirmaSenha').value;
+        const nome = document.getElementById('nome').value;
+        const telefone = document.getElementById('telefone').value;
+        const cpf = document.getElementById('cpf').value;
+        const propriedade = document.getElementById('propriedade').value;
+        const cidade = document.getElementById('cidade').value;
+        const estado = document.getElementById('estado').value;
+        const botao = document.querySelector('.btn-submit');
         let valid = true;
 
         if (!email.endsWith('@gmail.com')) {
@@ -60,6 +28,47 @@ if (cadastroForm) {
             document.getElementById('senhaError').style.display = 'none';
         }
 
-        if (!valid) e.preventDefault();
+        if (!valid) return;
+
+        botao.innerHTML = 'Criando conta...';
+
+        const { data, error } = await supabaseClient.auth.signUp({
+            email: email,
+            password: senha
+        });
+
+        if (error) {
+            alert('Erro: ' + error.message);
+            console.log(error);
+            botao.innerHTML = 'Criar Minha Conta';
+            return;
+        }
+
+        const usuario = data.user;
+
+        const { error: erroBanco } = await supabaseClient
+            .from('usuarios')
+            .insert({
+                id: usuario.id,
+                nome: nome,
+                email: email,
+                telefone: telefone,
+                cpf: cpf,
+                propriedade: propriedade,
+                cidade: cidade,
+                estado: estado,
+                tipo_usuario: 'produtor'
+            });
+        if (erroBanco) {
+            alert('Erro ao salvar usuário.');
+            console.log(erroBanco);
+            botao.innerHTML = 'Criar Minha Conta';
+            return;
+        }
+
+        alert('Conta criada com sucesso!');
+        console.log(usuario);
+        window.location.href = 'index.html';
+
     });
 }
