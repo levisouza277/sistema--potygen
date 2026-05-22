@@ -22,6 +22,7 @@ body { background: var(--bg-main); color: var(--text-navy); height: 100vh; overf
 }
 .sidebar-header { margin-bottom: 50px; padding-left: 10px; }
 .logo { width: 140px; }
+.logo3 {margin: 7px; width: 180px;}
 
 .nav-menu { flex: 1; }
 .nav-link { 
