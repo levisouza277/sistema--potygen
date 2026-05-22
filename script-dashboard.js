@@ -32,7 +32,7 @@ async function verificarLogin() {
     }
 }
 
-verificarLogin();
+//verificarLogin();
 
 document.addEventListener('DOMContentLoaded', () => {
 

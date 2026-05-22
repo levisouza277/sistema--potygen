@@ -1,0 +1,243 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Potygen Pro | Gestão de Animais</title>
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="style-gestao.css">
+</head>
+<body>
+
+    <div class="app-container">
+        <aside class="sidebar">
+            <div class="sidebar-top">
+                <img src="logo.png" alt="Potygen" class="logo-img">
+            </div>
+            
+            <nav class="menu">
+                <a href="dashboard.html" class="menu-item">
+                    <i class="fa-solid fa-house"></i> 
+                    <span>Dashboard</span>
+                </a>
+                <a href="#" class="menu-item active">
+                    <i class="fa-solid fa-cow"></i> 
+                    <span>Gestão de Animais</span>
+                </a>
+                <a href="#" class="menu-item">
+                    <i class="fa-solid fa-dna"></i> 
+                    <span>Análise Genética</span>
+                </a>
+                <a href="#" class="menu-item">
+                    <i class="fa-solid fa-clipboard-list"></i> 
+                    <span>Relatórios</span>
+                </a>
+                <a href="#" class="menu-item">
+                    <i class="fa-solid fa-gear"></i> 
+                    <span>Configurações</span>
+                </a>
+            </nav>
+
+            <div class="sidebar-footer">
+                <div class="ia-status-card">
+                    <i class="fa-solid fa-wand-magic-sparkles"></i>
+                    <div class="ia-info">
+                        <strong>Powered by IA</strong>
+                        <span>Análise preditiva ativa</span>
+                    </div>
+                </div>
+
+                <a href="#" class="btn-logout-sidebar" id="btnSair">
+                    <i class="fa-solid fa-arrow-right-from-bracket"></i>
+                    <span>Sair da conta</span>
+                </a>
+            </div>
+        </aside>
+
+        <main class="main-content">
+            <header class="content-header">
+                <div class="header-text">
+                    <h1>Gestão de Animais</h1>
+                    <p>Cadastro e monitoramento do rebanho</p>
+                </div>
+                <button class="btn-primary" id="btnNovoAnimal">
+                    <i class="fa-solid fa-plus"></i> Cadastrar Animal
+                </button>
+            </header>
+
+            <div class="toolbar-premium">
+                <div class="search-container">
+                    <i class="fa-solid fa-magnifying-glass"></i>
+                    <input type="text" placeholder="Pesquisar identificação ou lote..." id="busca">
+                </div>
+                <div class="filter-group">
+                    <select class="select-premium">
+                        <option>Todas as Espécies</option>
+                        <option>Bovino</option>
+                        <option>Ovino</option>
+                    </select>
+                    <button class="btn-ordenar">
+                        <i class="fa-solid fa-arrow-down-wide-short"></i> Ordenar
+                    </button>
+                </div>
+            </div>
+
+            <div class="table-container">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>ANIMAL</th>
+                            <th>RAÇA / ESPÉCIE</th>
+                            <th>IDADE</th>
+                            <th>PESO ATUAL</th>
+                            <th>STATUS</th>
+                            <th style="text-align: right;">AÇÕES</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td><strong>BR001234</strong><br><small>Estrela</small></td>
+                            <td>Nelore Bovino</td>
+                            <td>24 meses</td>
+                            <td><span class="weight-tag">450 kg</span></td>
+                            <td><span class="badge blue">Prenha</span></td>
+                            <td class="actions">
+                                <button class="btn-action-view" data-codigo="BR001234" data-nome="Estrela" data-especie="Bovino" data-raca="Nelore" data-peso="450 kg" data-status="Prenha">
+                                    <i class="fa-solid fa-eye"></i>
+                                </button>
+                                <button class="btn-action-edit" data-codigo="BR001234" data-nome="Estrela" data-raca="Nelore">
+                                    <i class="fa-solid fa-pen"></i>
+                                </button>
+                                <button class="btn-action-del"><i class="fa-solid fa-trash"></i></button>
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </main>
+    </div>
+
+    <div id="modalForm" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2 id="modalTitle">Cadastrar Novo Animal</h2>
+                <span class="close">&times;</span>
+            </div>
+            <div class="modal-body">
+                <div class="section-title">Identificação</div>
+                <div class="form-grid">
+                    <div class="input-group">
+                        <label>Código de Identificação *</label>
+                        <input type="text" id="formCodigo" placeholder="Ex: BR001234">
+                    </div>
+                    <div class="input-group">
+                        <label>Nome</label>
+                        <input type="text" id="formNome" placeholder="Nome do animal (opcional)">
+                    </div>
+                </div>
+
+                <div class="section-title">Características</div>
+                <div class="form-grid">
+                    <div class="input-group">
+                        <label>Espécie *</label>
+                        <select id="formEspecie">
+                            <option value="">Selecione...</option>
+                            <option>Bovino</option>
+                            <option>Ovino</option>
+                        </select>
+                    </div>
+                    <div class="input-group">
+                        <label>Raça *</label>
+                        <input type="text" id="formRaca" placeholder="Ex: Nelore, Angus, Dorper">
+                    </div>
+                    <div class="input-group">
+                        <label>Sexo *</label>
+                        <select id="formSexo">
+                            <option value="">Selecione...</option>
+                            <option>Macho</option>
+                            <option>Fêmea</option>
+                        </select>
+                    </div>
+                    <div class="input-group">
+                        <label>Pelagem</label>
+                        <input type="text" id="formPelagem" placeholder="Ex: Branca, Preta, Malhada">
+                    </div>
+                </div>
+
+                <div class="section-title">Dados de Nascimento</div>
+                <div class="form-grid grid-3">
+                    <div class="input-group">
+                        <label>Data de Nascimento *</label>
+                        <input type="text" id="formDataNascimento" placeholder="dd/mm/aaaa">
+                    </div>
+                    <div class="input-group">
+                        <label>Peso ao Nascer (kg)</label>
+                        <input type="number" id="formPesoNascer" placeholder="0.00">
+                    </div>
+                    <div class="input-group">
+                        <label>Peso Atual (kg)</label>
+                        <input type="number" id="formPesoAtual" placeholder="0.00">
+                    </div>
+                </div>
+
+                <div class="section-title">Gestão</div>
+                <div class="form-grid">
+                    <div class="input-group">
+                        <label>Finalidade</label>
+                        <select id="formFinalidade">
+                            <option value="">Selecione...</option>
+                            <option>Corte</option>
+                            <option>Leite</option>
+                            <option>Reprodução</option>
+                        </select>
+                    </div>
+                    <div class="input-group">
+                        <label>Lote</label>
+                        <input type="text" id="formLote" placeholder="Ex: Lote A, Pasto 1">
+                    </div>
+                </div>
+
+                <div class="input-group">
+                    <label>Observações</label>
+                    <textarea id="formObs" placeholder="Informações adicionais sobre o animal..."></textarea>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button class="btn-secondary btn-close-modal">Cancelar</button>
+                <button class="btn-save-main" id="btnSalvar">Cadastrar Animal</button>
+            </div>
+        </div>
+    </div>
+
+    <div id="modalVisualizar" class="modal">
+        <div class="modal-content wide">
+            <div class="modal-header">
+                <h2>Detalhes do Animal</h2>
+                <span class="close">&times;</span>
+            </div>
+            <div class="modal-body">
+                <div class="detail-cards">
+                    <div class="d-card green"><span>Status</span><strong id="viewStatus">-</strong></div>
+                    <div class="d-card blue"><span>Peso Atual</span><strong id="viewPeso">-</strong></div>
+                    <div class="d-card purple"><span>Idade</span><strong>24 meses</strong></div>
+                </div>
+                <div class="info-block">
+                    <p class="block-title"><i class="fa-solid fa-circle-info"></i> Informações Básicas</p>
+                    <div class="info-grid">
+                        <div><label>Código</label><p id="viewCodigo">-</p></div>
+                        <div><label>Nome</label><p id="viewNome">-</p></div>
+                        <div><label>Espécie</label><p id="viewEspecie">-</p></div>
+                        <div><label>Raça</label><p id="viewRaca">-</p></div>
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button class="btn-secondary btn-close-modal">Fechar</button>
+            </div>
+        </div>
+    </div>
+
+    <script src="script-gestao.js"></script>
+</body>
+</html>
