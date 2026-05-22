@@ -144,3 +144,4 @@ td { padding: 18px 20px; font-size: 14px; border-bottom: 1px solid #f8fafc; }
 .d-card.blue { background: #eff6ff; color: #1e40af; }
 .d-card.purple { background: #f5f3ff; color: #5b21b6; }
 .info-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 24px; background: #f8fafc; padding: 20px; border-radius: 12px; }
+.logout-button { color: #ee5d50; border: none; background: none; cursor: pointer; font-weight: 600; font-size: 14px; display: flex; align-items: center; gap: 10px; padding-left: 10px; }

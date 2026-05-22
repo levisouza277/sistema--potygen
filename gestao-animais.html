@@ -48,10 +48,10 @@
                     </div>
                 </div>
 
-                <a href="#" class="btn-logout-sidebar" id="btnSair">
+                <button id="logoutBtn" type="button" class="logout-button">
                     <i class="fa-solid fa-arrow-right-from-bracket"></i>
                     <span>Sair da conta</span>
-                </a>
+                </button>
             </div>
         </aside>
 
@@ -76,6 +76,7 @@
                         <option>Todas as Espécies</option>
                         <option>Bovino</option>
                         <option>Ovino</option>
+                        <option>Caprino</option>
                     </select>
                     <button class="btn-ordenar">
                         <i class="fa-solid fa-arrow-down-wide-short"></i> Ordenar
@@ -145,6 +146,7 @@
                             <option value="">Selecione...</option>
                             <option>Bovino</option>
                             <option>Ovino</option>
+                            <option>Caprinos</option>
                         </select>
                     </div>
                     <div class="input-group">
@@ -169,7 +171,7 @@
                 <div class="form-grid grid-3">
                     <div class="input-group">
                         <label>Data de Nascimento *</label>
-                        <input type="text" id="formDataNascimento" placeholder="dd/mm/aaaa">
+                        <input type="text" id="formDataNascimento" placeholder="dd/mm/aaaa" maxlength="10">
                     </div>
                     <div class="input-group">
                         <label>Peso ao Nascer (kg)</label>
@@ -238,6 +240,8 @@
         </div>
     </div>
 
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="database.js"></script>
     <script src="script-gestao.js"></script>
 </body>
 </html>
