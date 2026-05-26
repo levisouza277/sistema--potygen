@@ -1,0 +1,349 @@
+/* ==========================================================================
+   ESTILOS ESPECÍFICOS - ANÁLISE GENÉTICA & PREDICIONAL
+   ========================================================================== */
+
+.main-content {
+    flex: 1;
+    padding: 30px;
+    background: #f4f7fe;
+    height: 100vh;
+    overflow-y: auto;
+}
+
+/* Localização Badge na Barra Superior */
+.user-location-badge {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    background-color: #ffffff;
+    padding: 8px 16px;
+    border-radius: 20px;
+    box-shadow: 0 4px 12px rgba(112, 144, 176, 0.06);
+    color: #2b3674;
+    font-size: 14px;
+    font-weight: 600;
+    border: 1px solid #e9edf7;
+}
+
+.user-location-badge i {
+    color: #00b34e;
+}
+
+/* Grid de Layout */
+.content-wrapper {
+    margin-top: 25px;
+    display: flex;
+    flex-direction: column;
+    gap: 25px;
+}
+
+.analysis-grid {
+    display: grid;
+    grid-template-columns: 1.3fr 1fr;
+    gap: 25px;
+}
+
+/* Base de Cards seguindo o padrão da Dashboard */
+.card-analise {
+    background: #ffffff;
+    border-radius: 20px;
+    padding: 25px;
+    box-shadow: 0 14px 17px 40px 4px rgba(112, 144, 176, 0.03);
+    border: 1px solid #e9edf7;
+}
+
+.card-header-title {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin-bottom: 20px;
+    border-bottom: 1px solid #e9edf7;
+    padding-bottom: 12px;
+}
+
+.card-header-title i {
+    font-size: 18px;
+    color: #00b34e;
+}
+
+.card-header-title h2 {
+    font-size: 16px;
+    color: #2b3674;
+    font-weight: 700;
+}
+
+/* Grupos de Input Organizados */
+.input-group {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    margin-bottom: 16px;
+}
+
+.form-row {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 15px;
+}
+
+.input-group label {
+    font-size: 13px;
+    font-weight: 600;
+    color: #2b3674;
+}
+
+.input-group select {
+    width: 100%;
+    height: 46px;
+    padding: 0 12px;
+    border: 1px solid #e9edf7;
+    border-radius: 12px;
+    background-color: #fff;
+    color: #2b3674;
+    font-size: 14px;
+    font-weight: 500;
+    outline: none;
+    transition: 0.2s;
+}
+
+.input-group select:focus {
+    border-color: #00b34e;
+}
+
+/* Botão Estilizado */
+.btn-analisar {
+    width: 100%;
+    height: 50px;
+    background-color: #00b34e;
+    color: #ffffff;
+    border: none;
+    border-radius: 12px;
+    font-size: 15px;
+    font-weight: 700;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+    transition: 0.3s ease;
+    margin-top: 10px;
+}
+
+.btn-analisar:hover {
+    background-color: #009641;
+    transform: translateY(-2px);
+    box-shadow: 0 6px 20px rgba(0, 179, 78, 0.2);
+}
+
+/* Bloco Climático */
+.weather-metrics {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 15px;
+    margin-bottom: 20px;
+}
+
+.metric-box {
+    background: #f4f7fe;
+    padding: 15px;
+    border-radius: 14px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    border: 1px solid #e9edf7;
+}
+
+.metric-label {
+    font-size: 12px;
+    color: #a3aed0;
+    font-weight: 500;
+    margin-bottom: 4px;
+}
+
+.metric-value {
+    font-size: 24px;
+    color: #2b3674;
+    font-weight: 800;
+}
+
+/* Painel de ITU Interno */
+.itu-container {
+    background: #f4f7fe;
+    border-radius: 14px;
+    padding: 15px;
+    margin-bottom: 15px;
+    border-left: 4px solid #a3aed0;
+}
+
+.itu-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    font-size: 13px;
+    font-weight: 600;
+    color: #2b3674;
+    margin-bottom: 8px;
+}
+
+.itu-badge {
+    background: #2b3674;
+    color: #ffffff;
+    padding: 4px 10px;
+    border-radius: 8px;
+    font-weight: 700;
+}
+
+.itu-status-text {
+    font-size: 14px;
+    font-weight: 700;
+    color: #2b3674;
+}
+
+.update-timestamp {
+    font-size: 11px;
+    color: #a3aed0;
+    text-align: center;
+    margin-top: 10px;
+}
+
+/* Card de Resultado da Predição */
+.result-card {
+    border-left: 5px solid #00b34e;
+    animation: fadeInUp 0.4s ease-in-out;
+}
+
+.score-flex-container {
+    display: flex;
+    align-items: center;
+    gap: 30px;
+    margin-bottom: 20px;
+}
+
+.score-gauge {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    background: #f4f7fe;
+    padding: 15px;
+    border-radius: 16px;
+    min-width: 120px;
+}
+
+.score-number {
+    font-size: 36px;
+    font-weight: 800;
+    color: #00b34e;
+}
+
+.score-label {
+    font-size: 11px;
+    color: #a3aed0;
+    font-weight: 600;
+    text-align: center;
+}
+
+.progress-bar-wrapper {
+    flex: 1;
+}
+
+.barra-fundo {
+    width: 100%;
+    height: 16px;
+    background-color: #e9edf7;
+    border-radius: 10px;
+    overflow: hidden;
+}
+
+.barra-preenchimento {
+    width: 0%;
+    height: 100%;
+    background-color: #00b34e;
+    border-radius: 10px;
+    transition: width 1s cubic-bezier(0.1, 0.8, 0.3, 1);
+}
+
+.recomendacao-box {
+    display: flex;
+    gap: 15px;
+    background-color: #f4f7fe;
+    padding: 20px;
+    border-radius: 14px;
+    border: 1px solid #e9edf7;
+    line-height: 1.6;
+}
+
+.rec-icon {
+    font-size: 20px;
+    color: #00b34e;
+}
+
+.recomendacao-texto {
+    font-size: 14px;
+    color: #2b3674;
+}
+
+/* Animações */
+@keyframes fadeInUp {
+    from { opacity: 0; transform: translateY(15px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+
+/* ==========================================================================
+   SUPORTE E DISPOSITIVOS MÓVEIS (RESPONSIVIDADE)
+   ========================================================================== */
+@media (max-width: 992px) {
+    .analysis-grid {
+        grid-template-columns: 1fr;
+    }
+}
+
+@media (max-width: 768px) {
+    .app-container {
+        flex-direction: column;
+    }
+    
+    .sidebar {
+        width: 100%;
+        height: auto;
+        padding: 20px;
+        border-right: none;
+        border-bottom: 1px solid #e9edf7;
+    }
+    
+    .nav-menu {
+        flex-direction: row;
+        flex-wrap: wrap;
+        gap: 10px;
+        margin-bottom: 15px;
+    }
+    
+    .sidebar-header {
+        margin-bottom: 20px;
+    }
+    
+    .sidebar-footer, .ai-card {
+        display: none; /* Simplifica o mobile */
+    }
+    
+    .main-content {
+        padding: 15px;
+        height: auto;
+    }
+    
+    .top-bar {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 10px;
+    }
+    
+    .form-row {
+        grid-template-columns: 1fr;
+    }
+    
+    .score-flex-container {
+        flex-direction: column;
+        align-items: stretch;
+        gap: 15px;
+    }
+}

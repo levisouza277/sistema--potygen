@@ -1,0 +1,129 @@
+/* Custom Design Tokens baseados nos seus arquivos */
+:root {
+    --green-accent: #00b34e;
+    --dark-blue-poty: #002144;
+    --alert-blue: #2f80ed;
+    --alert-orange: #f2994a;
+    --bg-light-gray: #f8f9fa;
+    --border-color: #dcdcdc;
+}
+
+/* Alinhamento do Grid para manter o padrão UI */
+.agenda-layout-grid {
+    display: grid;
+    grid-template-columns: 1fr 1.2fr;
+    gap: 24px;
+}
+
+@media (max-width: 992px) {
+    .agenda-layout-grid {
+        grid-template-columns: 1fr;
+    }
+}
+
+/* UX Tratamento de Estado Vazio */
+.feed-placeholder {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 60px 40px;
+    text-align: center;
+    color: #999;
+}
+
+.feed-placeholder i {
+    font-size: 48px;
+    margin-bottom: 16px;
+    color: #ccc;
+}
+
+.feed-placeholder p {
+    font-size: 14px;
+    line-height: 1.5;
+    max-width: 320px;
+}
+
+/* Container do Cronograma Dinâmico */
+.feed-timeline {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+    margin-top: 15px;
+}
+
+/* Componentes de Alertas da Timeline */
+.timeline-item {
+    display: flex;
+    gap: 16px;
+    background: var(--bg-light-gray);
+    border-left: 5px solid var(--green-accent);
+    padding: 16px;
+    border-radius: 8px;
+    box-shadow: 0 2px 6px rgba(0,0,0,0.02);
+    transition: transform 0.2s ease;
+}
+
+.timeline-item:hover {
+    transform: translateY(-2px);
+}
+
+/* Variações de Cores por Contexto UX */
+.timeline-item.window-optimal {
+    border-left-color: var(--green-accent);
+    background-color: #e8f9f0;
+}
+
+.timeline-item.window-alert {
+    border-left-color: var(--alert-orange);
+    background-color: #fff9f3;
+}
+
+.timeline-item.window-info {
+    border-left-color: var(--alert-blue);
+    background-color: #f0f6ff;
+}
+
+.timeline-icon {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 40px;
+    height: 40px;
+    border-radius: 50px;
+    background: #fff;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+    font-size: 16px;
+}
+
+.window-optimal .timeline-icon { color: var(--green-accent); }
+.window-alert .timeline-icon { color: var(--alert-orange); }
+.window-info .timeline-icon { color: var(--alert-blue); }
+
+.timeline-content {
+    flex: 1;
+}
+
+.timeline-content h4 {
+    font-size: 15px;
+    font-weight: 700;
+    color: var(--dark-blue-poty);
+    margin-bottom: 4px;
+}
+
+.timeline-content p {
+    font-size: 13px;
+    color: #555;
+    margin-bottom: 6px;
+    line-height: 1.4;
+}
+
+.timeline-time-badge {
+    display: inline-block;
+    font-size: 11px;
+    font-weight: 600;
+    background: rgba(0,0,0,0.05);
+    padding: 3px 8px;
+    border-radius: 4px;
+    color: #444;
+}

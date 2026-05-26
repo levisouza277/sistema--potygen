@@ -1,0 +1,194 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Potygen - Painel do Animal</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        :root {
+            --poty-green-dark: #0d8a4f;
+            --poty-green-light: #12c95e;
+            --poty-orange: #ff7a1a;
+            --poty-red: #ff4757;
+            --poty-bg: #f4f7fe;
+        }
+        body { background-color: var(--poty-bg); font-family: 'Plus Jakarta Sans', sans-serif; }
+        .conteudo-perfil { margin: 4vh auto 50px; width: 95%; max-width: 950px; }
+        .dash-card { background: #fff; border-radius: 20px; box-shadow: 0 4px 15px rgba(0, 0, 0, 0.04); border: none; }
+        .avatar-fundo { width: 70px; height: 70px; background-color: #e8f9f0; color: var(--poty-green-dark); font-size: 28px; display: flex; align-items: center; justify-content: center; border-radius: 50%; }
+        .tag-status-gravida { background-color: #e8f9f0; color: var(--poty-green-dark); font-weight: 700; border-radius: 10px; padding: 6px 14px; font-size: 13px; display: inline-block; }
+        .calendario-grade { width: 100%; border-collapse: separate; border-spacing: 6px; }
+        .calendario-grade th { text-align: center; font-size: 13px; color: #a3aed0; font-weight: 600; padding-bottom: 8px; }
+        .dia-card { height: 75px; background-color: #f8fafc; border: 1px solid #e2e8f0; border-radius: 12px; padding: 6px; font-size: 14px; font-weight: 600; color: #2b3674; display: flex; flex-direction: column; justify-content: space-between; position: relative; }
+        .dia-vazio { background-color: transparent !important; border: none !important; }
+        .ponto-evento { width: 7px; height: 7px; border-radius: 50%; display: inline-block; margin-right: 3px; }
+        .ponto-ins { background-color: #2f80ed; }
+        .ponto-exame { background-color: var(--poty-orange); }
+        .ponto-parto { background-color: var(--poty-green-dark); }
+        .btn-acao-poty { background-color: var(--poty-green-dark); color: #fff; border: none; border-radius: 12px; font-weight: 600; padding: 10px 20px; transition: all 0.2s; }
+        .btn-acao-poty:hover { background-color: #0b7342; color: #fff; }
+    </style>
+</head>
+<body>
+
+    <div class="container conteudo-perfil">
+        <div class="row g-4">
+            <div class="col-lg-4">
+                <div class="card dash-card p-4 text-center">
+                    <div class="d-flex justify-content-center mb-3">
+                        <div class="avatar-fundo"><i class="fa-solid fa-cow"></i></div>
+                    </div>
+                    <h4 class="fw-bold text-navy mb-1" id="nomeAnimal">Estrela</h4>
+                    <p class="text-muted mb-3" id="brincoAnimal">Brinco: #1002</p>
+                    <div class="mb-4"><span class="tag-status-gravida">Em Acompanhamento</span></div>
+                    
+                    <hr class="text-muted my-3">
+                    <div class="text-start fs-6 row g-2">
+                        <div class="col-6 text-secondary">Espécie:</div><div class="col-6 fw-semibold text-end" id="espAnimal">Bovino</div>
+                        <div class="col-6 text-secondary">Raça:</div><div class="col-6 fw-semibold text-end" id="racaAnimal">Nelore</div>
+                        <div class="col-6 text-secondary">Nascimento:</div><div class="col-6 fw-semibold text-end">15/04/2021</div>
+                    </div>
+                    
+                    <button class="btn btn-acao-poty w-100 mt-4" data-bs-toggle="modal" data-bs-target="#modalExame">
+                        <i class="fa-solid fa-calendar-plus me-2"></i>Agendar Exame
+                    </button>
+                </div>
+            </div>
+
+            <div class="col-lg-8">
+                <div class="card dash-card p-4">
+                    <div class="d-flex justify-content-between align-items-center mb-4">
+                        <h5 class="fw-bold text-navy m-0"><i class="fa-solid fa-calendar-days text-success me-2"></i>Agenda Reprodutiva Coletiva</h5>
+                        <span class="fw-bold text-secondary" id="mesAnoAtual">Maio de 2026</span>
+                    </div>
+
+                    <div class="table-responsive">
+                        <table class="calendario-grade">
+                            <thead>
+                                <tr>
+                                    <th>DOM</th><th>SEG</th><th>TER</th><th>QUA</th><th>QUI</th><th>SEX</th><th>SÁB</th>
+                                </tr>
+                            </thead>
+                            <tbody id="corpoCalendario">
+                                </tbody>
+                        </table>
+                    </div>
+
+                    <div class="d-flex flex-wrap gap-3 justify-content-center mt-3 fs-7 border-top pt-3">
+                        <div><span class="ponto-evento ponto-ins"></span> Inseminação</div>
+                        <div><span class="ponto-evento ponto-exame"></span> Toque / Ultrassom</div>
+                        <div><span class="ponto-evento ponto-parto"></span> Janela de Parto</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="modal fade" id="modalExame" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content style-card border-0 rounded-4 p-2">
+                <div class="modal-header border-0 pb-0">
+                    <h5 class="modal-title fw-bold text-navy">Agendar Exame de Gravidez</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <form id="formExame">
+                    <div class="modal-body">
+                        <div class="mb-3">
+                            <label for="data_exame" class="form-label fw-semibold">Selecione a Data para Toque/Ultrassom</label>
+                            <input type="date" class="form-control rounded-3 py-2" id="data_exame" required>
+                        </div>
+                    </div>
+                    <div class="modal-footer border-0 pt-0">
+                        <button type="button" class="btn btn-light rounded-3 px-4" data-bs-dismiss="modal">Cancelar</button>
+                        <button type="submit" class="btn btn-acao-poty rounded-3 px-4">Confirmar Agenda</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        // Eventos pré-carregados estáticos para o mês de Maio de 2026
+        let examesLocais = [12]; // Exame pré-definido no dia 12
+        const inseminacoesLocais = [10]; // Inseminação ocorrida no dia 10
+        const partosLocais = [28]; // Previsão de parto fictícia no dia 28
+
+        document.addEventListener("DOMContentLoaded", () => {
+            montarCalendarioLocal(2026, 4); // Mês 4 é Maio (Index baseado em 0)
+        });
+
+        function montarCalendarioLocal(ano, mes) {
+            const corpo = document.getElementById("corpoCalendario");
+            corpo.innerHTML = "";
+
+            const primeiroDiaSemana = new Date(ano, mes, 1).getDay();
+            const totalDiasMes = new Date(ano, mes + 1, 0).getDate();
+
+            let linha = document.createElement("tr");
+            let diaSemanaContador = 0;
+
+            // Preenche espaços vazios iniciais
+            for (let i = 0; i < primeiroDiaSemana; i++) {
+                linha.innerHTML += `<td class="dia-vazio"></td>`;
+                diaSemanaContador++;
+            }
+
+            // Loop pelos dias do mês
+            for (let dia = 1; dia <= totalDiasMes; dia++) {
+                if (diaSemanaContador === 7) {
+                    corpo.appendChild(linha);
+                    linha = document.createElement("tr");
+                    diaSemanaContador = 0;
+                }
+
+                let htmlBolinhas = '<div class="d-flex">';
+                if (inseminacoesLocais.includes(dia)) htmlBolinhas += '<span class="ponto-evento ponto-ins" title="Inseminação"></span>';
+                if (examesLocais.includes(dia)) htmlBolinhas += '<span class="ponto-evento ponto-exame" title="Exame Confirmado"></span>';
+                if (partosLocais.includes(dia)) htmlBolinhas += '<span class="ponto-evento ponto-parto" title="Previsão Parto"></span>';
+                htmlBolinhas += '</div>';
+
+                linha.innerHTML += `
+                    <td>
+                        <div class="dia-card">
+                            <span>${dia}</span>
+                            ${htmlBolinhas}
+                        </div>
+                    </td>
+                `;
+                diaSemanaContador++;
+            }
+
+            // Preenche espaços vazios finais
+            while (diaSemanaContador < 7) {
+                linha.innerHTML += `<td class="dia-vazio"></td>`;
+                diaSemanaContador++;
+            }
+            corpo.appendChild(linha);
+        }
+
+        // Evento de envio do formulário salvando em array dinâmico local
+        document.getElementById("formExame").addEventListener("submit", (e) => {
+            e.preventDefault();
+            const inputData = document.getElementById("data_exame").value;
+            
+            if (inputData) {
+                const diaSelecionado = parseInt(inputData.split("-")[2]);
+                examesLocais.push(diaSelecionado);
+                
+                alert("Exame de gravidez agendado com sucesso localmente!");
+                
+                // Fecha o modal via instância do Bootstrap
+                const modalElement = document.getElementById('modalExame');
+                const modal = bootstrap.Modal.getInstance(modalElement);
+                modal.hide();
+                
+                // Atualiza o calendário na tela
+                montarCalendarioLocal(2026, 4);
+            }
+        });
+    </script>
+</body>
+</html>

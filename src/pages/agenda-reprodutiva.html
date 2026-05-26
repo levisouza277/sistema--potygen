@@ -1,0 +1,299 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Potygen Pro | Agenda Reprodutiva</title>
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="style-gestao.css">
+    <style>
+        :root {
+            --primary-green: #0d8a4f;
+            --green-light: #12c95e;
+            --poty-orange: #ff7a1a;
+            --logout-red: #ff4757;
+        }
+        
+        .badge-lote {
+            background-color: #f1f5f9;
+            color: #334155;
+            padding: 4px 10px;
+            border-radius: 6px;
+            font-size: 12px;
+            font-weight: 600;
+            border: 1px solid #e2e8f0;
+        }
+
+        .btn-view-agenda {
+            background: #fff;
+            border: 1px solid var(--primary-green);
+            color: var(--primary-green);
+            padding: 6px 14px;
+            border-radius: 8px;
+            font-weight: 600;
+            font-size: 13px;
+            cursor: pointer;
+            text-decoration: none;
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            transition: all 0.2s ease;
+        }
+
+        .btn-view-agenda:hover {
+            background: var(--primary-green);
+            color: #fff;
+        }
+
+        .table-container {
+            max-height: calc(100vh - 240px);
+            overflow-y: auto;
+        }
+
+        .potygen-sidebar {
+            width: 280px;
+            background: var(--white);
+            border-right: 1px solid #f1f5f9;
+            display: flex;
+            flex-direction: column;
+            padding: 40px 25px;
+            position: fixed;
+            top: 0;
+            left: -280px;
+            height: 100vh;
+            transition: left 0.3s ease;
+            z-index: 1001;
+        }
+        .potygen-sidebar.active {
+            left: 0;
+        }
+        .nav-logo {
+            width: 140px;
+            object-fit: contain;
+        }
+        .top-bar {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 22px 30px 18px;
+            min-height: 90px;
+            background: #ffffff;
+            border-bottom: 1px solid #f1f5f9;
+            margin-bottom: 20px;
+        }
+        .top-bar-left {
+            display: flex;
+            align-items: center;
+            gap: 16px;
+        }
+        .nav-menu-toggle {
+            width: 46px;
+            height: 46px;
+            background: var(--white);
+            border: 1px solid #e2e8f0;
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 18px;
+            color: var(--text-active);
+            cursor: pointer;
+            box-shadow: 0 12px 24px rgba(0, 0, 0, 0.08);
+        }
+        .nav-menu-toggle:hover {
+            background: var(--bg-ia);
+            color: var(--primary-green);
+        }
+
+        .nav-logo-wrap {
+            margin-bottom: 40px;
+            padding-left: 10px;
+        }
+        .potygen-nav {
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+            flex: 1;
+        }
+        .potygen-nav .nav-item {
+            display: flex;
+            align-items: center;
+            gap: 14px;
+            padding: 14px 18px;
+            border-radius: 14px;
+            text-decoration: none;
+            color: var(--text-inactive);
+            font-weight: 600;
+            transition: background 0.2s ease, color 0.2s ease;
+        }
+        .potygen-nav .nav-item i {
+            width: 24px;
+            text-align: center;
+            font-size: 16px;
+        }
+        .potygen-nav .nav-item:hover {
+            background: #f8fafc;
+            color: var(--primary-green);
+        }
+        .potygen-nav .nav-item.active {
+            color: var(--text-active);
+            background: #f1f5f9;
+            border-left: 4px solid var(--primary-green);
+            border-radius: 14px 0 0 14px;
+        }
+        .nav-footer {
+            margin-top: auto;
+        }
+        .nav-footer .nav-item {
+            padding: 14px 18px;
+            border-radius: 14px;
+            color: var(--logout-red);
+        }
+        .nav-footer .nav-item:hover {
+            background: #fff5f5;
+            color: var(--logout-red);
+        }
+    </style>
+</head>
+<body>
+
+    <div class="app-container">
+        <aside class="potygen-sidebar" id="potygen-sidebar">
+            <div class="nav-logo-wrap">
+                <img src="logo.png" class="nav-logo" alt="Potygen">
+            </div>
+            <nav class="potygen-nav">
+                <a href="dashboard.html" class="nav-item"><i class="fa-solid fa-house"></i><span>Dashboard</span></a>
+                <a href="registrar_inseminacao.html" class="nav-item"><i class="fa-solid fa-syringe"></i><span>Inseminação</span></a>
+                <a href="gestao-animais.html" class="nav-item"><i class="fa-solid fa-cow"></i><span>Gado e Animais</span></a>
+                <a href="analise-genetica.html" class="nav-item"><i class="fa-solid fa-dna"></i><span>Análise Genética</span></a>
+                <a href="agenda-reprodutiva.html" class="nav-item active"><i class="fa-solid fa-calendar-days"></i><span>Agenda Reprodutiva</span></a>
+                <a href="relatorio.html" class="nav-item"><i class="fa-solid fa-chart-pie"></i><span>Relatórios</span></a>
+                <a href="configuracoes.html" class="nav-item"><i class="fa-solid fa-gear"></i><span>Configurações</span></a>  
+              </nav>
+            <div class="nav-footer">
+                <a href="#" class="nav-item logout"><i class="fa-solid fa-right-from-bracket"></i><span>Sair da Conta</span></a>
+            </div>
+        </aside>
+
+        <main class="main-content" id="mainContent">
+            <header class="top-bar">
+                <div class="top-bar-left">
+                    <button class="nav-menu-toggle" id="navToggleBtn">
+                        <i class="fa-solid fa-bars"></i>
+                    </button>
+                    <div>
+                        <h1 class="top-bar-title">Agenda Reprodutiva</h1>
+                    </div>
+                </div>
+            </header>
+
+            <div class="filter-bar" style="margin-bottom: 20px;">
+                <div class="search-box">
+                    <i class="fa-solid fa-magnifying-glass"></i>
+                    <input type="text" id="inputBuscaFemea" placeholder="Buscar fêmea por brinco ou nome...">
+                </div>
+                <div class="filter-actions">
+                    <button class="btn-filter"><i class="fa-solid fa-sliders"></i> Filtrar</button>
+                </div>
+            </div>
+
+            <div class="content-card">
+                <div class="table-container">
+                    <table class="animals-table">
+                        <thead>
+                            <tr>
+                                <th>Brinco / ID</th>
+                                <th>Nome da Matriz</th>
+                                <th>Espécie / Raça</th>
+                                <th>Última Inseminação</th>
+                                <th>Reprodutor Macho</th>
+                                <th>Lote / Localização</th>
+                                <th style="text-align: center;">Ações</th>
+                            </tr>
+                        </thead>
+                        <tbody id="tabelaInseminadas">
+                            </tbody>
+                    </table>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <script>
+        // Banco local estático substituindo o Supabase
+        const cacheRegistros = [
+            { id: 1, data_inseminacao: "2026-05-22", reprodutor_macho: "Bull Master", localizacao: "Piquete A", animais: { id: "1", brinco_id: "1002", nome: "Estrela", especie: "Bovino", raca: "Nelore" } },
+            { id: 2, data_inseminacao: "2026-04-18", reprodutor_macho: "Teimoso Sêmen", localizacao: "Lote M", animais: { id: "2", brinco_id: "1054", nome: "Mimosa", especie: "Bovino", raca: "Gir" } },
+            { id: 3, data_inseminacao: "2026-05-02", reprodutor_macho: "Ram Corajoso", localizacao: "Galpão Ovinos", animais: { id: "3", brinco_id: "2019", nome: "Luna", especie: "Ovino", raca: "Santa Inês" } }
+        ];
+
+        document.addEventListener("DOMContentLoaded", () => {
+            renderizarTabela(cacheRegistros);
+
+            document.getElementById("inputBuscaFemea").addEventListener("input", (e) => {
+                const query = e.target.value.toLowerCase().trim();
+                if (!query) {
+                    renderizarTabela(cacheRegistros);
+                    return;
+                }
+                const filtrados = cacheRegistros.filter(reg => {
+                    return reg.animais.nome.toLowerCase().includes(query) || reg.animais.brinco_id.toLowerCase().includes(query);
+                });
+                renderizarTabela(filtrados);
+            });
+        });
+
+        function renderizarTabela(lista) {
+            const tbody = document.getElementById("tabelaInseminadas");
+            tbody.innerHTML = "";
+
+            if (lista.length === 0) {
+                tbody.innerHTML = `<tr><td colspan="7" style="text-align: center; color: var(--text-inactive); padding: 20px;">Nenhum animal corresponde à pesquisa.</td></tr>`;
+                return;
+            }
+
+            lista.forEach(reg => {
+                const animal = reg.animais;
+                const dateParts = reg.data_inseminacao.split("-");
+                const dataFormatada = `${dateParts[2]}/${dateParts[1]}/${dateParts[0]}`;
+
+                tbody.innerHTML += `
+                    <tr>
+                        <td><span style="font-weight: 700; color: var(--primary-green);">#${animal.brinco_id}</span></td>
+                        <td><span style="font-weight: 600; color: var(--text-active);">${animal.nome}</span></td>
+                        <td>${animal.especie} <span style="color: var(--text-inactive); font-size:12px;">(${animal.raca})</span></td>
+                        <td><i class="fa-solid fa-calendar-day" style="color: var(--text-inactive); margin-right: 5px;"></i>${dataFormatada}</td>
+                        <td><i class="fa-solid fa-mars" style="color: #2f80ed; margin-right: 4px;"></i>${reg.reprodutor_macho}</td>
+                        <td><span class="badge-lote">${reg.localizacao}</span></td>
+                        <td style="text-align: center;">
+                            <a href="painel_animal.html?id=${animal.id}" class="btn-view-agenda">
+                                <i class="fa-solid fa-calendar-week"></i> Ver Agendamentos
+                            </a>
+                        </td>
+                    </tr>
+                `;
+            });
+        }
+
+        // Código de inicialização padrão do menu lateral (Igual ao Dashboard)
+        const toggleBtn = document.getElementById('navToggleBtn');
+        const sidebar = document.getElementById('potygen-sidebar');
+
+        if (toggleBtn && sidebar) {
+            toggleBtn.addEventListener('click', (e) => {
+                e.stopPropagation();
+                sidebar.classList.toggle('active');
+            });
+
+            // Fecha o menu ao clicar em qualquer lugar fora dele (essencial para mobile)
+            document.addEventListener('click', (e) => {
+                if (sidebar.classList.contains('active') && !sidebar.contains(e.target) && e.target !== toggleBtn) {
+                    sidebar.classList.remove('active');
+                }
+            });
+        }
+    </script>
+</body>
+</html>
