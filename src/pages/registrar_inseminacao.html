@@ -4,195 +4,230 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Potygen - Registrar Inseminação</title>
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    <link rel="stylesheet" href="style-dashboard.css">
-    <link rel="stylesheet" href="style_registrar.css">
+    <link rel="stylesheet" href="../style/style-dashboard.css">
+    <link rel="stylesheet" href="../style/style_registrar.css">
+    
+    <!-- Estilos padronizados da navbar -->
+    <link rel="stylesheet" href="../style/navbar-style.css">
+    
+   
 </head>
 <body>
-    <div class="app-container">
-        <aside class="potygen-sidebar" id="potygen-sidebar">
-            <div class="nav-logo-wrap">
-                <img src="logo.png" class="nav-logo" alt="Potygen">
-            </div>
-            <nav class="potygen-nav">
-                <a href="dashboard.html" class="nav-item"><i class="fa-solid fa-house"></i><span>Dashboard</span></a>
-                <a href="registrar_inseminacao.html" class="nav-item active"><i class="fa-solid fa-syringe"></i><span>Inseminação</span></a>
-                <a href="gestao-animais.html" class="nav-item"><i class="fa-solid fa-cow"></i><span>Gado e Animais</span></a>
-                <a href="analise-genetica.html" class="nav-item"><i class="fa-solid fa-dna"></i><span>Análise Genética</span></a>
-                <a href="agenda-reprodutiva.html" class="nav-item"><i class="fa-solid fa-calendar-days"></i><span>Agenda Reprodutiva</span></a>
-                <a href="relatorio.html" class="nav-item"><i class="fa-solid fa-chart-pie"></i><span>Relatórios</span></a>
-                <a href="configuracoes.html" class="nav-item"><i class="fa-solid fa-gear"></i><span>Configurações</span></a> 
-            </nav>
-            <div class="nav-footer">
-                <a href="#" class="nav-item logout"><i class="fa-solid fa-right-from-bracket"></i><span>Sair da Conta</span></a>
-            </div>
-        </aside>
 
-        <main class="main-content" id="mainContent">
-            <header class="top-bar">
-                <div class="top-bar-left">
-                    <button class="nav-menu-toggle" id="navToggleBtn">
-                        <i class="fa-solid fa-bars"></i>
-                    </button>
-                    <div>
-                        <span class="top-bar-pre">Potygen Pro</span>
-                        <h1 class="top-bar-title">Registrar Inseminação</h1>
-                    </div>
+<div class="app-container">
+    <!-- ============================================ -->
+    <!-- NAVBAR PADRONIZADA -->
+    <!-- ============================================ -->
+    
+    <button class="nav-menu-toggle" id="navToggleBtn" aria-label="Alternar menu lateral">
+        <i class="fa-solid fa-bars"></i>
+    </button>
+    
+    <div class="nav-overlay" id="navOverlay"></div>
+    
+    <aside class="potygen-sidebar" id="potygen-sidebar">
+        <div class="nav-logo-wrap">
+            <img src="../assets/logo.png" alt="Potygen" class="nav-logo" 
+                 onerror="this.onerror=null;this.src='https://placehold.co/140x48/ffffff/0d8a4f?text=Potygen';">
+        </div>
+        
+        <nav class="potygen-nav">
+            <a href="dashboard.html" class="nav-item">
+                <i class="fa-solid fa-house"></i>
+                <span>Dashboard</span>
+            </a>
+            <a href="registrar_inseminacao.html" class="nav-item active">
+                <i class="fa-solid fa-syringe"></i>
+                <span>Inseminação</span>
+            </a>
+            <a href="gestao-animais.html" class="nav-item">
+                <i class="fa-solid fa-cow"></i>
+                <span>Gestão de Animais</span>
+            </a>
+            <a href="analise-genetica.html" class="nav-item">
+                <i class="fa-solid fa-dna"></i>
+                <span>Análise Genética</span>
+            </a>
+            <a href="agenda-reprodutiva.html" class="nav-item">
+                <i class="fa-solid fa-calendar-days"></i>
+                <span>Agenda Reprodutiva</span>
+            </a>
+            <a href="relatorio.html" class="nav-item">
+                <i class="fa-solid fa-chart-pie"></i>
+                <span>Relatórios</span>
+            </a>
+            <a href="configuracoes.html" class="nav-item">
+                <i class="fa-solid fa-gear"></i>
+                <span>Configurações</span>
+            </a>
+        </nav>
+        
+        <div class="nav-footer">
+            <a href="index.html" class="nav-item logout">
+                <i class="fa-solid fa-right-from-bracket"></i>
+                <span>Sair da Conta</span>
+            </a>
+        </div>
+    </aside>
+    
+    <!-- ============================================ -->
+    <!-- CONTEÚDO PRINCIPAL -->
+    <!-- ============================================ -->
+    
+    <main class="main-content" id="mainContent">
+        <header class="top-bar">
+            <div class="top-bar-left">
+                <div>
+                    
+                    <h1 class="top-bar-title">Registrar Inseminação</h1>
                 </div>
-            </header>
-            <div class="container-fluid">
-                <div class="row mb-4">
-                    <div class="col-12">
-                        <h2 class="text-navy fw-bold">Novo Registro de Inseminação</h2>
-                        <p class="text-secondary">Insira as informações reprodutivas da matriz selecionada.</p>
-                    </div>
+            </div>
+        </header>
+        
+        <div class="container-fluid">
+            <div class="row mb-4">
+                <div class="col-12">
+                    <h2 class="text-navy fw-bold text-center">Novo Registro de Inseminação</h2>
+                    <p class="text-secondary text-center">Insira as informações reprodutivas da matriz selecionada.</p>
                 </div>
+            </div>
 
-                <form id="formInseminacao">
-                    <div class="row g-4">
-                        <div class="col-lg-6">
-                            <div class="dash-card border-start border-success">
-                                <h5 class="mb-4 text-navy"><i class="fa-solid fa-cow me-2 text-success"></i>Identificação da Fêmea</h5>
-                                
-                                <div class="mb-3">
-                                    <label for="selectAnimal" class="form-label">Selecione a Matriz</label>
-                                    <select class="form-select" id="selectAnimal" required>
-                                        <option value="">Escolha uma fêmea...</option>
-                                        <option value="1">#1002 - Estrela (Bovino / Nelore)</option>
-                                        <option value="2">#1054 - Mimosa (Bovino / Gir)</option>
-                                        <option value="3">#2019 - Luna (Ovino / Santa Inês)</option>
+            <form id="formInseminacao">
+                <div class="row g-4">
+                    <div class="col-lg-6">
+                        <div class="dash-card border-start border-success">
+                            <h5 class="mb-4 text-navy"><i class="fa-solid fa-cow me-2 text-success"></i>Identificação da Fêmea</h5>
+                            
+                            <div class="mb-3">
+                                <label for="selectAnimal" class="form-label">Selecione a Matriz</label>
+                                <select class="form-select" id="selectAnimal" required>
+                                    <option value="">Escolha uma fêmea...</option>
+                                    <option value="1">#1002 - Estrela (Bovino / Nelore)</option>
+                                    <option value="2">#1054 - Mimosa (Bovino / Gir)</option>
+                                    <option value="3">#2019 - Luna (Ovino / Santa Inês)</option>
+                                </select>
+                            </div>
+
+                            <div class="mb-3">
+                                <label class="form-label">Nome da Matriz</label>
+                                <input type="text" class="form-control" id="animalNome" readonly placeholder="Preenchido automaticamente">
+                            </div>
+
+                            <div class="row">
+                                <div class="col-md-6 mb-3">
+                                    <label class="form-label">Espécie</label>
+                                    <input type="text" class="form-control" id="animalEspecie" readonly placeholder="Automático">
+                                </div>
+                                <div class="col-md-6 mb-3">
+                                    <label class="form-label">Raça</label>
+                                    <input type="text" class="form-control" id="animalRaca" readonly placeholder="Automático">
+                                </div>
+                            </div>
+
+                            <div class="mb-3">
+                                <label class="form-label">Data de Nascimento</label>
+                                <input type="text" class="form-control" id="animalNasc" readonly placeholder="Automático">
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="col-lg-6">
+                        <div class="dash-card">
+                            <h5 class="mb-4 text-navy"><i class="fa-solid fa-vial-circle-check me-2 text-success"></i>Dados do Procedimento</h5>
+                            
+                            <div class="row">
+                                <div class="col-md-6 mb-3">
+                                    <label for="peso" class="form-label">Peso Corporal (kg)</label>
+                                    <input type="number" step="0.1" class="form-control" id="peso" placeholder="Ex: 450">
+                                </div>
+                                <div class="col-md-6 mb-3">
+                                    <label for="finalidade" class="form-label">Finalidade</label>
+                                    <select class="form-select" id="finalidade" required>
+                                        <option value="PO">Puro de Origem (PO)</option>
+                                        <option value="Comercial">Comercial</option>
+                                        <option value="Corte">Produção de Corte</option>
+                                        <option value="Leite">Produção Leiteira</option>
                                     </select>
                                 </div>
+                            </div>
 
-                                <div class="mb-3">
-                                    <label class="form-label">Nome da Matriz</label>
-                                    <input type="text" class="form-control" id="animalNome" readonly placeholder="Preenchido automaticamente">
+                            <div class="mb-3">
+                                <label for="localizacao" class="form-label">Lote / Localização</label>
+                                <input type="text" class="form-control" id="localizacao" placeholder="Ex: Piquete 04, Setor Sul" required>
+                            </div>
+
+                            <div class="row">
+                                <div class="col-md-6 mb-3">
+                                    <label for="data_inseminacao" class="form-label">Data da Inseminação</label>
+                                    <input type="date" class="form-control" id="data_inseminacao" required>
                                 </div>
-
-                                <div class="row">
-                                    <div class="col-md-6 mb-3">
-                                        <label class="form-label">Espécie</label>
-                                        <input type="text" class="form-control" id="animalEspecie" readonly placeholder="Automático">
-                                    </div>
-                                    <div class="col-md-6 mb-3">
-                                        <label class="form-label">Raça</label>
-                                        <input type="text" class="form-control" id="animalRaca" readonly placeholder="Automático">
-                                    </div>
-                                </div>
-
-                                <div class="mb-3">
-                                    <label class="form-label">Data de Nascimento</label>
-                                    <input type="text" class="form-control" id="animalNasc" readonly placeholder="Automático">
+                                <div class="col-md-6 mb-3">
+                                    <label for="hora_inseminacao" class="form-label">Hora do Manejo</label>
+                                    <input type="time" class="form-control" id="hora_inseminacao" required>
                                 </div>
                             </div>
-                        </div>
 
-                        <div class="col-lg-6">
-                            <div class="dash-card">
-                                <h5 class="mb-4 text-navy"><i class="fa-solid fa-vial-circle-check me-2 text-success"></i>Dados do Procedimento</h5>
-                                
-                                <div class="row">
-                                    <div class="col-md-6 mb-3">
-                                        <label for="peso" class="form-label">Peso Corporal (kg)</label>
-                                        <input type="number" step="0.1" class="form-control" id="peso" placeholder="Ex: 450">
-                                    </div>
-                                    <div class="col-md-6 mb-3">
-                                        <label for="finalidade" class="form-label">Finalidade</label>
-                                        <select class="form-select" id="finalidade" required>
-                                            <option value="PO">Puro de Origem (PO)</option>
-                                            <option value="Comercial">Comercial</option>
-                                            <option value="Corte">Produção de Corte</option>
-                                            <option value="Leite">Produção Leiteira</option>
-                                        </select>
-                                    </div>
-                                </div>
+                            <div class="mb-4">
+                                <label for="reprodutor_macho" class="form-label">Identificação / Touro Reprodutor</label>
+                                <input type="text" class="form-control" id="reprodutor_macho" placeholder="Nome ou Registro do Sêmen" required>
+                            </div>
 
-                                <div class="mb-3">
-                                    <label for="localizacao" class="form-label">Lote / Localização</label>
-                                    <input type="text" class="form-control" id="localizacao" placeholder="Ex: Piquete 04, Setor Sul" required>
-                                </div>
-
-                                <div class="row">
-                                    <div class="col-md-6 mb-3">
-                                        <label for="data_inseminacao" class="form-label">Data da Inseminação</label>
-                                        <input type="date" class="form-control" id="data_inseminacao" required>
-                                    </div>
-                                    <div class="col-md-6 mb-3">
-                                        <label for="hora_inseminacao" class="form-label">Hora do Manejo</label>
-                                        <input type="time" class="form-control" id="hora_inseminacao" required>
-                                    </div>
-                                </div>
-
-                                <div class="mb-4">
-                                    <label for="reprodutor_macho" class="form-label">Identificação / Touro Reprodutor</label>
-                                    <input type="text" class="form-control" id="reprodutor_macho" placeholder="Nome ou Registro do Sêmen" required>
-                                </div>
-
-                                <div class="text-end">
-                                    <button type="submit" class="btn btn-submit-pri px-5 py-3 w-100">Salvar Registro</button>
-                                </div>
+                            <div class="text-end">
+                                <button type="submit" class="btn btn-submit-pri px-5 py-3 w-100">Salvar Registro</button>
                             </div>
                         </div>
                     </div>
-                </form>
-            </div>
-        </main>
-    </div>
+                </div>
+            </form>
+        </div>
+    </main>
+</div>
 
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
-    <script>
-        // Dados estáticos locais simulando a base de dados
-        const bancoAnimais = {
-            "1": { nome: "Estrela", especie: "Bovino", raca: "Nelore", nascimento: "15/04/2021" },
-            "2": { nome: "Mimosa", especie: "Bovino", raca: "Gir", nascimento: "22/08/2020" },
-            "3": { nome: "Luna", especie: "Ovino", raca: "Santa Inês", nascimento: "10/01/2022" }
-        };
 
-        // Escuta a seleção do animal para preenchimento dos campos automáticos
-        document.getElementById("selectAnimal").addEventListener("change", (e) => {
-            const id = e.target.value;
-            if (id && bancoAnimais[id]) {
-                document.getElementById("animalNome").value = bancoAnimais[id].nome;
-                document.getElementById("animalEspecie").value = bancoAnimais[id].especie;
-                document.getElementById("animalRaca").value = bancoAnimais[id].raca;
-                document.getElementById("animalNasc").value = bancoAnimais[id].nascimento;
-            } else {
-                limparCamposReadOnly();
-            }
-        });
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="../backend/database.js"></script>
+<script src="../backend/navbar-script.js"></script>
 
-        function limparCamposReadOnly() {
-            document.getElementById("animalNome").value = "";
-            document.getElementById("animalEspecie").value = "";
-            document.getElementById("animalRaca").value = "";
-            document.getElementById("animalNasc").value = "";
-        }
+<script>
+    // Dados estáticos locais simulando a base de dados
+    const bancoAnimais = {
+        "1": { nome: "Estrela", especie: "Bovino", raca: "Nelore", nascimento: "15/04/2021" },
+        "2": { nome: "Mimosa", especie: "Bovino", raca: "Gir", nascimento: "22/08/2020" },
+        "3": { nome: "Luna", especie: "Ovino", raca: "Santa Inês", nascimento: "10/01/2022" }
+    };
 
-        // Simulação do envio do formulário localmente
-        document.getElementById("formInseminacao").addEventListener("submit", (e) => {
-            e.preventDefault();
-            alert("Registro de Inseminação salvo com sucesso localmente!");
-            document.getElementById("formInseminacao").reset();
+    // Escuta a seleção do animal para preenchimento dos campos automáticos
+    document.getElementById("selectAnimal").addEventListener("change", (e) => {
+        const id = e.target.value;
+        if (id && bancoAnimais[id]) {
+            document.getElementById("animalNome").value = bancoAnimais[id].nome;
+            document.getElementById("animalEspecie").value = bancoAnimais[id].especie;
+            document.getElementById("animalRaca").value = bancoAnimais[id].raca;
+            document.getElementById("animalNasc").value = bancoAnimais[id].nascimento;
+        } else {
             limparCamposReadOnly();
-        });
-
-        // Código de inicialização padrão do menu lateral (Igual ao Dashboard)
-        const toggleBtn = document.getElementById('navToggleBtn');
-        const sidebar = document.getElementById('potygen-sidebar');
-
-        if (toggleBtn && sidebar) {
-            toggleBtn.addEventListener('click', (e) => {
-                e.stopPropagation();
-                sidebar.classList.toggle('active');
-            });
-
-            document.addEventListener('click', (e) => {
-                if (sidebar.classList.contains('active') && !sidebar.contains(e.target) && e.target !== toggleBtn) {
-                    sidebar.classList.remove('active');
-                }
-            });
         }
-    </script>
+    });
+
+    function limparCamposReadOnly() {
+        document.getElementById("animalNome").value = "";
+        document.getElementById("animalEspecie").value = "";
+        document.getElementById("animalRaca").value = "";
+        document.getElementById("animalNasc").value = "";
+    }
+
+    // Simulação do envio do formulário localmente
+    document.getElementById("formInseminacao").addEventListener("submit", (e) => {
+        e.preventDefault();
+        alert("Registro de Inseminação salvo com sucesso localmente!");
+        document.getElementById("formInseminacao").reset();
+        limparCamposReadOnly();
+    });
+</script>
+
 </body>
 </html>
