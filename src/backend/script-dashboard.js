@@ -5,7 +5,7 @@ async function verificarLogin() {
     const { data, error } = await supabaseClient.auth.getSession();
 
     if (error || !data.session) {
-        window.location.href = 'index.html';
+        window.location.href = '../pages/index.html';
         return;
     }
 
@@ -76,7 +76,7 @@ document.addEventListener('DOMContentLoaded', () => {
         logoutBtn.addEventListener('click', async () => {
             if (confirm('Deseja sair da conta?')) {
                 const { error } = await supabaseClient.auth.signOut();
-                window.location.href = 'index.html';
+                window.location.href = '../pages/index.html';
             }
         });
     }

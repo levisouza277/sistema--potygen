@@ -4,268 +4,203 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Potygen - Análise Genética Avançada</title>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     
-    <link rel="stylesheet" href="style-dashboard.css">
-    <link rel="stylesheet" href="style-analise.css">
+    <link rel="stylesheet" href="../style/style-dashboard.css">
+    <link rel="stylesheet" href="../style/style-analise.css">
+    
+    <!-- Estilos padronizados da navbar -->
+    <link rel="stylesheet" href="../style/navbar-style.css">
 
     <script src="https://unpkg.com/brain.js"></script>
-
-    <style>
-      :root {
-        --nav-primary-green: #00b34e;
-        --nav-dark-blue: #002144;
-        --nav-text-navy: #2b3674;
-        --nav-text-gray: #a3aed0;
-        --nav-bg-light: #f4f7fe;
-        --nav-white: #ffffff;
-        --nav-border: #e9edf7;
-        --nav-shadow: 14px 17px 40px 4px rgba(112, 144, 176, 0.08);
-        --nav-sidebar-width: 290px;
-        --nav-transition: 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-      }
-      .nav-menu-toggle {
-        position: fixed; top: 22px; left: 20px;
-        width: 46px; height: 46px;
-        background: var(--nav-white);
-        border: 1px solid var(--nav-border);
-        border-radius: 12px;
-        display: flex; align-items: center; justify-content: center;
-        font-size: 20px; color: var(--nav-text-navy);
-        cursor: pointer; box-shadow: var(--nav-shadow);
-        z-index: 1002; transition: all var(--nav-transition);
-      }
-      .nav-menu-toggle:hover { background: var(--nav-bg-light); color: var(--nav-primary-green); transform: scale(1.05); }
-      .nav-overlay { display: none; position: fixed; inset: 0; background: rgba(0,33,68,0.4); z-index: 1000; }
-      .nav-overlay.visible { display: block; }
-      .potygen-sidebar {
-        width: var(--nav-sidebar-width);
-        background: var(--nav-white);
-        border-right: 1px solid var(--nav-border);
-        display: flex; flex-direction: column;
-        padding: 40px 25px; flex-shrink: 0;
-        position: fixed; top: 0;
-        left: calc(-1 * var(--nav-sidebar-width));
-        height: 100vh;
-        transition: left var(--nav-transition);
-        z-index: 1001; overflow-y: auto;
-      }
-      .potygen-sidebar.nav-open { left: 0; }
-      .potygen-sidebar .nav-logo-wrap { margin-bottom: 50px; padding-left: 50px; }
-      .potygen-sidebar .nav-logo { width: 140px; object-fit: contain; }
-      .potygen-nav { flex: 1; }
-      .potygen-nav .nav-item {
-        display: flex; align-items: center; gap: 15px;
-        padding: 16px; text-decoration: none;
-        color: var(--nav-text-gray);
-        font-family: 'Inter', sans-serif; font-weight: 500; font-size: 15px;
-        border-radius: 12px; margin-bottom: 5px;
-        transition: color var(--nav-transition), background var(--nav-transition);
-      }
-      .potygen-nav .nav-item i { font-size: 17px; width: 20px; text-align: center; }
-      .potygen-nav .nav-item:hover { color: var(--nav-primary-green); background: #f8fafc; }
-      .potygen-nav .nav-item.active {
-        color: var(--nav-text-navy); font-weight: 700;
-        border-right: 4px solid var(--nav-primary-green);
-        border-radius: 12px 0 0 12px; background: transparent;
-      }
-      .potygen-sidebar-footer { margin-top: auto; }
-      .nav-ia-card {
-        background: var(--nav-bg-light); padding: 15px; border-radius: 16px;
-        display: flex; gap: 12px; align-items: center; margin-bottom: 20px;
-      }
-      .nav-ia-card .nav-ia-icon { color: #3b82f6; font-size: 20px; }
-      .nav-ia-card .nav-ia-title { font-size: 13px; font-weight: 700; color: var(--nav-text-navy); font-family: 'Inter', sans-serif; display: block; }
-      .nav-ia-card .nav-ia-sub { font-size: 11px; color: var(--nav-text-gray); font-family: 'Inter', sans-serif; display: block; }
-      .nav-logout-btn {
-        display: flex; align-items: center; gap: 12px;
-        padding: 14px 16px; border-radius: 12px;
-        text-decoration: none; color: #e53e3e;
-        font-family: 'Inter', sans-serif; font-weight: 600; font-size: 14px;
-        background: none; border: none; cursor: pointer;
-        width: 100%; text-align: left;
-        transition: background var(--nav-transition), color var(--nav-transition);
-      }
-      .nav-logout-btn i { font-size: 16px; }
-      .nav-logout-btn:hover { background: #fff5f5; color: #c53030; }
-      @media (min-width: 1025px) {
-        .main-content.nav-sidebar-open { padding-left: var(--nav-sidebar-width); }
-        .main-content.nav-sidebar-open .top-bar { padding-left: 40px; }
-      }
-    </style>
-    </head>
+</head>
 <body>
 
+<div class="app-container">
+    <!-- ============================================ -->
+    <!-- NAVBAR PADRONIZADA -->
+    <!-- ============================================ -->
+    
     <button class="nav-menu-toggle" id="navToggleBtn" aria-label="Alternar menu lateral">
-      <i class="fa-solid fa-bars"></i>
+        <i class="fa-solid fa-bars"></i>
     </button>
+    
     <div class="nav-overlay" id="navOverlay"></div>
-
-    <div class="app-container">
+    
+    <aside class="potygen-sidebar" id="potygen-sidebar">
+        <div class="nav-logo-wrap">
+            <img src="../assets/logo.png" alt="Potygen" class="nav-logo" 
+                 onerror="this.onerror=null;this.src='https://placehold.co/140x48/ffffff/0d8a4f?text=Potygen';">
+        </div>
         
-        <aside class="potygen-sidebar" id="potygen-sidebar">
-            <div class="nav-logo-wrap">
-              <img src="logo.png" alt="Potygen" class="nav-logo"
-                   onerror="this.onerror=null;this.src='https://placehold.co/140x48/ffffff/00b34e?text=Potygen';">
+        <nav class="potygen-nav">
+            <a href="dashboard.html" class="nav-item">
+                <i class="fa-solid fa-house"></i>
+                <span>Dashboard</span>
+            </a>
+            <a href="registrar_inseminacao.html" class="nav-item">
+                <i class="fa-solid fa-syringe"></i>
+                <span>Inseminação</span>
+            </a>
+            <a href="gestao-animais.html" class="nav-item">
+                <i class="fa-solid fa-cow"></i>
+                <span>Gestão de Animais</span>
+            </a>
+            <a href="analise-genetica.html" class="nav-item active">
+                <i class="fa-solid fa-dna"></i>
+                <span>Análise Genética</span>
+            </a>
+            <a href="agenda-reprodutiva.html" class="nav-item">
+                <i class="fa-solid fa-calendar-days"></i>
+                <span>Agenda Reprodutiva</span>
+            </a>
+            <a href="relatorio.html" class="nav-item">
+                <i class="fa-solid fa-chart-pie"></i>
+                <span>Relatórios</span>
+            </a>
+            <a href="configuracoes.html" class="nav-item">
+                <i class="fa-solid fa-gear"></i>
+                <span>Configurações</span>
+            </a>
+        </nav>
+        
+        <div class="nav-footer">
+            <a href="index.html" class="nav-item logout">
+                <i class="fa-solid fa-right-from-bracket"></i>
+                <span>Sair da Conta</span>
+            </a>
+        </div>
+    </aside>
+    
+    <!-- ============================================ -->
+    <!-- CONTEÚDO PRINCIPAL -->
+    <!-- ============================================ -->
+    
+    <main class="main-content" id="mainContent">
+        <header class="top-bar">
+            <div class="breadcrumb-area">
+                <p class="page-subtitle">Páginas / Análise Genética</p>
+                <h1 class="page-title">Predição Reprodutiva IA</h1>
             </div>
-            <nav class="potygen-nav">
-              <a href="dashboard.html"      class="nav-item" data-page="dashboard"><i class="fa-solid fa-house"></i><span>Dashboard</span></a>
-              <a href="registrar_inseminacao.html" class="nav-item"><i class="fa-solid fa-syringe"></i><span>Inseminação</span></a>
-              <a href="gestao-animais.html" class="nav-item" data-page="gestao-animais"><i class="fa-solid fa-cow"></i><span>Gestão de Animais</span></a>
-              <a href="analise-genetica.html"                   class="nav-item active" data-page="analise-genetica"><i class="fa-solid fa-dna"></i><span>Análise Genética</span></a>
-              <a href="agenda-reprodutiva.html" class="nav-item" data-page="agenda-reprodutiva"><i class="fa-solid fa-calendar-days"></i><span>Agenda Reprodutiva</span></a>
-              <a href="relatorio.html"      class="nav-item" data-page="relatorios"><i class="fa-solid fa-clipboard-list"></i><span>Relatórios</span></a>
-              <a href="#"                   class="nav-item" data-page="configuracoes"><i class="fa-solid fa-gear"></i><span>Configurações</span></a>
-            </nav>
-            <div class="potygen-sidebar-footer">
-              <div class="nav-ia-card">
-                <span class="nav-ia-icon"><i class="fa-solid fa-wand-magic-sparkles"></i></span>
-                <div>
-                  <span class="nav-ia-title">Powered by IA</span>
-                  <span class="nav-ia-sub">Análise preditiva ativa</span>
-                </div>
-              </div>
-              <button class="nav-logout-btn" onclick="window.location.href='index.html'">
-                <i class="fa-solid fa-arrow-right-from-bracket"></i>
-                <span>Sair da conta</span>
-              </button>
+            <div class="user-location-badge">
+                <i class="fa-solid fa-location-dot"></i>
+                <span id="lblLocalizacaoUsuario">Carregando fazenda...</span>
             </div>
-        </aside>
+        </header>
 
-        <main class="main-content" id="mainContent">
-            <header class="top-bar">
-                <div class="breadcrumb-area">
-                    <p class="page-subtitle">Páginas / Análise Genética</p>
-                    <h1 class="page-title">Predição Reprodutiva IA</h1>
-                </div>
-                <div class="user-location-badge">
-                    <i class="fa-solid fa-location-dot"></i>
-                    <span id="lblLocalizacaoUsuario">Carregando fazenda...</span>
-                </div>
-            </header>
-
-            <div class="content-wrapper">
+        <div class="content-wrapper">
+            
+            <div class="analysis-grid">
                 
-                <div class="analysis-grid">
+                <div class="card-analise">
+                    <div class="card-header-title">
+                        <i class="fa-solid fa-sliders"></i>
+                        <h2>Configuração do Acasalamento</h2>
+                    </div>
                     
-                    <div class="card-analise">
-                        <div class="card-header-title">
-                            <i class="fa-solid fa-sliders"></i>
-                            <h2>Configuração do Acasalamento</h2>
+                    <form id="formAcoplamento" onsubmit="event.preventDefault();">
+                        <div class="input-group">
+                            <label for="txtEspecie">Espécie do Rebanho</label>
+                            <select id="txtEspecie" onchange="atualizarFormulario()">
+                                <option value="Bovino">Bovinos</option>
+                                <option value="Ovino">Ovinos</option>
+                                <option value="Caprino">Caprinos</option>
+                            </select>
                         </div>
-                        
-                        <form id="formAcoplamento" onsubmit="event.preventDefault();">
+
+                        <div class="form-row">
                             <div class="input-group">
-                                <label for="txtEspecie">Espécie do Rebanho</label>
-                                <select id="txtEspecie" onchange="atualizarFormulario()">
-                                    <option value="Bovino">Bovinos</option>
-                                    <option value="Ovino">Ovinos</option>
-                                    <option value="Caprino">Caprinos</option>
-                                </select>
+                                <label for="txtRaca">Raça da Matriz (Fêmea)</label>
+                                <select id="txtRaca"></select>
                             </div>
-
-                            <div class="form-row">
-                                <div class="input-group">
-                                    <label for="txtRaca">Raça da Matriz (Fêmea)</label>
-                                    <select id="txtRaca"></select>
-                                </div>
-                                <div class="input-group">
-                                    <label for="txtRacaReprodutor">Raça do Reprodutor (Macho)</label>
-                                    <select id="txtRacaReprodutor"></select>
-                                </div>
-                            </div>
-
                             <div class="input-group">
-                                <label for="txtFinalidade">Finalidade Zootécnica</label>
-                                <select id="txtFinalidade"></select>
+                                <label for="txtRacaReprodutor">Raça do Reprodutor (Macho)</label>
+                                <select id="txtRacaReprodutor"></select>
                             </div>
-
-                            <button type="button" class="btn-analisar" onclick="executarPredicaoIA()">
-                                <i class="fa-solid fa-brain"></i> Executar Predição da IA
-                            </button>
-                        </form>
-                    </div>
-
-                    <div class="card-analise weather-card">
-                        <div class="card-header-title">
-                            <i class="fa-solid fa-temperature-three-quarters"></i>
-                            <h2>Bioclimatologia Animal Real-Time</h2>
                         </div>
-                        
-                        <div id="painelClimatico" class="weather-display">
-                            <div class="weather-metrics">
-                                <div class="metric-box">
-                                    <span class="metric-label">Temperatura Atual</span>
-                                    <span id="lblTemperatura" class="metric-value">--°C</span>
-                                </div>
-                                <div class="metric-box">
-                                    <span class="metric-label">Umidade Relativa</span>
-                                    <span id="lblUmidade" class="metric-value">--%</span>
-                                </div>
-                            </div>
 
-                            <div class="itu-container">
-                                <div class="itu-header">
-                                    <span>Índice de Temperatura e Umidade (ITU)</span>
-                                    <span id="lblITU" class="itu-badge">--</span>
-                                </div>
-                                <div id="lblStatusTermico" class="itu-status-text">Carregando dados climáticos...</div>
-                            </div>
-
-                            <p class="update-timestamp">
-                                <i class="fa-regular fa-clock"></i> Última sincronização: <span id="lblAtualizacao">--</span>
-                            </p>
+                        <div class="input-group">
+                            <label for="txtFinalidade">Finalidade Zootécnica</label>
+                            <select id="txtFinalidade"></select>
                         </div>
-                    </div>
 
+                        <button type="button" class="btn-analisar" onclick="executarPredicaoIA()">
+                            <i class="fa-solid fa-brain"></i> Executar Predição da IA
+                        </button>
+                    </form>
                 </div>
 
-                <div id="painelResultado" class="card-analise result-card" style="display: none;">
+                <div class="card-analise weather-card">
                     <div class="card-header-title">
-                        <i class="fa-solid fa-chart-pie"></i>
-                        <h2>Resultado do Motor Preditivo PotyGen</h2>
+                        <i class="fa-solid fa-temperature-three-quarters"></i>
+                        <h2>Bioclimatologia Animal Real-Time</h2>
                     </div>
-
-                    <div class="score-flex-container">
-                        <div class="score-gauge">
-                            <span id="lblScore" class="score-number">0%</span>
-                            <span class="score-label">Chance de Prenhez</span>
-                        </div>
-                        <div class="progress-bar-wrapper">
-                            <div class="barra-fundo">
-                                <div id="lblBarra" class="barra-preenchimento"></div>
+                    
+                    <div id="painelClimatico" class="weather-display">
+                        <div class="weather-metrics">
+                            <div class="metric-box">
+                                <span class="metric-label">Temperatura Atual</span>
+                                <span id="lblTemperatura" class="metric-value">--°C</span>
+                            </div>
+                            <div class="metric-box">
+                                <span class="metric-label">Umidade Relativa</span>
+                                <span id="lblUmidade" class="metric-value">--%</span>
                             </div>
                         </div>
-                    </div>
 
-                    <div class="recomendacao-box">
-                        <div class="rec-icon"><i class="fa-solid fa-comment-medical"></i></div>
-                        <div id="lblRecomendacao" class="recomendacao-texto">
-                            Processando parecer da IA...
+                        <div class="itu-container">
+                            <div class="itu-header">
+                                <span>Índice de Temperatura e Umidade (ITU)</span>
+                                <span id="lblITU" class="itu-badge">--</span>
+                            </div>
+                            <div id="lblStatusTermico" class="itu-status-text">Carregando dados climáticos...</div>
                         </div>
+
+                        <p class="update-timestamp">
+                            <i class="fa-regular fa-clock"></i> Última sincronização: <span id="lblAtualizacao">--</span>
+                        </p>
                     </div>
                 </div>
 
             </div>
-        </main>
-    </div>
 
-    <script src="script-analise.js"></script>
+            <div id="painelResultado" class="card-analise result-card" style="display: none;">
+                <div class="card-header-title">
+                    <i class="fa-solid fa-chart-pie"></i>
+                    <h2>Resultado do Motor Preditivo PotyGen</h2>
+                </div>
 
-    <script>
-        // Navbar unificada Potygen
-        (function () {
-          const toggleBtn   = document.getElementById('navToggleBtn');
-          const sidebar     = document.getElementById('potygen-sidebar');
-          const overlay     = document.getElementById('navOverlay');
-          const mainContent = document.getElementById('mainContent');
-          function open()  { sidebar.classList.add('nav-open'); overlay.classList.add('visible'); if (mainContent && window.innerWidth > 1024) mainContent.classList.add('nav-sidebar-open'); }
-          function close() { sidebar.classList.remove('nav-open'); overlay.classList.remove('visible'); if (mainContent) mainContent.classList.remove('nav-sidebar-open'); }
-          toggleBtn.addEventListener('click', () => sidebar.classList.contains('nav-open') ? close() : open());
-          overlay.addEventListener('click', close);
-          window.toggleSidebar = () => sidebar.classList.contains('nav-open') ? close() : open();
-        })();
-    </script>
+                <div class="score-flex-container">
+                    <div class="score-gauge">
+                        <span id="lblScore" class="score-number">0%</span>
+                        <span class="score-label">Chance de Prenhez</span>
+                    </div>
+                    <div class="progress-bar-wrapper">
+                        <div class="barra-fundo">
+                            <div id="lblBarra" class="barra-preenchimento"></div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="recomendacao-box">
+                    <div class="rec-icon"><i class="fa-solid fa-comment-medical"></i></div>
+                    <div id="lblRecomendacao" class="recomendacao-texto">
+                        Processando parecer da IA...
+                    </div>
+                </div>
+            </div>
+
+        </div>
+    </main>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="../backend/database.js"></script>
+<script src="../backend/script-analise.js"></script>
+
+<!-- Navbar Script Global -->
+<script src="../backend/navbar-script.js"></script>
+
 </body>
 </html>
