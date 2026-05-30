@@ -93,10 +93,10 @@
         </nav>
         
         <div class="nav-footer">
-            <a href="index.html" class="nav-item logout">
+            <button type="button" id="logoutBtn" class="nav-item logout-btn">
                 <i class="fa-solid fa-right-from-bracket"></i>
                 <span>Sair da Conta</span>
-            </a>
+            </button>
         </div>
     </aside>
     
@@ -703,8 +703,10 @@
 
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script src="../backend/database.js"></script>
+<script src="../backend/auth.js"></script>
 <!-- Navbar Script Global -->
 <script src="../backend/navbar-script.js"></script>
+<script src="../backend/logout.js"></script>
 
 </body>
 </html>

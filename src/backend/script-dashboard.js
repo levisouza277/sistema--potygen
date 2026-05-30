@@ -1,44 +1,4 @@
 // ==========================================
-// VERIFICAÇÃO DE LOGIN E DADOS (SUPABASE)
-// ==========================================
-async function verificarLogin() {
-    const { data, error } = await supabaseClient.auth.getSession();
-
-    if (error || !data.session) {
-        window.location.href = '../pages/index.html';
-        return;
-    }
-
-    const usuario = data.session.user;
-    
-    // Atualiza nome exibido
-    const userNameElement = document.querySelector('.user-name');
-    if (userNameElement) {
-        userNameElement.innerHTML = usuario.email;
-    }
-
-    // Busca dados complementares na tabela 'usuarios'
-    const { data: dadosUsuario, error: erroUsuario } = await supabaseClient
-        .from('usuarios')
-        .select('*')
-        .eq('id', usuario.id)
-        .single();
-
-    if (!erroUsuario && dadosUsuario) {
-        const userFarmElement = document.querySelector('.user-farm');
-        if (userFarmElement) {
-            userFarmElement.innerHTML = dadosUsuario.propriedade || 'Fazenda não informada';
-        }
-        if (userNameElement) {
-            userNameElement.innerHTML = dadosUsuario.nome || usuario.email;
-        }
-    }
-}
-
-// Chamar verificação ao carregar
-verificarLogin();
-
-// ==========================================
 // CONTROLE DE MENU MOBILE E UI
 // ==========================================
 document.addEventListener('DOMContentLoaded', () => {
@@ -69,17 +29,6 @@ document.addEventListener('DOMContentLoaded', () => {
             sidebar.classList.remove('active');
         }
     });
-
-    // Logout
-    const logoutBtn = document.getElementById('logoutBtn');
-    if (logoutBtn) {
-        logoutBtn.addEventListener('click', async () => {
-            if (confirm('Deseja sair da conta?')) {
-                const { error } = await supabaseClient.auth.signOut();
-                window.location.href = '../pages/index.html';
-            }
-        });
-    }
 
     // Inicializa Gráficos
     renderizarGraficos();
