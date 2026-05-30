@@ -292,4 +292,3 @@ window.addEventListener("load", () => {
         console.error("Erro Crítico: A biblioteca Brain.js não foi carregada corretamente. Verifique sua conexão ou a tag <script>.");
     }
 });
-
