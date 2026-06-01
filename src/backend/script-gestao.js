@@ -1,4 +1,66 @@
+function limparFormulario() {
+    const modalForm = document.getElementById('modalForm');
+    if (modalForm) {
+        const inputs = modalForm.querySelectorAll('input, select, textarea');
+        inputs.forEach(input => input.value = "");
+    }
+    // Limpar campos específicos
+    const buscaRaca = document.getElementById('buscaRaca');
+    if (buscaRaca) buscaRaca.value = "";
+    const listaRacas = document.getElementById('listaRacasResultados');
+    if (listaRacas) listaRacas.innerHTML = "";
+}
+
 document.addEventListener('DOMContentLoaded', function() {
+
+    // Funções principais
+    window.visualizarAnimal = visualizarAnimal;
+    window.editarAnimal = editarAnimal;
+    window.deletarAnimal = deletarAnimal;
+    
+    // Funções auxiliares
+    window.calcularIdade = calcularIdade;
+    window.calcularIdadeAnimal = calcularIdadeAnimal;
+    window.calcularIdadeCria = calcularIdadeCria;
+    window.limparFormulario = limparFormulario;
+    
+    // Funções de doenças
+    window.atualizarListaDoencas = atualizarListaDoencas;
+    window.atualizarListaDoencasMacho = atualizarListaDoencasMacho;
+    window.toggleDoencaDetalhes = toggleDoencaDetalhes;
+    window.toggleTratamentoCampos = toggleTratamentoCampos;
+    window.toggleDoencaDetalhesMacho = toggleDoencaDetalhesMacho;
+    window.toggleTratamentoCamposMacho = toggleTratamentoCamposMacho;
+    window.coletarDoencas = coletarDoencas;
+    window.coletarDoencasMacho = coletarDoencasMacho;
+    
+    // Funções de raça
+    window.filtrarListaRacas = filtrarListaRacas;
+    window.mostrarTodasRacas = mostrarTodasRacas;
+    window.selecionarRaca = selecionarRaca;
+    
+    // Funções de UI
+    window.toggleCamposPorSexo = toggleCamposPorSexo;
+    window.toggleCamposCategoria = toggleCamposCategoria;
+    window.toggleCamposAborto = toggleCamposAborto;
+    window.gerarCamposAborto = gerarCamposAborto;
+    window.toggleCamposNascimentosPorCategoria = toggleCamposNascimentosPorCategoria;
+    window.gerarCamposNascimentos = gerarCamposNascimentos;
+    window.toggleCamposReprodutor = toggleCamposReprodutor;
+    window.toggleCamposCrias = toggleCamposCrias;
+    window.toggleCamposDescendentes = toggleCamposDescendentes;
+    window.gerarCamposDescendentes = gerarCamposDescendentes;
+    
+    // Funções de finalidade e raça
+    window.atualizarFinalidadePorEspecie = atualizarFinalidadePorEspecie;
+    window.atualizarRacasPorEspecie = atualizarRacasPorEspecie;
+    
+    // Funções de mensagem
+    window.mostrarMensagem = mostrarMensagem;
+    window.mostrarConfirmacao = mostrarConfirmacao;
+
+    carregarAnimais();
+
     const modalForm = document.getElementById('modalForm');
     const modalVisualizar = document.getElementById('modalVisualizar');
     const modalTitle = document.getElementById('modalTitle');
@@ -60,24 +122,91 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     });
 
-    function limparFormulario() {
-        const inputs = modalForm.querySelectorAll('input, select, textarea');
-        inputs.forEach(input => input.value = "");
-    }
-
-
     btnSalvar.addEventListener('click', () => {
-        mostrarMensagem('Ação realizada com sucesso!', 'sucesso');
+        salvarAnimal();
         modalForm.style.display = "none";
     });
 });
 
-    // ============================================
-    // SISTEMA DE ARMAZENAMENTO DE ANIMAIS
-    // ============================================
+// ============================================
+// SISTEMA DE ARMAZENAMENTO DE ANIMAIS
+// ============================================
     
-    let animais = JSON.parse(localStorage.getItem('potygen_animais') || '[]');
-    // ============================================
+let animais = [];
+
+async function carregarAnimais() {
+    try {
+        const { data: { user }, error: userError } = await supabaseClient.auth.getUser();
+        
+        if (userError || !user) {
+            console.error("Usuário não autenticado.");
+            return;
+        }
+
+        // Busca os animais
+        const { data, error } = await supabaseClient
+            .from('animais')
+            .select(`
+                *,
+                doencas_animais(*),
+                abortos_animais(*),
+                pai:pai_id(id, codigo, nome),
+                mae:mae_id(id, codigo, nome)
+            `)
+            .order('created_at', { ascending: false });
+
+        if (error) throw error;
+
+        // Processa os dados para o formato usado na tela
+        animais = (data || []).map(animal => ({
+            id: animal.id,
+            codigo: animal.codigo,
+            nome: animal.nome,
+            especie: animal.especie,
+            raca: animal.raca,
+            sexo: animal.sexo,
+            pelagem: animal.pelagem,
+            dataNascimento: animal.data_nascimento,
+            pesoNascer: animal.peso_nascer,
+            pesoAtual: animal.peso_atual,
+            finalidade: animal.finalidade,
+            lote: animal.lote,
+            observacoes: animal.observacoes,
+            grauSangue: animal.grau_sangue,
+            categoriaReprodutiva: animal.categoria_reprodutiva,
+            ecc: animal.ecc,
+            tipoReprodutor: animal.tipo_reprodutor,
+            laboratorio: animal.laboratorio,
+            exameAndrologicoDia: animal.exame_andrologico,
+            mae: animal.mae ? `${animal.mae.codigo} - ${animal.mae.nome || 'Sem nome'}` : null,
+            pai: animal.pai ? `${animal.pai.codigo} - ${animal.pai.nome || 'Sem nome'}` : null,
+            doencas: (animal.doencas_animais || []).map(d => ({
+                nome: d.nome_doenca,
+                dataDiagnostico: d.data_diagnostico,
+                tratou: d.tratou,
+                dataTratamento: d.data_tratamento,
+                tipoTratamento: d.tipo_tratamento,
+                observacoesTratamento: d.observacoes
+            })),
+            abortos: (animal.abortos_animais || []).map((a, index) => ({
+                numero: index + 1,
+                data: a.data_aborto,
+                diasGestacao: a.idade_gestacional_dias,
+                macho: a.causa_suspeita,
+                observacoes: a.observacoes
+            }))
+        }));
+
+        renderizarTabela(animais);
+        if (typeof atualizarDatalists === "function") atualizarDatalists();
+        
+    } catch (error) {
+        console.error("Erro ao carregar animais:", error.message);
+        mostrarMensagem('Erro ao carregar dados do rebanho.', 'erro');
+    }
+}
+
+// ============================================
 // BANCO DE DOENÇAS POR ESPÉCIE E SEXO
 // ============================================
 
@@ -561,23 +690,32 @@ function calcularIdadeAnimal() {
 }
     
     // Controlar subcampos de aborto
-    function toggleCamposAborto() {
+function toggleCamposAborto() {
     const temAborto = document.getElementById('formHistoricoAborto').value;
     const subCampos = document.getElementById('subCamposAborto');
+    const qtdAbortos = document.getElementById('formQtdAbortos');
     
     if (temAborto === 'sim') {
         subCampos.style.display = 'block';
+        if (!qtdAbortos.value || parseInt(qtdAbortos.value) === 0) {
+            qtdAbortos.value = 1;
+        }
         gerarCamposAborto();
     } else {
         subCampos.style.display = 'none';
-        document.getElementById('formQtdAbortos').value = 0;
-        document.getElementById('listaAbortosContainer').innerHTML = '';
+        qtdAbortos.value = 0;
+        const container = document.getElementById('listaAbortosContainer');
+        if (container) container.innerHTML = '';
     }
 }
 
 function gerarCamposAborto() {
     const qtd = parseInt(document.getElementById('formQtdAbortos').value) || 0;
     const container = document.getElementById('listaAbortosContainer');
+    if (!container) return;
+    
+    // LIMPA COMPLETAMENTE
+    container.innerHTML = '';
     
     if (qtd === 0) {
         container.innerHTML = '<p style="color: #64748b; font-size: 13px; margin-top: 10px;">Nenhum aborto registrado</p>';
@@ -585,10 +723,9 @@ function gerarCamposAborto() {
     }
     
     let html = '<div style="margin-top: 15px;"><label style="font-weight: 600; margin-bottom: 10px; display: block;">Detalhes de cada aborto:</label>';
-    
     for (let i = 1; i <= qtd; i++) {
         html += `
-            <div class="sub-block" style="margin-bottom: 15px; border-left-color: #dc3545;">
+            <div class="sub-block" style="margin-bottom: 15px; border-left-color: #dc3545;" data-aborto-index="${i}">
                 <h4 style="color: #dc3545;">Aborto #${i}</h4>
                 <div class="form-grid">
                     <div class="input-group">
@@ -597,218 +734,359 @@ function gerarCamposAborto() {
                     </div>
                     <div class="input-group">
                         <label>Macho Reprodutor</label>
-                        <input type="text" id="abortoMacho_${i}" class="aborto-macho" 
-                               placeholder="Código/Nome do touro" list="listaReprodutores">
+                        <input type="text" id="abortoMacho_${i}" class="aborto-macho" placeholder="Código/Nome do touro" list="listaReprodutores">
                     </div>
                 </div>
                 <div class="form-grid">
                     <div class="input-group">
                         <label>Gestão Aproximada (dias)</label>
-                        <input type="number" id="abortoDias_${i}" class="aborto-dias" 
-                               placeholder="Ex: 120, 180" step="10">
+                        <input type="number" id="abortoDias_${i}" class="aborto-dias" placeholder="Ex: 120, 180" step="10">
                     </div>
                     <div class="input-group">
                         <label>Observações</label>
-                        <input type="text" id="abortoObs_${i}" class="aborto-obs" 
-                               placeholder="Ex: Causa desconhecida, trauma...">
+                        <input type="text" id="abortoObs_${i}" class="aborto-obs" placeholder="Ex: Causa desconhecida, trauma...">
                     </div>
                 </div>
             </div>
         `;
     }
-    
     html += '</div>';
     container.innerHTML = html;
 }
-    
-    // Salvar animal no localStorage
-   function salvarAnimal() {
-    const isEditing = window.animalEmEdicao;
-    const editingAnimal = isEditing ? animais.find(a => a.id === isEditing) : null;
-    if (isEditing && editingAnimal) {
-        animais = animais.filter(a => a.id !== isEditing);
-    }
-    
-    // Coletar dados básicos
-    const animal = {
-        id: isEditing || Date.now(),
-        codigo: document.getElementById('formCodigo').value,
-        nome: document.getElementById('formNome').value || '',
-        especie: document.getElementById('formEspecie').value,
-        raca: document.getElementById('formRaca').value,
-        grauSangue: document.getElementById('formGrauSangue').value,
-        pelagem: document.getElementById('formPelagem').value,
-        dataNascimento: document.getElementById('formDataNascimento').value,
-        pesoNascer: parseFloat(document.getElementById('formPesoNascer').value) || 0,
-        pesoAtual: parseFloat(document.getElementById('formPesoAtual').value) || 0,
-        sexo: document.getElementById('formSexo').value,
-        finalidade: document.getElementById('formFinalidade').value,
-        lote: document.getElementById('formLote').value,
-        observacoes: document.getElementById('formObs').value,
-        dataCadastro: new Date().toISOString(),
-        doencas: []
-    };
-    
-    // Validar campos obrigatórios
-    if (!animal.codigo || !animal.especie || !animal.raca || !animal.sexo || !animal.dataNascimento) {
-        mostrarMensagem('Por favor, preencha todos os campos obrigatórios (*)', 'aviso');
-        return;
-    }
-    
-    // Adicionar campos específicos baseado no sexo
-    if (animal.sexo === 'Fêmea') {
-        animal.categoriaReprodutiva = document.getElementById('formCategoriaFemea').value;
-        animal.ecc = parseFloat(document.getElementById('formECC').value) || null;
-        animal.mae = document.getElementById('formMae').value || null;
-        animal.historicoAborto = document.getElementById('formHistoricoAborto').value === 'sim';
-        
-        if (animal.historicoAborto) {
-            animal.qtdAbortos = parseInt(document.getElementById('formQtdAbortos').value) || 0;
-            const abortosDetalhes = [];
-            for (let i = 1; i <= animal.qtdAbortos; i++) {
-                const data = document.getElementById(`abortoData_${i}`)?.value;
-                const macho = document.getElementById(`abortoMacho_${i}`)?.value;
-                const dias = document.getElementById(`abortoDias_${i}`)?.value;
-                const obs = document.getElementById(`abortoObs_${i}`)?.value;
+
+    async function salvarAnimal() {
+        try {
+            // Validação básica
+            const codigoInput = document.getElementById('formCodigo').value.trim();
+            const especieInput = document.getElementById('formEspecie').value;
+            const racaInput = document.getElementById('formRaca').value;
+            const sexoInput = document.getElementById('formSexo').value;
+            const dataNascInput = document.getElementById('formDataNascimento').value;
+
+            if (!codigoInput || !especieInput || !racaInput || !sexoInput || !dataNascInput) {
+                mostrarMensagem('Por favor, preencha todos os campos obrigatórios!', 'erro');
+                return;
+            }
+
+            // Pega o usuário autenticado
+            const { data: { user }, error: userError } = await supabaseClient.auth.getUser();
+            if (userError || !user) {
+                mostrarMensagem('Sessão expirada. Faça login novamente.', 'erro');
+                return;
+            }
+
+            const isEditing = window.animalEmEdicao;
+
+            // Monta o payload - APENAS os campos que existem na tabela animais
+            const dadosAnimal = {
+                usuario_id: user.id,
+                codigo: codigoInput,
+                nome: document.getElementById('formNome').value.trim() || null,
+                especie: especieInput,
+                raca: racaInput,
+                sexo: sexoInput,
+                pelagem: document.getElementById('formPelagem').value || null,
+                data_nascimento: dataNascInput,
+                peso_nascer: parseFloat(document.getElementById('formPesoNascer').value) || null,
+                peso_atual: parseFloat(document.getElementById('formPesoAtual').value) || null,
+                finalidade: document.getElementById('formFinalidade').value || null,
+                lote: document.getElementById('formLote').value || null,
+                observacoes: document.getElementById('formObs').value || null,
+                status: 'Ativo',
+                grau_sangue: document.getElementById('formGrauSangue').value || null,
+                categoria_reprodutiva: null,
+                ecc: null,
+                tipo_reprodutor: null,
+                laboratorio: null,
+                exame_andrologico: false,
+                pai_id: null,
+                mae_id: null
+            };
+
+            // Adiciona campos específicos do sexo
+            if (sexoInput === 'Fêmea') {
+                dadosAnimal.categoria_reprodutiva = document.getElementById('formCategoriaFemea')?.value || null;
+                dadosAnimal.ecc = parseFloat(document.getElementById('formECC')?.value) || null;
                 
-                if (data || macho) {
-                    abortosDetalhes.push({
-                        numero: i,
-                        data: data || null,
-                        macho: macho || null,
-                        diasGestacao: dias ? parseInt(dias) : null,
-                        observacoes: obs || null
-                    });
+                // Buscar IDs da mãe e pai pelo código/nome
+                const maeNome = document.getElementById('formMae')?.value;
+                const paiNome = document.getElementById('formPai')?.value;
+                
+                if (maeNome) {
+                    const maeEncontrada = animais.find(a => 
+                        a.codigo === maeNome || a.nome === maeNome
+                    );
+                    if (maeEncontrada) dadosAnimal.mae_id = maeEncontrada.id;
+                }
+                
+                if (paiNome) {
+                    const paiEncontrado = animais.find(a => 
+                        a.codigo === paiNome || a.nome === paiNome
+                    );
+                    if (paiEncontrado) dadosAnimal.pai_id = paiEncontrado.id;
+                }
+            } else if (sexoInput === 'Macho') {
+                dadosAnimal.tipo_reprodutor = document.getElementById('formTipoMacho')?.value || null;
+                dadosAnimal.laboratorio = document.getElementById('formLaboratorio')?.value || null;
+                dadosAnimal.exame_andrologico = document.getElementById('formExameAndrologico')?.value === 'sim';
+                dadosAnimal.ecc = parseFloat(document.getElementById('formECCMacho')?.value) || null;
+                
+                // Buscar IDs da mãe e pai do macho
+                const maeNome = document.getElementById('formMaeMacho')?.value;
+                const paiNome = document.getElementById('formPaiMacho')?.value;
+                
+                if (maeNome) {
+                    const maeEncontrada = animais.find(a => 
+                        a.codigo === maeNome || a.nome === maeNome
+                    );
+                    if (maeEncontrada) dadosAnimal.mae_id = maeEncontrada.id;
+                }
+                
+                if (paiNome) {
+                    const paiEncontrado = animais.find(a => 
+                        a.codigo === paiNome || a.nome === paiNome
+                    );
+                    if (paiEncontrado) dadosAnimal.pai_id = paiEncontrado.id;
                 }
             }
-            animal.abortos = abortosDetalhes;
-        }
-        animal.doencas = coletarDoencas();
-        
-        // Coletar doenças pregressas
-        const doencas = [];
-        document.querySelectorAll('#camposFemea input[type="checkbox"]:checked').forEach(cb => {
-            doencas.push(cb.value);
-        });
-        animal.doencasPregressas = doencas;
-        
-        // ========== CÓDIGO PARA NASCIMENTOS (COM PERGUNTA) ==========
-        const temCrias = document.getElementById('formTemCrias')?.value;
-        
-        if (temCrias === 'sim') {
-            const qtdNascimentos = parseInt(document.getElementById('formQtdNascimentos').value) || 0;
-            const nascimentos = [];
+
+            let animalId = null;
+
+            if (isEditing) {
+                // EDITAR
+                const { data, error } = await supabaseClient
+                    .from('animais')
+                    .update(dadosAnimal)
+                    .eq('id', isEditing)
+                    .select();
+                
+                if (error) throw error;
+                animalId = isEditing;
+            } else {
+                // INSERIR NOVO
+                const { data, error } = await supabaseClient
+                    .from('animais')
+                    .insert([dadosAnimal])
+                    .select();
+                
+                if (error) throw error;
+                animalId = data[0].id;
+            }
+
+            // === SALVAR DOENÇAS ===
+            await salvarDoencas(animalId, sexoInput);
+
+            // === SALVAR ABORTOS (se for fêmea) ===
+            if (sexoInput === 'Fêmea') {
+                await salvarAbortos(animalId);
+            }
+
+            mostrarMensagem(isEditing ? 'Alterações salvas com sucesso!' : 'Animal cadastrado com sucesso!', 'sucesso');
             
-            for (let i = 1; i <= qtdNascimentos; i++) {
-                const data = document.getElementById(`nascimentoData_${i}`)?.value;
-                if (data) {
-                    nascimentos.push({
-                        numero: i,
-                        data: data,
-                        sexo: document.getElementById(`nascimentoSexo_${i}`)?.value || null,
-                        pai: document.getElementById(`nascimentoPai_${i}`)?.value || null,
-                        peso: parseFloat(document.getElementById(`nascimentoPeso_${i}`)?.value) || null,
-                        observacoes: document.getElementById(`nascimentoObs_${i}`)?.value || null
-                    });
-                }
-            }
-            animal.nascimentos = nascimentos;
-            animal.qtdNascimentos = qtdNascimentos;
-        } else {
-            animal.nascimentos = [];
-            animal.qtdNascimentos = 0;
-        }
-        // ========== FIM DO CÓDIGO PARA NASCIMENTOS ==========
-        
-    } else if (animal.sexo === 'Macho') {
-        animal.tipoReprodutor = document.getElementById('formTipoMacho').value;
-        animal.exameAndrologicoDia = document.getElementById('formExameAndrologico').value === 'sim';
-        animal.eccMacho = document.getElementById('formECCMacho').value || null;
-        animal.maeMacho = document.getElementById('formMaeMacho').value || null;
-        animal.paiMacho = document.getElementById('formPaiMacho').value || null;
-        animal.laboratorio = document.getElementById('formLaboratorio').value || null;
-        
-        // ========== COLETAR DESCENDENTES (COM PERGUNTA) ==========
-        const temDescendentes = document.getElementById('formTemDescendentes')?.value;
-        
-        if (temDescendentes === 'sim') {
-            const qtdDescendentes = parseInt(document.getElementById('formQtdDescendentes').value) || 0;
-            animal.qtdDescendentes = qtdDescendentes;
+            window.animalEmEdicao = null;
+            document.getElementById('modalForm').style.display = "none";
+            limparFormulario();
             
-            const descendentes = [];
-            for (let i = 1; i <= qtdDescendentes; i++) {
-                const nomeDescendente = document.getElementById(`descendenteNome_${i}`)?.value;
-                if (nomeDescendente) {
-                    descendentes.push({
-                        numero: i,
-                        nome: nomeDescendente,
-                        sexo: document.getElementById(`descendenteSexo_${i}`)?.value || null,
-                        mae: document.getElementById(`descendenteMae_${i}`)?.value || null,
-                        dataNascimento: document.getElementById(`descendenteData_${i}`)?.value || null,
-                        pesoNascer: parseFloat(document.getElementById(`descendentePeso_${i}`)?.value) || null,
-                        observacoes: document.getElementById(`descendenteObs_${i}`)?.value || null
-                    });
-                }
-            }
-            animal.descendentes = descendentes;
-        } else {
-            animal.qtdDescendentes = 0;
-            animal.descendentes = [];
+            await carregarAnimais();
+
+        } catch (error) {
+            console.error("Erro ao salvar animal:", error);
+            mostrarMensagem(`Erro ao salvar: ${error.message}`, 'erro');
         }
-        // ========== FIM DESCENDENTES ==========
+    }
+
+    // ============================================
+    // FUNÇÃO PARA SALVAR DOENÇAS
+    // ============================================
+    async function salvarDoencas(animalId, sexo) {
+        try {
+            // Primeiro, remove todas as doenças antigas do animal
+            const { error: deleteError } = await supabaseClient
+                .from('doencas_animais')
+                .delete()
+                .eq('animal_id', animalId);
+            
+            if (deleteError) throw deleteError;
+
+            // Coleta as doenças de acordo com o sexo
+            let doencas = [];
+            if (sexo === 'Fêmea') {
+                doencas = coletarDoencas();
+            } else {
+                doencas = coletarDoencasMacho();
+            }
+
+            // Se não tem doenças, retorna
+            if (!doencas.length) return;
+
+            // Prepara os dados para inserção
+            const doencasParaInserir = doencas.map(d => ({
+                animal_id: animalId,
+                nome_doenca: d.nome,
+                data_diagnostico: d.dataDiagnostico || null,
+                tratou: d.tratou || false,
+                data_tratamento: d.dataTratamento || null,
+                tipo_tratamento: d.tipoTratamento || null,
+                observacoes: d.observacoesTratamento || null
+            }));
+
+            // Insere as doenças
+            const { error: insertError } = await supabaseClient
+                .from('doencas_animais')
+                .insert(doencasParaInserir);
+            
+            if (insertError) throw insertError;
+
+        } catch (error) {
+            console.error("Erro ao salvar doenças:", error);
+        }
+    }
+
+    // ============================================
+    // FUNÇÃO PARA SALVAR ABORTOS
+    // ============================================
+async function salvarAbortos(animalId) {
+    try {
+        const temAborto = document.getElementById('formHistoricoAborto')?.value === 'sim';
         
-        // Coletar doenças do macho
-        animal.doencas = coletarDoencasMacho();
+        // SEMPRE deleta todos os abortos existentes (mais simples e garantido)
+        const { error: deleteError } = await supabaseClient
+            .from('abortos_animais')
+            .delete()
+            .eq('animal_id', animalId);
+        
+        if (deleteError) {
+            console.error("Erro ao limpar abortos:", deleteError);
+        }
+        
+        // Se não tem aborto, acabou
+        if (!temAborto) {
+            console.log("Sem abortos para salvar");
+            return;
+        }
+        
+        // Coleta os abortos do formulário
+        const qtdAbortos = parseInt(document.getElementById('formQtdAbortos')?.value) || 0;
+        
+        if (qtdAbortos === 0) {
+            return;
+        }
+        
+        const abortosParaSalvar = [];
+        
+        for (let i = 1; i <= qtdAbortos; i++) {
+            const dataAborto = document.getElementById(`abortoData_${i}`)?.value;
+            // Só salva se tiver data
+            if (dataAborto && dataAborto !== '') {
+                abortosParaSalvar.push({
+                    animal_id: animalId,
+                    data_aborto: dataAborto,
+                    idade_gestacional_dias: parseInt(document.getElementById(`abortoDias_${i}`)?.value) || null,
+                    causa_suspeita: document.getElementById(`abortoMacho_${i}`)?.value || null,
+                    observacoes: document.getElementById(`abortoObs_${i}`)?.value || null
+                });
+            }
+        }
+        
+        if (abortosParaSalvar.length > 0) {
+            const { error: insertError } = await supabaseClient
+                .from('abortos_animais')
+                .insert(abortosParaSalvar);
+            
+            if (insertError) throw insertError;
+            console.log(`${abortosParaSalvar.length} abortos salvos`);
+        }
+        
+    } catch (error) {
+        console.error("Erro ao salvar abortos:", error);
+        mostrarMensagem('Erro ao salvar histórico de abortos', 'erro');
+    }
+}
+
+// Função auxiliar para comparar abortos
+function compararAbortos(existentes, novos) {
+    // Se um é vazio e o outro não
+    if ((!existentes || existentes.length === 0) && (!novos || novos.length === 0)) {
+        return false; // Ambos vazios, não precisa atualizar
     }
     
-    // Salvar
-    animais.push(animal);
-    localStorage.setItem('potygen_animais', JSON.stringify(animais));
+    if ((!existentes || existentes.length === 0) && novos.length > 0) {
+        return true; // Tem novos abortos
+    }
     
-    // Depois de salvar, fechar modal e atualizar tudo
-    window.animalEmEdicao = null;
-    mostrarMensagem(isEditing ? 'Animal atualizado com sucesso!' : 'Animal cadastrado com sucesso!', 'sucesso');
-    fecharModalCadastro();
-    renderizarTabela();
-    atualizarDatalists();
+    if (existentes.length !== novos.length) {
+        return true; // Quantidades diferentes
+    }
+    
+    // Ordena ambos para comparação consistente
+    const sortedExistentes = [...existentes].sort((a, b) => 
+        (a.data_aborto || '').localeCompare(b.data_aborto || '')
+    );
+    const sortedNovos = [...novos].sort((a, b) => 
+        (a.data_aborto || '').localeCompare(b.data_aborto || '')
+    );
+    
+    for (let i = 0; i < sortedExistentes.length; i++) {
+        const existente = sortedExistentes[i];
+        const novo = sortedNovos[i];
+        
+        if ((existente.data_aborto || '') !== (novo.data_aborto || '')) return true;
+        if ((existente.idade_gestacional_dias || null) !== (novo.idade_gestacional_dias || null)) return true;
+        if ((existente.causa_suspeita || '') !== (novo.causa_suspeita || '')) return true;
+        if ((existente.observacoes || '') !== (novo.observacoes || '')) return true;
+    }
+    
+    return false;
 }
+
     // Renderizar tabela
     function renderizarTabela() {
-    const tbody = document.getElementById('tabelaAnimais');
-    if (!tbody) return;
-    
-    if (animais.length === 0) {
-        tbody.innerHTML = '<tr><td colspan="9" style="text-align: center;">Nenhum animal cadastrado</td></tr>';
-        return;
+        const tbody = document.getElementById('tabelaAnimais');
+        if (!tbody) return;
+        
+        if (animais.length === 0) {
+            tbody.innerHTML = '<tr><td colspan="9" style="text-align: center;">Nenhum animal cadastrado</td></tr>';
+            return;
+        }
+        
+        tbody.innerHTML = animais.map(animal => {
+            const idade = calcularIdade(animal.dataNascimento);
+            return `
+                <tr>
+                    <td><strong>${animal.nome || 'Sem nome'}</strong><br><small>${animal.codigo}</small></td>
+                    <td>${animal.raca} - ${animal.especie}</td>
+                    <td>${idade}</td>
+                    <td>${animal.pesoAtual || animal.peso_atual || 0} kg</td>
+                    <td>${animal.sexo === 'Fêmea' ? '♀ Fêmea' : '♂ Macho'}</td>
+                    <td>${animal.finalidade || '—'}</td>
+                    <td>${animal.lote || '—'}</td>
+                    <td>${animal.pelagem || '—'}</td>
+                    <td class="action-buttons">
+                        <button class="action-btn action-view" data-id="${animal.id}">
+                            <i class="fa-solid fa-eye"></i> Ver Características
+                        </button>
+                        <button class="action-btn action-edit" data-id="${animal.id}">
+                            <i class="fa-solid fa-pen"></i> Editar
+                        </button>
+                        <button class="action-btn action-delete" data-id="${animal.id}">
+                            <i class="fa-solid fa-trash"></i> Excluir
+                        </button>
+                    </td>
+                </tr>
+            `;
+        }).join('');
+        
+        // Adicionar event listeners após renderizar
+        document.querySelectorAll('.action-view').forEach(btn => {
+            btn.onclick = () => visualizarAnimal(btn.getAttribute('data-id'));
+        });
+        document.querySelectorAll('.action-edit').forEach(btn => {
+            btn.onclick = () => editarAnimal(btn.getAttribute('data-id'));
+        });
+        document.querySelectorAll('.action-delete').forEach(btn => {
+            btn.onclick = () => deletarAnimal(btn.getAttribute('data-id'));
+        });
     }
-    
-    tbody.innerHTML = animais.map(animal => {
-    const idade = calcularIdade(animal.dataNascimento);
-    return `
-        <tr>
-            <td><strong>${animal.nome || 'Sem nome'}</strong><br><small>${animal.codigo}</small></td>
-            <td>${animal.raca} - ${animal.especie}</td>
-            <td>${idade}</td>
-            <td>${animal.pesoAtual} kg</td>
-            <td>${animal.sexo || 'N/A'}</td>
-            <td>${animal.finalidade || '—'}</td>
-            <td>${animal.lote || '—'}</td>
-            <td>${animal.pelagem || '—'}</td>
-            <td class="action-buttons">
-                <button class="action-btn action-view" onclick="visualizarAnimal(${animal.id})">
-                    <i class="fa-solid fa-eye"></i> Ver características
-                </button>
-                <button class="action-btn action-edit" onclick="editarAnimal(${animal.id})">
-                <i class="fa-solid fa-pen"></i> Editar
-             </button>
-                <button class="action-btn action-delete" onclick="deletarAnimal(${animal.id})">
-                    <i class="fa-solid fa-trash"></i> Excluir
-                </button>
-            </td>
-        </tr>
-    `;
-}).join('');
-}
     
     function calcularIdade(dataNascimento) {
         if (!dataNascimento) return 'N/A';
@@ -825,146 +1103,128 @@ function gerarCamposAborto() {
         }
     }
     
+    // ============================================
+    // FUNÇÃO DELETAR ANIMAL CORRIGIDA
+    // ============================================
+    async function deletarAnimal(idAnimal) {
+        mostrarConfirmacao('Tem certeza que deseja remover permanentemente este animal do rebanho?', async () => {
+            try {
+                // O cascade delete vai remover automaticamente doenças e abortos
+                const { error } = await supabaseClient
+                    .from('animais')
+                    .delete()
+                    .eq('id', idAnimal);
+
+                if (error) throw error;
+
+                mostrarMensagem('Animal removido com sucesso!', 'sucesso');
+                await carregarAnimais();
+            } catch (error) {
+                console.error("Erro ao excluir animal:", error.message);
+                mostrarMensagem('Não foi possível excluir o animal.', 'erro');
+            }
+        });
+    }
+
+    // ============================================
+    // FUNÇÃO VISUALIZAR ANIMAL CORRIGIDA
+    // ============================================
     function visualizarAnimal(id) {
-    // Buscar o animal do array global (já atualizado)
-    const animal = animais.find(a => a.id === id);
-    if (!animal) {
-        console.error("Animal não encontrado! ID:", id);
-        mostrarMensagem('Animal não encontrado!', 'erro');
-        return;
-    }
-    
-    // Informações básicas (comuns a ambos)
-    document.getElementById('viewCodigo').textContent = animal.codigo || '-';
-    document.getElementById('viewNome').textContent = animal.nome || '-';
-    document.getElementById('viewEspecie').textContent = animal.especie || '-';
-    document.getElementById('viewRaca').textContent = animal.raca || '-';
-    document.getElementById('viewPelagem').textContent = animal.pelagem || '-';
-    document.getElementById('viewLote').textContent = animal.lote || '-';
-    document.getElementById('viewFinalidade').textContent = animal.finalidade || '-';
-    document.getElementById('viewGrauSangue').textContent = animal.grauSangue || '-';
-    document.getElementById('viewPeso').textContent = animal.pesoAtual ? `${animal.pesoAtual} kg` : '-';
-    document.getElementById('viewIdade').textContent = calcularIdade(animal.dataNascimento);
-    document.getElementById('viewStatus').textContent = animal.sexo || '-';
-    
-    // Esconder seções específicas primeiro
-    const viewFemeaInfo = document.getElementById('viewFemeaInfo');
-    const viewMachoInfo = document.getElementById('viewMachoInfo');
-    if (viewFemeaInfo) viewFemeaInfo.style.display = 'none';
-    if (viewMachoInfo) viewMachoInfo.style.display = 'none';
-    
-    // Se for FÊMEA
-    if (animal.sexo === 'Fêmea') {
-        if (viewFemeaInfo) viewFemeaInfo.style.display = 'block';
+        const animal = animais.find(a => a.id === id);
+        if (!animal) {
+            mostrarMensagem('Animal não encontrado!', 'erro');
+            return;
+        }
         
-        document.getElementById('viewCategoria').textContent = animal.categoriaReprodutiva || '-';
-        document.getElementById('viewECC').textContent = animal.ecc || '-';
-        document.getElementById('viewQtdCrias').textContent = animal.qtdNascimentos || '0';
-        document.getElementById('viewAborto').textContent = animal.historicoAborto ? 'Sim' : 'Não';
-        document.getElementById('viewMae').textContent = animal.mae || '-';
-        document.getElementById('viewPai').textContent = animal.pai || '-';
+        // Informações básicas
+        document.getElementById('viewCodigo').textContent = animal.codigo || '-';
+        document.getElementById('viewNome').textContent = animal.nome || '-';
+        document.getElementById('viewEspecie').textContent = animal.especie || '-';
+        document.getElementById('viewRaca').textContent = animal.raca || '-';
+        document.getElementById('viewPelagem').textContent = animal.pelagem || '-';
+        document.getElementById('viewLote').textContent = animal.lote || '-';
+        document.getElementById('viewFinalidade').textContent = animal.finalidade || '-';
+        document.getElementById('viewGrauSangue').textContent = animal.grauSangue || '-';
+        document.getElementById('viewPeso').textContent = animal.pesoAtual ? `${animal.pesoAtual} kg` : '-';
+        document.getElementById('viewIdade').textContent = calcularIdade(animal.dataNascimento);
+        document.getElementById('viewStatus').textContent = animal.sexo || '-';
         
-        // Mostrar lista de crias/nascimentos
-        const nascimentosContainer = document.getElementById('viewNascimentosContainer');
-        const listaNascimentos = document.getElementById('viewListaNascimentos');
+        const viewFemeaInfo = document.getElementById('viewFemeaInfo');
+        const viewMachoInfo = document.getElementById('viewMachoInfo');
+        if (viewFemeaInfo) viewFemeaInfo.style.display = 'none';
+        if (viewMachoInfo) viewMachoInfo.style.display = 'none';
         
-        if (nascimentosContainer && listaNascimentos) {
-            if (animal.nascimentos && animal.nascimentos.length > 0) {
-                nascimentosContainer.style.display = 'block';
-                listaNascimentos.innerHTML = animal.nascimentos.map(n => `
+        // Se for FÊMEA
+        if (animal.sexo === 'Fêmea') {
+            if (viewFemeaInfo) viewFemeaInfo.style.display = 'block';
+            
+            document.getElementById('viewCategoria').textContent = animal.categoriaReprodutiva || '-';
+            document.getElementById('viewECC').textContent = animal.ecc || '-';
+            document.getElementById('viewQtdCrias').textContent = animal.nascimentos?.length || '0';
+            document.getElementById('viewAborto').textContent = (animal.abortos && animal.abortos.length > 0) ? `Sim (${animal.abortos.length})` : 'Não';
+            document.getElementById('viewMae').textContent = animal.mae || '-';
+            document.getElementById('viewPai').textContent = animal.pai || '-';
+            
+            // Mostrar abortos
+            const abortosContainer = document.getElementById('viewAbortosContainer');
+            const listaAbortos = document.getElementById('viewListaAbortos');
+            
+            if (abortosContainer && listaAbortos && animal.abortos && animal.abortos.length > 0) {
+                abortosContainer.style.display = 'block';
+                listaAbortos.innerHTML = animal.abortos.map(a => `
                     <div style="padding: 8px; border-bottom: 1px solid #e2e8f0;">
-                        <strong>${n.numero}ª cria:</strong> ${n.data || 'Data não registrada'} 
-                        ${n.sexo ? `- ${n.sexo}` : ''}
-                        ${n.pai ? `<br>👨 Pai: ${n.pai}` : ''}
-                        ${n.peso ? `<br>⚖️ Peso: ${n.peso} kg` : ''}
+                        <strong>Data:</strong> ${a.data || 'Não registrada'}<br>
+                        <strong>Dias de gestação:</strong> ${a.diasGestacao || '-'}<br>
+                        <strong>Observações:</strong> ${a.observacoes || '-'}
+                    </div>
+                `).join('');
+            } else if (abortosContainer) {
+                abortosContainer.style.display = 'none';
+            }
+        }
+        
+        // Se for MACHO
+        if (animal.sexo === 'Macho') {
+            if (viewMachoInfo) viewMachoInfo.style.display = 'block';
+            
+            let tipoTexto = '-';
+            if (animal.tipoReprodutor === 'local') tipoTexto = 'Reprodutor Local';
+            else if (animal.tipoReprodutor === 'laboratorio') tipoTexto = 'Reprodutor de Laboratório';
+            else if (animal.tipoReprodutor === 'rufiao') tipoTexto = 'Rufião';
+            else if (animal.tipoReprodutor === 'castrado') tipoTexto = 'Castrado';
+            else tipoTexto = animal.tipoReprodutor || '-';
+            
+            document.getElementById('viewTipoMacho').textContent = tipoTexto;
+            document.getElementById('viewExameAndrologico').textContent = animal.exameAndrologicoDia ? 'Sim - Apto' : 'Não ou Vencido';
+            document.getElementById('viewECCMacho').textContent = animal.ecc || '-';
+            document.getElementById('viewMaeMacho').textContent = animal.mae || '-';
+            document.getElementById('viewPaiMacho').textContent = animal.pai || '-';
+            document.getElementById('viewLaboratorio').textContent = animal.laboratorio || '-';
+        }
+        
+        // Mostrar doenças
+        const listaDoencas = document.getElementById('viewListaDoencas');
+        if (listaDoencas) {
+            if (animal.doencas && animal.doencas.length > 0) {
+                listaDoencas.innerHTML = animal.doencas.map(d => `
+                    <div style="padding: 8px; border-bottom: 1px solid #e2e8f0;">
+                        <strong>${d.nome}</strong>
+                        ${d.dataDiagnostico ? `<br>📅 Diagnóstico: ${d.dataDiagnostico}` : ''}
+                        ${d.tratou ? `<br>✅ Tratado em: ${d.dataTratamento || 'Data não registrada'}` : '<br>⚠️ Não tratado'}
+                        ${d.tipoTratamento ? `<br>💊 Tratamento: ${d.tipoTratamento}` : ''}
                     </div>
                 `).join('');
             } else {
-                nascimentosContainer.style.display = 'none';
+                listaDoencas.innerHTML = '<p style="color: #64748b;">Nenhuma doença registrada</p>';
             }
         }
-    }
-    
-    // Se for MACHO
-    if (animal.sexo === 'Macho') {
-        if (viewMachoInfo) viewMachoInfo.style.display = 'block';
         
-        // Tipo de Reprodutor com texto amigável
-        let tipoTexto = '-';
-        if (animal.tipoReprodutor === 'local') tipoTexto = 'Reprodutor Local';
-        else if (animal.tipoReprodutor === 'laboratorio') tipoTexto = 'Reprodutor de Laboratório';
-        else if (animal.tipoReprodutor === 'rufiao') tipoTexto = 'Rufião';
-        else if (animal.tipoReprodutor === 'castrado') tipoTexto = 'Castrado';
-        else tipoTexto = animal.tipoReprodutor || '-';
-        
-        document.getElementById('viewTipoMacho').textContent = tipoTexto;
-        document.getElementById('viewExameAndrologico').textContent = animal.exameAndrologicoDia ? 'Sim - Apto' : 'Não ou Vencido';
-        document.getElementById('viewECCMacho').textContent = animal.eccMacho || '-';
-        document.getElementById('viewQtdDescendentes').textContent = animal.qtdDescendentes || '0';
-        document.getElementById('viewMaeMacho').textContent = animal.maeMacho || '-';
-        document.getElementById('viewPaiMacho').textContent = animal.paiMacho || '-';
-        document.getElementById('viewLaboratorio').textContent = animal.laboratorio || '-';
-        
-        // Mostrar lista de descendentes
-        const descendentesContainer = document.getElementById('viewDescendentesContainer');
-        const listaDescendentes = document.getElementById('viewListaDescendentes');
-        
-        if (descendentesContainer && listaDescendentes) {
-            if (animal.descendentes && animal.descendentes.length > 0) {
-                descendentesContainer.style.display = 'block';
-                listaDescendentes.innerHTML = animal.descendentes.map(d => `
-                    <div style="padding: 8px; border-bottom: 1px solid #e2e8f0;">
-                        <strong>${d.nome || `Descendente #${d.numero}`}</strong>
-                        ${d.sexo ? `<br>🧬 Sexo: ${d.sexo}` : ''}
-                        ${d.mae ? `<br>🐄 Mãe: ${d.mae}` : ''}
-                        ${d.dataNascimento ? `<br>📅 Nascimento: ${d.dataNascimento}` : ''}
-                    </div>
-                `).join('');
-            } else {
-                descendentesContainer.style.display = 'none';
-            }
+        const modalVisualizar = document.getElementById('modalVisualizar');
+        if (modalVisualizar) {
+            modalVisualizar.style.display = 'flex';
         }
     }
-    
-    // Mostrar doenças (para ambos)
-    const listaDoencas = document.getElementById('viewListaDoencas');
-    if (listaDoencas) {
-        if (animal.doencas && animal.doencas.length > 0) {
-            listaDoencas.innerHTML = animal.doencas.map(d => `
-                <div style="padding: 8px; border-bottom: 1px solid #e2e8f0;">
-                    <strong>${d.nome}</strong>
-                    ${d.dataDiagnostico ? `<br>📅 Diagnóstico: ${d.dataDiagnostico}` : ''}
-                    ${d.tratou ? `<br>✅ Tratado em: ${d.dataTratamento || 'Data não registrada'}` : '<br>⚠️ Não tratado'}
-                </div>
-            `).join('');
-        } else {
-            listaDoencas.innerHTML = '<p style="color: #64748b;">Nenhuma doença registrada</p>';
-        }
-    }
-    
-    // Abrir modal
-    const modalVisualizar = document.getElementById('modalVisualizar');
-    if (modalVisualizar) {
-        modalVisualizar.style.display = 'flex';
-    }
-}
-   function deletarAnimal(id) {
-    mostrarConfirmacao(
-        'Tem certeza que deseja excluir este animal? Esta ação não pode ser desfeita!',
-        function() {
-            // Confirmado
-            animais = animais.filter(a => a.id !== id);
-            localStorage.setItem('potygen_animais', JSON.stringify(animais));
-            renderizarTabela();
-            atualizarDatalists();
-            mostrarMensagem('Animal excluído com sucesso!', 'sucesso');
-        },
-        function() {
-            // Cancelado - não faz nada
-            console.log('Exclusão cancelada');
-        }
-    );
-}
+
     
     function fecharModalCadastro() {
         document.getElementById('modalForm').style.display = 'none';
@@ -1279,7 +1539,7 @@ function calcularIdadeCria(numero) {
 }
     // Event Listeners
     document.addEventListener('DOMContentLoaded', () => {
-    renderizarTabela();
+    renderizarTabela(); 
     atualizarDatalists();
     document.getElementById('formQtdDescendentes').addEventListener('input', gerarCamposDescendentes);
     // Evento para espécie (atualiza finalidade, raças e doenças)
@@ -1341,10 +1601,6 @@ document.getElementById('formSexo').addEventListener('change', function() {
     // Evento para quantidade de crias da fêmea
     document.getElementById('formQtdNascimentos').addEventListener('input', gerarCamposNascimentos);
     
-    // Evento para histórico de aborto
-    document.getElementById('formHistoricoAborto').addEventListener('change', toggleCamposAborto);
-    document.getElementById('formQtdAbortos').addEventListener('input', gerarCamposAborto);
-    
     // Botão novo animal
     document.getElementById('btnNovoAnimal').addEventListener('click', () => {
         document.getElementById('modalForm').style.display = 'flex';
@@ -1380,10 +1636,6 @@ document.getElementById('formSexo').addEventListener('change', function() {
             limparFormulario();
             document.getElementById('modalForm').style.display = 'flex';
         });
-        
-        document.getElementById('formQtdAbortos').addEventListener('input', gerarCamposAborto);
-        document.getElementById('formSexo').addEventListener('change', toggleCamposPorSexo);
-        document.getElementById('formHistoricoAborto').addEventListener('change', toggleCamposAborto);
         
         document.getElementById('btnSalvar').addEventListener('click', salvarAnimal);
         
@@ -1512,17 +1764,15 @@ document.getElementById('busca').addEventListener('input', (e) => {
     }).join('');
 }
         
-    function editarAnimal(id) {
+function editarAnimal(id) {
     const animal = animais.find(a => a.id === id);
     if (!animal) {
         mostrarMensagem('Animal não encontrado!', 'erro');
         return;
     }
     
-    // Limpar formulário primeiro
     limparFormulario();
     
-    // Abrir modal
     const modalForm = document.getElementById('modalForm');
     const modalTitle = document.getElementById('modalTitle');
     const btnSalvar = document.getElementById('btnSalvar');
@@ -1530,7 +1780,7 @@ document.getElementById('busca').addEventListener('input', (e) => {
     modalTitle.innerText = "Editar Animal";
     btnSalvar.innerText = "Salvar Alterações";
     
-    // ========== PREENCHER DADOS BÁSICOS ==========
+    // Campos básicos
     document.getElementById('formCodigo').value = animal.codigo || '';
     document.getElementById('formNome').value = animal.nome || '';
     document.getElementById('formEspecie').value = animal.especie || '';
@@ -1542,87 +1792,75 @@ document.getElementById('busca').addEventListener('input', (e) => {
     document.getElementById('formPesoNascer').value = animal.pesoNascer || '';
     document.getElementById('formPesoAtual').value = animal.pesoAtual || '';
     document.getElementById('formSexo').value = animal.sexo || '';
-    document.getElementById('formFinalidade').value = animal.finalidade || '';
     document.getElementById('formLote').value = animal.lote || '';
     document.getElementById('formObs').value = animal.observacoes || '';
     
-    // Calcular idade
-    if (animal.dataNascimento) {
-        calcularIdadeAnimal();
-    }
+    // Finalidade
+    atualizarFinalidadePorEspecie();
+    document.getElementById('formFinalidade').value = animal.finalidade || '';
     
-    // Mostrar campos corretos baseado no sexo
     toggleCamposPorSexo();
     
-    // ========== SE FOR FÊMEA ==========
+    // FÊMEA
     if (animal.sexo === 'Fêmea') {
         document.getElementById('formCategoriaFemea').value = animal.categoriaReprodutiva || '';
         document.getElementById('formECC').value = animal.ecc || '';
         document.getElementById('formMae').value = animal.mae || '';
         document.getElementById('formPai').value = animal.pai || '';
-        document.getElementById('formHistoricoAborto').value = animal.historicoAborto ? 'sim' : 'nao';
         
-        const qtdCrias = (animal.nascimentos && animal.nascimentos.length) || animal.qtdNascimentos || 0;
-        document.getElementById('formQtdNascimentos').value = qtdCrias;
-        
-        if (qtdCrias > 0) {
-            gerarCamposNascimentos();
+        const temAborto = (animal.abortos && animal.abortos.length > 0);
+        const selectAborto = document.getElementById('formHistoricoAborto');
+        const subCampos = document.getElementById('subCamposAborto');
+        const qtdAbortosInput = document.getElementById('formQtdAbortos');
+        const abortosContainer = document.getElementById('listaAbortosContainer');
+
+        selectAborto.value = temAborto ? 'sim' : 'nao';
+
+        if (temAborto) {
+            subCampos.style.display = 'block';
+            qtdAbortosInput.value = animal.abortos.length;
+            
+            // CHAMA UMA ÚNICA VEZ para gerar os campos
+            gerarCamposAborto();
+            
+            // Preenche os dados (sem setTimeout aninhado)
             setTimeout(() => {
-                if (animal.nascimentos) {
-                    animal.nascimentos.forEach(n => {
-                        const dataField = document.getElementById(`nascimentoData_${n.numero}`);
-                        if (dataField) dataField.value = n.data || '';
-                        const sexoField = document.getElementById(`nascimentoSexo_${n.numero}`);
-                        if (sexoField) sexoField.value = n.sexo || '';
-                        const paiField = document.getElementById(`nascimentoPai_${n.numero}`);
-                        if (paiField) paiField.value = n.pai || '';
-                        const pesoField = document.getElementById(`nascimentoPeso_${n.numero}`);
-                        if (pesoField) pesoField.value = n.peso || '';
-                    });
+                for (let i = 0; i < animal.abortos.length; i++) {
+                    const num = i + 1;
+                    const a = animal.abortos[i];
+                    
+                    const dataField = document.getElementById(`abortoData_${num}`);
+                    if (dataField) dataField.value = a.data || '';
+                    
+                    const machoField = document.getElementById(`abortoMacho_${num}`);
+                    if (machoField) machoField.value = a.macho || a.causa_suspeita || '';
+                    
+                    const diasField = document.getElementById(`abortoDias_${num}`);
+                    if (diasField) diasField.value = a.diasGestacao || a.idade_gestacional_dias || '';
+                    
+                    const obsField = document.getElementById(`abortoObs_${num}`);
+                    if (obsField) obsField.value = a.observacoes || '';
                 }
             }, 100);
+        } else {
+            subCampos.style.display = 'none';
+            qtdAbortosInput.value = 0;
+            if (abortosContainer) abortosContainer.innerHTML = '';
         }
     }
     
-    // ========== SE FOR MACHO ==========
+    // MACHO
     if (animal.sexo === 'Macho') {
         document.getElementById('formTipoMacho').value = animal.tipoReprodutor || '';
         document.getElementById('formExameAndrologico').value = animal.exameAndrologicoDia ? 'sim' : 'nao';
-        document.getElementById('formECCMacho').value = animal.eccMacho || '';
-        document.getElementById('formMaeMacho').value = animal.maeMacho || '';
-        document.getElementById('formPaiMacho').value = animal.paiMacho || '';
+        document.getElementById('formECCMacho').value = animal.ecc || '';
+        document.getElementById('formMaeMacho').value = animal.mae || '';
+        document.getElementById('formPaiMacho').value = animal.pai || '';
         document.getElementById('formLaboratorio').value = animal.laboratorio || '';
-        
-        if (animal.tipoReprodutor === 'laboratorio') {
-            document.getElementById('campoLaboratorio').style.display = 'block';
-        }
-        
-        const qtdDesc = (animal.descendentes && animal.descendentes.length) || animal.qtdDescendentes || 0;
-        document.getElementById('formQtdDescendentes').value = qtdDesc;
-        
-        if (qtdDesc > 0) {
-            gerarCamposDescendentes();
-            setTimeout(() => {
-                if (animal.descendentes) {
-                    animal.descendentes.forEach(d => {
-                        const nomeField = document.getElementById(`descendenteNome_${d.numero}`);
-                        if (nomeField) nomeField.value = d.nome || '';
-                        const sexoField = document.getElementById(`descendenteSexo_${d.numero}`);
-                        if (sexoField) sexoField.value = d.sexo || '';
-                        const maeField = document.getElementById(`descendenteMae_${d.numero}`);
-                        if (maeField) maeField.value = d.mae || '';
-                        const dataField = document.getElementById(`descendenteData_${d.numero}`);
-                        if (dataField) dataField.value = d.dataNascimento || '';
-                    });
-                }
-            }, 100);
-        }
     }
     
-    // Guardar ID para saber que é edição
+    calcularIdadeAnimal();
     window.animalEmEdicao = animal.id;
-    
-    // Abrir modal
     modalForm.style.display = "flex";
 }
         // Função para gerar campos de descendentes com nome da mãe
@@ -1697,299 +1935,6 @@ function toggleCamposReprodutor() {
        
     }
 }
-// TESTE - Função de edição simplificada
-// ============================================
-// FUNÇÃO EDITAR ANIMAL (COMPLETA)
-window.editarAnimal = function(id) {
-    const animal = animais.find(a => a.id === id);
-    if (!animal) {
-        mostrarMensagem('Animal não encontrado!', 'erro');
-        return;
-    }
-    
-    console.log("Editando animal:", animal);
-    
-    // Abrir modal
-    const modalForm = document.getElementById('modalForm');
-    const modalTitle = document.getElementById('modalTitle');
-    const btnSalvar = document.getElementById('btnSalvar');
-    
-    modalTitle.innerText = "Editar Animal";
-    btnSalvar.innerText = "Salvar Alterações";
-    
-    // Limpar formulário primeiro
-    if (typeof limparFormulario === 'function') {
-        limparFormulario();
-    }
-    
-    // PREENCHER DADOS BÁSICOS
-    document.getElementById('formCodigo').value = animal.codigo || '';
-    document.getElementById('formNome').value = animal.nome || '';
-    document.getElementById('formEspecie').value = animal.especie || '';
-    document.getElementById('buscaRaca').value = animal.raca || '';
-    document.getElementById('formRaca').value = animal.raca || '';
-    document.getElementById('formGrauSangue').value = animal.grauSangue || '';
-    document.getElementById('formPelagem').value = animal.pelagem || '';
-    document.getElementById('formDataNascimento').value = animal.dataNascimento || '';
-    document.getElementById('formPesoNascer').value = animal.pesoNascer || '';
-    document.getElementById('formPesoAtual').value = animal.pesoAtual || '';
-    document.getElementById('formSexo').value = animal.sexo || '';
-    document.getElementById('formFinalidade').value = animal.finalidade || '';
-    document.getElementById('formLote').value = animal.lote || '';
-    document.getElementById('formObs').value = animal.observacoes || '';
-    
-    // Calcular idade
-    if (animal.dataNascimento && typeof calcularIdadeAnimal === 'function') {
-        calcularIdadeAnimal();
-    }
-    
-    // Mostrar campos corretos baseado no sexo
-    if (typeof toggleCamposPorSexo === 'function') {
-        toggleCamposPorSexo();
-    }
-    
-    // Disparar eventos change para ativar as funções
-    const especieSelect = document.getElementById('formEspecie');
-    const sexoSelect = document.getElementById('formSexo');
-    if (especieSelect) especieSelect.dispatchEvent(new Event('change'));
-    if (sexoSelect) sexoSelect.dispatchEvent(new Event('change'));
-    
-    // ========== SE FOR FÊMEA ==========
-    if (animal.sexo === 'Fêmea') {
-        // Dados básicos da fêmea
-        const catElem = document.getElementById('formCategoriaFemea');
-        if (catElem) catElem.value = animal.categoriaReprodutiva || '';
-        
-        const eccElem = document.getElementById('formECC');
-        if (eccElem) eccElem.value = animal.ecc || '';
-        
-        const maeElem = document.getElementById('formMae');
-        if (maeElem) maeElem.value = animal.mae || '';
-        
-        const paiElem = document.getElementById('formPai');
-        if (paiElem) paiElem.value = animal.pai || '';
-        
-        const abortoElem = document.getElementById('formHistoricoAborto');
-        if (abortoElem) abortoElem.value = animal.historicoAborto ? 'sim' : 'nao';
-        
-        // ========== CARREGAR PERGUNTA "JÁ TEVE CRIAS?" ==========
-        const temCrias = (animal.qtdNascimentos && animal.qtdNascimentos > 0) || 
-                         (animal.nascimentos && animal.nascimentos.length > 0);
-        const temCriasSelect = document.getElementById('formTemCrias');
-        if (temCriasSelect) {
-            temCriasSelect.value = temCrias ? 'sim' : 'nao';
-            if (typeof toggleCamposCrias === 'function') {
-                toggleCamposCrias();
-            }
-        }
-        
-        // ========== CARREGAR CRIAS ==========
-        const qtdCrias = (animal.nascimentos && animal.nascimentos.length) || animal.qtdNascimentos || 0;
-        const qtdElem = document.getElementById('formQtdNascimentos');
-        if (qtdElem) qtdElem.value = qtdCrias;
-        
-        if (qtdCrias > 0 && typeof gerarCamposNascimentos === 'function') {
-            setTimeout(() => {
-                gerarCamposNascimentos();
-                setTimeout(() => {
-                    if (animal.nascimentos) {
-                        animal.nascimentos.forEach(n => {
-                            const dataField = document.getElementById(`nascimentoData_${n.numero}`);
-                            if (dataField) dataField.value = n.data || '';
-                            const sexoField = document.getElementById(`nascimentoSexo_${n.numero}`);
-                            if (sexoField) sexoField.value = n.sexo || '';
-                            const paiField = document.getElementById(`nascimentoPai_${n.numero}`);
-                            if (paiField) paiField.value = n.pai || '';
-                            const pesoField = document.getElementById(`nascimentoPeso_${n.numero}`);
-                            if (pesoField) pesoField.value = n.peso || '';
-                            const obsField = document.getElementById(`nascimentoObs_${n.numero}`);
-                            if (obsField) obsField.value = n.observacoes || '';
-                        });
-                    }
-                }, 100);
-            }, 100);
-        }
-        
-        // ========== CARREGAR ABORTOS ==========
-        if (animal.historicoAborto && typeof toggleCamposAborto === 'function') {
-            setTimeout(() => {
-                toggleCamposAborto();
-                setTimeout(() => {
-                    if (animal.abortos && animal.abortos.length > 0) {
-                        const qtdAbortos = animal.abortos.length;
-                        const qtdAbortosElem = document.getElementById('formQtdAbortos');
-                        if (qtdAbortosElem) qtdAbortosElem.value = qtdAbortos;
-                        
-                        if (typeof gerarCamposAborto === 'function') {
-                            gerarCamposAborto();
-                        }
-                        
-                        setTimeout(() => {
-                            animal.abortos.forEach(aborto => {
-                                const dataField = document.getElementById(`abortoData_${aborto.numero}`);
-                                if (dataField) dataField.value = aborto.data || '';
-                                const machoField = document.getElementById(`abortoMacho_${aborto.numero}`);
-                                if (machoField) machoField.value = aborto.macho || '';
-                                const diasField = document.getElementById(`abortoDias_${aborto.numero}`);
-                                if (diasField) diasField.value = aborto.diasGestacao || '';
-                                const obsField = document.getElementById(`abortoObs_${aborto.numero}`);
-                                if (obsField) obsField.value = aborto.observacoes || '';
-                            });
-                        }, 100);
-                    }
-                }, 100);
-            }, 100);
-        }
-        
-        // ========== CARREGAR DOENÇAS DA FÊMEA ==========
-        if (animal.doencas && animal.doencas.length > 0) {
-            setTimeout(() => {
-                if (typeof atualizarListaDoencas === 'function') {
-                    atualizarListaDoencas();
-                }
-                setTimeout(() => {
-                    animal.doencas.forEach(doenca => {
-                        const doencaId = doenca.nome.replace(/[^a-zA-Z0-9]/g, '_');
-                        const checkbox = document.querySelector(`.doenca-checkbox[value="${doenca.nome.replace(/"/g, '&quot;')}"]`);
-                        if (checkbox) {
-                            checkbox.checked = true;
-                            if (typeof toggleDoencaDetalhes === 'function') {
-                                toggleDoencaDetalhes(checkbox, doencaId);
-                            }
-                            const dataDiag = document.getElementById(`dataDoenca_${doencaId}`);
-                            if (dataDiag) dataDiag.value = doenca.dataDiagnostico || '';
-                            
-                            const tratouSelect = document.getElementById(`tratouDoenca_${doencaId}`);
-                            if (tratouSelect) {
-                                tratouSelect.value = doenca.tratou ? 'sim' : 'nao';
-                                if (doenca.tratou && typeof toggleTratamentoCampos === 'function') {
-                                    toggleTratamentoCampos(tratouSelect, doencaId);
-                                    const dataTrat = document.getElementById(`dataTratamento_${doencaId}`);
-                                    if (dataTrat) dataTrat.value = doenca.dataTratamento || '';
-                                    const tipoTrat = document.getElementById(`tipoTratamento_${doencaId}`);
-                                    if (tipoTrat) tipoTrat.value = doenca.tipoTratamento || '';
-                                    const obsTrat = document.getElementById(`obsTratamento_${doencaId}`);
-                                    if (obsTrat) obsTrat.value = doenca.observacoesTratamento || '';
-                                }
-                            }
-                        }
-                    });
-                }, 200);
-            }, 200);
-        }
-    }
-    
-    // ========== SE FOR MACHO ==========
-    if (animal.sexo === 'Macho') {
-        // Dados básicos do macho
-        const tipoElem = document.getElementById('formTipoMacho');
-        if (tipoElem) tipoElem.value = animal.tipoReprodutor || '';
-        
-        const exameElem = document.getElementById('formExameAndrologico');
-        if (exameElem) exameElem.value = animal.exameAndrologicoDia ? 'sim' : 'nao';
-        
-        const eccMachoElem = document.getElementById('formECCMacho');
-        if (eccMachoElem) eccMachoElem.value = animal.eccMacho || '';
-        
-        const maeMachoElem = document.getElementById('formMaeMacho');
-        if (maeMachoElem) maeMachoElem.value = animal.maeMacho || '';
-        
-        const paiMachoElem = document.getElementById('formPaiMacho');
-        if (paiMachoElem) paiMachoElem.value = animal.paiMacho || '';
-        
-        const labElem = document.getElementById('formLaboratorio');
-        if (labElem) labElem.value = animal.laboratorio || '';
-        
-        // Mostrar/esconder campo de laboratório
-        const campoLab = document.getElementById('campoLaboratorio');
-        if (campoLab) {
-            campoLab.style.display = animal.tipoReprodutor === 'laboratorio' ? 'block' : 'none';
-        }
-        
-        // ========== CARREGAR PERGUNTA "JÁ GEROU DESCENDENTES?" ==========
-        const temDescendentes = (animal.qtdDescendentes && animal.qtdDescendentes > 0) || 
-                                (animal.descendentes && animal.descendentes.length > 0);
-        const temDescendentesSelect = document.getElementById('formTemDescendentes');
-        if (temDescendentesSelect) {
-            temDescendentesSelect.value = temDescendentes ? 'sim' : 'nao';
-            if (typeof toggleCamposDescendentes === 'function') {
-                toggleCamposDescendentes();
-            }
-        }
-        
-        // ========== CARREGAR DESCENDENTES ==========
-        const qtdDesc = (animal.descendentes && animal.descendentes.length) || animal.qtdDescendentes || 0;
-        const qtdDescElem = document.getElementById('formQtdDescendentes');
-        if (qtdDescElem) qtdDescElem.value = qtdDesc;
-        
-        if (qtdDesc > 0 && typeof gerarCamposDescendentes === 'function') {
-            setTimeout(() => {
-                gerarCamposDescendentes();
-                setTimeout(() => {
-                    if (animal.descendentes) {
-                        animal.descendentes.forEach(d => {
-                            const nomeField = document.getElementById(`descendenteNome_${d.numero}`);
-                            if (nomeField) nomeField.value = d.nome || '';
-                            const sexoField = document.getElementById(`descendenteSexo_${d.numero}`);
-                            if (sexoField) sexoField.value = d.sexo || '';
-                            const maeField = document.getElementById(`descendenteMae_${d.numero}`);
-                            if (maeField) maeField.value = d.mae || '';
-                            const dataField = document.getElementById(`descendenteData_${d.numero}`);
-                            if (dataField) dataField.value = d.dataNascimento || '';
-                            const pesoField = document.getElementById(`descendentePeso_${d.numero}`);
-                            if (pesoField) pesoField.value = d.pesoNascer || '';
-                            const obsField = document.getElementById(`descendenteObs_${d.numero}`);
-                            if (obsField) obsField.value = d.observacoes || '';
-                        });
-                    }
-                }, 100);
-            }, 100);
-        }
-        
-        // ========== CARREGAR DOENÇAS DO MACHO ==========
-        if (animal.doencas && animal.doencas.length > 0) {
-            setTimeout(() => {
-                if (typeof atualizarListaDoencasMacho === 'function') {
-                    atualizarListaDoencasMacho();
-                }
-                setTimeout(() => {
-                    animal.doencas.forEach(doenca => {
-                        const doencaId = 'macho_' + doenca.nome.replace(/[^a-zA-Z0-9]/g, '_');
-                        const checkbox = document.querySelector(`.doenca-checkbox-macho[value="${doenca.nome.replace(/"/g, '&quot;')}"]`);
-                        if (checkbox) {
-                            checkbox.checked = true;
-                            if (typeof toggleDoencaDetalhesMacho === 'function') {
-                                toggleDoencaDetalhesMacho(checkbox, doencaId);
-                            }
-                            const dataDiag = document.getElementById(`dataDoencaMacho_${doencaId}`);
-                            if (dataDiag) dataDiag.value = doenca.dataDiagnostico || '';
-                            
-                            const tratouSelect = document.getElementById(`tratouDoencaMacho_${doencaId}`);
-                            if (tratouSelect) {
-                                tratouSelect.value = doenca.tratou ? 'sim' : 'nao';
-                                if (doenca.tratou && typeof toggleTratamentoCamposMacho === 'function') {
-                                    toggleTratamentoCamposMacho(tratouSelect, doencaId);
-                                    const dataTrat = document.getElementById(`dataTratamentoMacho_${doencaId}`);
-                                    if (dataTrat) dataTrat.value = doenca.dataTratamento || '';
-                                    const tipoTrat = document.getElementById(`tipoTratamentoMacho_${doencaId}`);
-                                    if (tipoTrat) tipoTrat.value = doenca.tipoTratamento || '';
-                                    const obsTrat = document.getElementById(`obsTratamentoMacho_${doencaId}`);
-                                    if (obsTrat) obsTrat.value = doenca.observacoesTratamento || '';
-                                }
-                            }
-                        }
-                    });
-                }, 200);
-            }, 200);
-        }
-    }
-    
-    // Guardar ID para saber que é edição
-    window.animalEmEdicao = animal.id;
-    
-    // Abrir modal
-    if (modalForm) modalForm.style.display = "flex";
-};
 // Função para mostrar/esconder campos de crias da fêmea
 function toggleCamposCrias() {
     const temCrias = document.getElementById('formTemCrias').value;

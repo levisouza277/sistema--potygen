@@ -317,7 +317,7 @@
     <div class="form-grid">
         <div class="input-group">
             <label>Quantidade de Abortos</label>
-            <input type="number" id="formQtdAbortos" min="0" value="0" step="1" oninput="gerarCamposAborto()">
+            <input type="number" id="formQtdAbortos" min="0" value="0" step="1" onchange="gerarCamposAborto()">
         </div>
     </div>
     <div id="listaAbortosContainer" style="margin-top: 15px;"></div>
@@ -481,9 +481,9 @@
             </div>
         </div>
         
-        <div id="viewNascimentosContainer" class="info-block" style="display: none;">
-            <p class="block-title"><i class="fa-solid fa-baby"></i> Registro de Crias</p>
-            <div id="viewListaNascimentos"></div>
+        <div id="viewAbortosContainer" class="info-block" style="display: none;">
+            <p class="block-title"><i class="fa-solid fa-exclamation-triangle"></i> Histórico de Abortos</p>
+            <div id="viewListaAbortos"></div>
         </div>
     </div>
 
@@ -537,10 +537,10 @@
 
 <!-- SCRIPT PRINCIPAL COM LÓGICA DOS CAMPOS DINÂMICOS -->
 
-<script src="../backend/script-gestao.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script src="../backend/database.js"></script>
 <script src="../backend/auth.js"></script>
+<script src="../backend/script-gestao.js"></script>
 <!-- Navbar Script Global -->
 <script src="../backend/navbar-script.js"></script>
 <script src="../backend/logout.js"></script>
