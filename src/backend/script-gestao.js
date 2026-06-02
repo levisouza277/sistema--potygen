@@ -1,86 +1,12 @@
-document.addEventListener('DOMContentLoaded', function() {
-    const modalForm = document.getElementById('modalForm');
-    const modalVisualizar = document.getElementById('modalVisualizar');
-    const modalTitle = document.getElementById('modalTitle');
-    const btnSalvar = document.getElementById('btnSalvar');
-    
-    const btnNovoAnimal = document.getElementById('btnNovoAnimal');
-    const btnSair = document.getElementById('btnSair');
-    const btnClose = document.querySelectorAll('.close, .btn-close-modal');
+// ============================================
+// ESTADO LOCAL (cache em memória)
+// ============================================
+// OBS: supabaseClient é inicializado em database.js
+let animais = [];
 
-    // Abrir Modal para Cadastro
-    btnNovoAnimal.addEventListener('click', () => {
-        modalTitle.innerText = "Cadastrar Novo Animal";
-        btnSalvar.innerText = "Cadastrar Animal";
-        limparFormulario();
-        modalForm.style.display = "flex";
-    });
-
-    // Abrir Modal para Edição
-    document.querySelectorAll('.btn-action-edit').forEach(btn => {
-        btn.addEventListener('click', function() {
-            modalTitle.innerText = "Editar Animal";
-            btnSalvar.innerText = "Salvar Alterações";
-            
-            // Preenche dados simulados para edição
-            document.getElementById('formCodigo').value = this.dataset.codigo;
-            document.getElementById('formNome').value = this.dataset.nome;
-            document.getElementById('formRaca').value = this.dataset.raca;
-            
-            modalForm.style.display = "flex";
-        });
-    });
-
-    // Abrir Visualização
-    document.querySelectorAll('.btn-action-view').forEach(btn => {
-        btn.addEventListener('click', function() {
-            document.getElementById('viewCodigo').innerText = this.dataset.codigo;
-            document.getElementById('viewNome').innerText = this.dataset.nome;
-            document.getElementById('viewEspecie').innerText = this.dataset.especie;
-            document.getElementById('viewRaca').innerText = this.dataset.raca;
-            document.getElementById('viewPeso').innerText = this.dataset.peso;
-            document.getElementById('viewStatus').innerText = this.dataset.status;
-            modalVisualizar.style.display = "flex";
-        });
-    });
-
-    // Fechar Modais
-    btnClose.forEach(btn => {
-        btn.addEventListener('click', () => {
-            modalForm.style.display = "none";
-            modalVisualizar.style.display = "none";
-        });
-    });
-
-    // Fechar ao clicar fora
-    window.addEventListener('click', (e) => {
-        if (e.target.className === 'modal') {
-            modalForm.style.display = "none";
-            modalVisualizar.style.display = "none";
-        }
-    });
-
-    function limparFormulario() {
-        const inputs = modalForm.querySelectorAll('input, select, textarea');
-        inputs.forEach(input => input.value = "");
-    }
-
-
-    btnSalvar.addEventListener('click', () => {
-        mostrarMensagem('Ação realizada com sucesso!', 'sucesso');
-        modalForm.style.display = "none";
-    });
-});
-
-    // ============================================
-    // SISTEMA DE ARMAZENAMENTO DE ANIMAIS
-    // ============================================
-    
-    let animais = JSON.parse(localStorage.getItem('potygen_animais') || '[]');
-    // ============================================
+// ============================================
 // BANCO DE DOENÇAS POR ESPÉCIE E SEXO
 // ============================================
-
 const bancoDoencas = {
     'Bovino': {
         'Macho': [
@@ -156,512 +82,266 @@ const bancoDoencas = {
     }
 };
 
-let doencasSelecionadas = [];
+// ============================================
+// FUNÇÕES DE BANCO DE DADOS (SUPABASE)
+// ============================================
 
-// Função para atualizar lista de doenças baseado em espécie e sexo
-// Função para buscar crias de um determinado pai
-function buscarCriasPorPai() {
-    const paiInput = document.getElementById('formPaiMacho');
-    const paiNome = paiInput ? paiInput.value : '';
-    const qtdCriasInput = document.getElementById('formQtdCriasMacho');
-    const container = document.getElementById('listaCriasMachoContainer');
-    
-    if (!paiNome || paiNome === '') {
-        container.innerHTML = '<p style="color: #64748b; font-size: 13px;">Digite o nome/código do pai para buscar suas crias automaticamente</p>';
-        return;
-    }
-    
-    // Buscar todos os animais onde o pai é este macho
-    const crias = animais.filter(animal => {
-        const paiDoAnimal = animal.pai || animal.paiMacho || animal.paiFemea;
-        return paiDoAnimal && paiDoAnimal.includes(paiNome);
-    });
-    
-    if (crias.length > 0) {
-        qtdCriasInput.value = crias.length;
-        
-        let html = '<div class="sub-block"><h4>🐄 Crias/Descendentes Registrados</h4>';
-        html += '<div style="max-height: 200px; overflow-y: auto;">';
-        
-        crias.forEach(cria => {
-            const idade = calcularIdade(cria.dataNascimento);
-            html += `
-                <div style="display: flex; justify-content: space-between; align-items: center; padding: 8px; border-bottom: 1px solid #e2e8f0;">
-                    <div>
-                        <strong>${cria.codigo}</strong> - ${cria.nome || 'Sem nome'}
-                        <span style="color: #64748b; font-size: 12px; margin-left: 10px;">${idade}</span>
-                    </div>
-                    <span style="background: #e2e8f0; padding: 2px 8px; border-radius: 20px; font-size: 11px;">${cria.sexo}</span>
-                </div>
-            `;
-        });
-        
-        html += '</div></div>';
-        container.innerHTML = html;
-    } else {
-        const qtdManual = qtdCriasInput.value;
-        if (qtdManual > 0) {
-            container.innerHTML = `<p style="color: #64748b; font-size: 13px;">${qtdManual} crias registradas manualmente</p>`;
-        } else {
-            container.innerHTML = '<p style="color: #64748b; font-size: 13px;">Nenhuma cria encontrada para este pai</p>';
-        }
-    }
-}
+/**
+ * Carrega todos os animais do usuário logado, junto com suas
+ * doenças e abortos das tabelas relacionais.
+ */
+async function carregarAnimais() {
+    try {
+        mostrarLoading(true);
 
-// Função para atualizar lista de doenças para MACHO
-// Função para atualizar lista de doenças para MACHO (Corrigida)
-function atualizarListaDoencasMacho() {
-    const especie = document.getElementById('formEspecie').value;
-    const container = document.getElementById('listaDoencasContainerMacho');
-    
-    console.log("Chamou atualizarListaDoencasMacho - Espécie:", especie);
-    
-    if (!container) {
-        console.log("Container listaDoencasContainerMacho NÃO encontrado no HTML!");
-        return;
-    }
-    
-    if (!especie) {
-        container.innerHTML = '<p style="color: #64748b; font-size: 13px;">Selecione a espécie primeiro</p>';
-        return;
-    }
-    
-    const doencas = bancoDoencas[especie]?.['Macho'] || [];
-    console.log("Doenças de macho encontradas:", doencas);
-    
-    if (doencas.length === 0) {
-        container.innerHTML = '<p style="color: #64748b; font-size: 13px;">Nenhuma doença cadastrada para este macho</p>';
-        return;
-    }
-    
-    let html = '<div class="section-title" style="margin-top: 10px;">Doenças Registradas (Macho)</div>';
-    html += '<div class="form-grid" style="flex-direction: column; gap: 15px;">';
-    
-    doencas.forEach(doenca => {
-        // Correção do ID para evitar duplicação do prefixo
-        const doencaId = 'macho_' + doenca.replace(/[^a-zA-Z0-9]/g, '_');
-        
-        html += `
-            <div class="doenca-card" style="background: #f8fafc; border-radius: 12px; padding: 15px; border: 1px solid #e2e8f0;">
-                <label style="display: flex; align-items: center; gap: 10px; font-weight: 600; cursor: pointer; margin-bottom: 10px;">
-                    <input type="checkbox" value="${doenca.replace(/"/g, '&quot;')}" class="doenca-checkbox-macho" onchange="toggleDoencaDetalhesMacho(this, '${doencaId}')">
-                    ${doenca}
-                </label>
-                
-                <div id="detalhes_${doencaId}" style="display: none; margin-top: 15px; padding-top: 15px; border-top: 1px solid #e2e8f0;">
-                    <div class="form-grid">
-                        <div class="input-group">
-                            <label>Data do Diagnóstico</label>
-                            <input type="date" id="dataDoencaMacho_${doencaId}" style="width: 100%; padding: 10px; border-radius: 8px; border: 1px solid #e2e8f0;">
-                        </div>
-                        <div class="input-group">
-                            <label>Já tratou esta doença?</label>
-                            <select id="tratouDoencaMacho_${doencaId}" onchange="toggleTratamentoCamposMacho(this, '${doencaId}')" style="width: 100%; padding: 10px; border-radius: 8px; border: 1px solid #e2e8f0;">
-                                <option value="">Selecione...</option>
-                                <option value="sim">Sim</option>
-                                <option value="nao">Não</option>
-                            </select>
-                        </div>
-                    </div>
-                    
-                    <div id="tratamentoCamposMacho_${doencaId}" style="display: none; margin-top: 15px;">
-                        <div class="form-grid">
-                            <div class="input-group">
-                                <label>Data do Tratamento</label>
-                                <input type="date" id="dataTratamentoMacho_${doencaId}" style="width: 100%; padding: 10px; border-radius: 8px; border: 1px solid #e2e8f0;">
-                            </div>
-                            <div class="input-group">
-                                <label>Tipo de Tratamento</label>
-                                <input type="text" id="tipoTratamentoMacho_${doencaId}" placeholder="Ex: Antibiótico..." style="width: 100%; padding: 10px; border-radius: 8px; border: 1px solid #e2e8f0;">
-                            </div>
-                        </div>
-                        <div class="input-group" style="margin-top: 10px;">
-                            <label>Observações</label>
-                            <textarea id="obsTratamentoMacho_${doencaId}" rows="2" style="width: 100%; padding: 10px; border-radius: 8px; border: 1px solid #e2e8f0;"></textarea>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        `;
-    });
-    
-    html += '</div>';
-    container.innerHTML = html;
-}
+        const { data, error } = await supabaseClient
+            .from('animais')
+            .select(`
+                *,
+                doencas_animais(*),
+                abortos_animais(*)
+            `)
+            .order('created_at', { ascending: false });
 
-// Função auxiliar corrigida para o Macho abrir a div correta
-function toggleDoencaDetalhesMacho(checkbox, doencaId) {
-    const detalhesDiv = document.getElementById(`detalhes_${doencaId}`);
-    if (detalhesDiv) {
-        detalhesDiv.style.display = checkbox.checked ? 'block' : 'none';
+        if (error) throw error;
+
+        // Normaliza os dados: mapeia as sub-tabelas para os campos esperados
+        animais = (data || []).map(a => ({
+            ...a,
+            // Mapeia doencas_animais → formato interno
+            doencas: (a.doencas_animais || []).map(d => ({
+                id: d.id,
+                nome: d.nome_doenca,
+                dataDiagnostico: d.data_diagnostico,
+                tratou: d.tratou,
+                dataTratamento: d.data_tratamento,
+                tipoTratamento: d.tipo_tratamento,
+                observacoesTratamento: d.observacoes
+            })),
+            // Mapeia abortos_animais → formato interno
+            abortos: (a.abortos_animais || []).map(ab => ({
+                id: ab.id,
+                data: ab.data_aborto,
+                diasGestacao: ab.idade_gestacional_dias,
+                causa: ab.causa_suspeita,
+                observacoes: ab.observacoes
+            })),
+            // nascimentos e descendentes ainda são armazenados como JSON
+            // na tabela animais (campos qtd_nascimentos/qtd_descendentes)
+            nascimentos: a.nascimentos || [],
+            descendentes: a.descendentes || []
+        }));
+
+        renderizarTabela();
+        atualizarDatalists();
+    } catch (err) {
+        console.error('Erro ao carregar animais:', err);
+        mostrarMensagem('Erro ao carregar animais do banco de dados: ' + err.message, 'erro');
+    } finally {
+        mostrarLoading(false);
     }
 }
 
-function toggleTratamentoCamposMacho(select, doencaId) {
-    const tratamentoCampos = document.getElementById(`tratamentoCamposMacho_${doencaId}`);
-    if (select.value === 'sim') {
-        tratamentoCampos.style.display = 'block';
-    } else {
-        tratamentoCampos.style.display = 'none';
-    }
-}
-
-// Função para coletar doenças do MACHO no salvamento
-function coletarDoencasMacho() {
-    const doencasRegistradas = [];
-    const especie = document.getElementById('formEspecie').value;
-    
-    if (!especie) return [];
-    
-    const doencas = bancoDoencas[especie]?.['Macho'] || [];
-    
-    doencas.forEach(doenca => {
-        const doencaId = 'macho_' + doenca.replace(/[^a-zA-Z0-9]/g, '_');
-        const checkbox = document.querySelector(`.doenca-checkbox-macho[value="${doenca.replace(/"/g, '&quot;')}"]`);
-        if (checkbox && checkbox.checked) {
-            doencasRegistradas.push({
-                nome: doenca,
-                dataDiagnostico: document.getElementById(`dataDoencaMacho_${doencaId}`)?.value || null,
-                tratou: document.getElementById(`tratouDoencaMacho_${doencaId}`)?.value === 'sim',
-                dataTratamento: document.getElementById(`dataTratamentoMacho_${doencaId}`)?.value || null,
-                tipoTratamento: document.getElementById(`tipoTratamentoMacho_${doencaId}`)?.value || null,
-                observacoesTratamento: document.getElementById(`obsTratamentoMacho_${doencaId}`)?.value || null
-            });
-        }
-    });
-    
-    return doencasRegistradas;
-}
-function atualizarListaDoencas() {
-    const especie = document.getElementById('formEspecie').value;
-    const sexo = document.getElementById('formSexo').value;
-    const container = document.getElementById('listaDoencasContainer');
-    
-    if (!container) return;
-    
-    if (!especie || !sexo) {
-        container.innerHTML = '<p style="color: #64748b; font-size: 13px;">Selecione espécie e sexo primeiro</p>';
-        return;
-    }
-    
-    const doencas = bancoDoencas[especie]?.[sexo] || [];
-    
-    if (doencas.length === 0) {
-        container.innerHTML = '<p style="color: #64748b; font-size: 13px;">Nenhuma doença cadastrada para esta combinação</p>';
-        return;
-    }
-    
-    let html = '<div class="section-title" style="margin-top: 10px;">Doenças Registradas</div>';
-    html += '<div class="form-grid" style="flex-direction: column; gap: 15px;">';
-    
-    doencas.forEach(doenca => {
-        const doencaId = doenca.replace(/[^a-zA-Z0-9]/g, '_');
-        html += `
-            <div class="doenca-card" style="background: #f8fafc; border-radius: 12px; padding: 15px; border: 1px solid #e2e8f0;">
-                <label style="display: flex; align-items: center; gap: 10px; font-weight: 600; cursor: pointer; margin-bottom: 10px;">
-                    <input type="checkbox" value="${doenca.replace(/"/g, '&quot;')}" class="doenca-checkbox" onchange="toggleDoencaDetalhes(this, '${doencaId}')">
-                    ${doenca}
-                </label>
-                <div id="detalhes_${doencaId}" style="display: none; margin-top: 15px; padding-top: 15px; border-top: 1px solid #e2e8f0;">
-                    <div class="form-grid">
-                        <div class="input-group">
-                            <label>Data do Diagnóstico</label>
-                            <input type="date" id="dataDoenca_${doencaId}" class="doenca-data" style="width: 100%; padding: 10px; border-radius: 8px; border: 1px solid #e2e8f0;">
-                        </div>
-                        <div class="input-group">
-                            <label>Já tratou esta doença?</label>
-                            <select id="tratouDoenca_${doencaId}" class="tratou-select" onchange="toggleTratamentoCampos(this, '${doencaId}')" style="width: 100%; padding: 10px; border-radius: 8px; border: 1px solid #e2e8f0;">
-                                <option value="">Selecione...</option>
-                                <option value="sim">Sim</option>
-                                <option value="nao">Não</option>
-                            </select>
-                        </div>
-                    </div>
-                    <div id="tratamentoCampos_${doencaId}" style="display: none;">
-                        <div class="form-grid">
-                            <div class="input-group">
-                                <label>Data do Tratamento</label>
-                                <input type="date" id="dataTratamento_${doencaId}" style="width: 100%; padding: 10px; border-radius: 8px; border: 1px solid #e2e8f0;">
-                            </div>
-                            <div class="input-group">
-                                <label>Tipo de Tratamento</label>
-                                <input type="text" id="tipoTratamento_${doencaId}" placeholder="Ex: Antibiótico, Anti-inflamatório..." style="width: 100%; padding: 10px; border-radius: 8px; border: 1px solid #e2e8f0;">
-                            </div>
-                        </div>
-                        <div class="input-group">
-                            <label>Observações do Tratamento</label>
-                            <textarea id="obsTratamento_${doencaId}" rows="2" placeholder="Informações adicionais sobre o tratamento..." style="width: 100%; padding: 10px; border-radius: 8px; border: 1px solid #e2e8f0;"></textarea>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        `;
-    });
-    
-    html += '</div>';
-    container.innerHTML = html;
-}
-
-// Função para mostrar/esconder detalhes da doença
-function toggleDoencaDetalhes(checkbox, doencaId) {
-    const detalhesDiv = document.getElementById(`detalhes_${doencaId}`);
-    if (checkbox.checked) {
-        detalhesDiv.style.display = 'block';
-    } else {
-        detalhesDiv.style.display = 'none';
-    }
-}
-
-// Função para mostrar/esconder campos de tratamento
-function toggleTratamentoCampos(select, doencaId) {
-    const tratamentoCampos = document.getElementById(`tratamentoCampos_${doencaId}`);
-    if (select.value === 'sim') {
-        tratamentoCampos.style.display = 'block';
-    } else {
-        tratamentoCampos.style.display = 'none';
-    }
-}
-// Função para coletar doenças no salvamento
-// Função para coletar doenças no salvamento
-function coletarDoencas() {
-    const doencasRegistradas = [];
-    const especie = document.getElementById('formEspecie').value;
-    const sexo = document.getElementById('formSexo').value;
-    
-    if (!especie || !sexo) return [];
-    
-    const doencas = bancoDoencas[especie]?.[sexo] || [];
-    
-    doencas.forEach(doenca => {
-        const doencaId = doenca.replace(/[^a-zA-Z0-9]/g, '_');
-        const checkbox = document.querySelector(`input[value="${doenca.replace(/"/g, '&quot;')}"]`);
-        if (checkbox && checkbox.checked) {
-            doencasRegistradas.push({
-                nome: doenca,
-                dataDiagnostico: document.getElementById(`dataDoenca_${doencaId}`)?.value || null,
-                tratou: document.getElementById(`tratouDoenca_${doencaId}`)?.value === 'sim',
-                dataTratamento: document.getElementById(`dataTratamento_${doencaId}`)?.value || null,
-                tipoTratamento: document.getElementById(`tipoTratamento_${doencaId}`)?.value || null,
-                observacoesTratamento: document.getElementById(`obsTratamento_${doencaId}`)?.value || null
-            });
-        }
-    });
-    
-    return doencasRegistradas;
-}
-    // Função para atualizar as datalists com animais existentes
-    function atualizarDatalists() {
-        const matrizes = animais.filter(a => a.sexo === 'Fêmea');
-        const reprodutores = animais.filter(a => a.sexo === 'Macho');
-        
-        const listaMatrizes = document.getElementById('listaMatrizes');
-        const listaReprodutores = document.getElementById('listaReprodutores');
-        
-        if (listaMatrizes) {
-            listaMatrizes.innerHTML = '';
-            matrizes.forEach(matriz => {
-                const option = document.createElement('option');
-                option.value = `${matriz.codigo} - ${matriz.nome || 'Sem nome'}`;
-                listaMatrizes.appendChild(option);
-            });
-        }
-        
-        if (listaReprodutores) {
-            listaReprodutores.innerHTML = '';
-            reprodutores.forEach(reprodutor => {
-                const option = document.createElement('option');
-                option.value = `${reprodutor.codigo} - ${reprodutor.nome || 'Sem nome'}`;
-                listaReprodutores.appendChild(option);
-            });
-        }
-    }
-    
-    // Função para controlar campos dinâmicos baseado no sexo
-    // Função para calcular idade do animal em tempo real
-function calcularIdadeAnimal() {
-    const dataInput = document.getElementById('formDataNascimento');
-    const idadeDiv = document.getElementById('idadeAnimalPreview');
-    
-    if (!dataInput || !dataInput.value) {
-        idadeDiv.innerHTML = '';
-        return;
-    }
-    
-    const dataNasc = new Date(dataInput.value);
-    const hoje = new Date();
-    
-    // Verificar se a data é válida
-    if (isNaN(dataNasc.getTime())) {
-        idadeDiv.innerHTML = '⚠️ Data inválida';
-        return;
-    }
-    
-    // Calcular diferença em meses
-    const diffMeses = (hoje.getFullYear() - dataNasc.getFullYear()) * 12 + (hoje.getMonth() - dataNasc.getMonth());
-    
-    let idadeTexto = '';
-    
-    if (diffMeses < 0) {
-        idadeTexto = '⚠️ Data futura';
-    } else if (diffMeses < 1) {
-        const diffDias = Math.floor((hoje - dataNasc) / (1000 * 60 * 60 * 24));
-        idadeTexto = `${diffDias} dias`;
-    } else if (diffMeses < 12) {
-        idadeTexto = `${diffMeses} meses`;
-    } else {
-        const anos = Math.floor(diffMeses / 12);
-        const meses = diffMeses % 12;
-        idadeTexto = meses > 0 ? `${anos} anos e ${meses} meses` : `${anos} anos`;
-    }
-    
-    idadeDiv.innerHTML = `<i class="fa-solid fa-calendar"></i> Idade atual: ${idadeTexto}`;
-}
-    function toggleCamposPorSexo() {
-    const sexo = document.getElementById('formSexo').value;
-    const especie = document.getElementById('formEspecie').value;
-    const camposFemea = document.getElementById('camposFemea');
-    const camposMacho = document.getElementById('camposMacho');
-    
-    // Convertendo para checar sem problemas de maiúsculas/minúsculas ou acentos
-    const sexoNormalizado = sexo ? sexo.trim().toLowerCase() : '';
-
-    if (sexoNormalizado === 'fêmea' || sexoNormalizado === 'femea') {
-        if (camposFemea) camposFemea.style.display = 'block';
-        if (camposMacho) camposMacho.style.display = 'none';
-        
-        // Atualizar doenças da fêmea se espécie já estiver selecionada
-        if (especie) {
-            atualizarListaDoencas();
-        }
-    } else if (sexoNormalizado === 'macho') {
-        if (camposFemea) camposFemea.style.display = 'none';
-        if (camposMacho) camposMacho.style.display = 'block';
-        
-        // Atualizar doenças do macho se espécie já estiver selecionada
-        if (especie) {
-            atualizarListaDoencasMacho();
-        }
-    } else {
-        if (camposFemea) camposFemea.style.display = 'none';
-        if (camposMacho) camposMacho.style.display = 'none';
-    }
-}
-    
-    // Controlar subcampos de categoria reprodutiva
-    function toggleCamposCategoria() {
-    const categoria = document.getElementById('formCategoriaFemea').value;
-    const camposECC = document.getElementById('camposECC');
-    
-    if (categoria === 'Reprodutora') {
-        camposECC.style.display = 'block';
-    } else {
-        camposECC.style.display = 'none';
-        document.getElementById('formECC').value = '';
-    }
-}
-    
-    // Controlar subcampos de aborto
-    function toggleCamposAborto() {
-    const temAborto = document.getElementById('formHistoricoAborto').value;
-    const subCampos = document.getElementById('subCamposAborto');
-    
-    if (temAborto === 'sim') {
-        subCampos.style.display = 'block';
-        gerarCamposAborto();
-    } else {
-        subCampos.style.display = 'none';
-        document.getElementById('formQtdAbortos').value = 0;
-        document.getElementById('listaAbortosContainer').innerHTML = '';
-    }
-}
-
-function gerarCamposAborto() {
-    const qtd = parseInt(document.getElementById('formQtdAbortos').value) || 0;
-    const container = document.getElementById('listaAbortosContainer');
-    
-    if (qtd === 0) {
-        container.innerHTML = '<p style="color: #64748b; font-size: 13px; margin-top: 10px;">Nenhum aborto registrado</p>';
-        return;
-    }
-    
-    let html = '<div style="margin-top: 15px;"><label style="font-weight: 600; margin-bottom: 10px; display: block;">Detalhes de cada aborto:</label>';
-    
-    for (let i = 1; i <= qtd; i++) {
-        html += `
-            <div class="sub-block" style="margin-bottom: 15px; border-left-color: #dc3545;">
-                <h4 style="color: #dc3545;">Aborto #${i}</h4>
-                <div class="form-grid">
-                    <div class="input-group">
-                        <label>Data do Aborto</label>
-                        <input type="date" id="abortoData_${i}" class="aborto-data">
-                    </div>
-                    <div class="input-group">
-                        <label>Macho Reprodutor</label>
-                        <input type="text" id="abortoMacho_${i}" class="aborto-macho" 
-                               placeholder="Código/Nome do touro" list="listaReprodutores">
-                    </div>
-                </div>
-                <div class="form-grid">
-                    <div class="input-group">
-                        <label>Gestão Aproximada (dias)</label>
-                        <input type="number" id="abortoDias_${i}" class="aborto-dias" 
-                               placeholder="Ex: 120, 180" step="10">
-                    </div>
-                    <div class="input-group">
-                        <label>Observações</label>
-                        <input type="text" id="abortoObs_${i}" class="aborto-obs" 
-                               placeholder="Ex: Causa desconhecida, trauma...">
-                    </div>
-                </div>
-            </div>
-        `;
-    }
-    
-    html += '</div>';
-    container.innerHTML = html;
-}
-    
-    // Salvar animal no localStorage
-   function salvarAnimal() {
+/**
+ * Salva ou atualiza um animal no Supabase.
+ * Trata doenças e abortos nas tabelas relacionais.
+ */
+async function salvarAnimalDB(animalData) {
     const isEditing = window.animalEmEdicao;
-    const editingAnimal = isEditing ? animais.find(a => a.id === isEditing) : null;
-    if (isEditing && editingAnimal) {
-        animais = animais.filter(a => a.id !== isEditing);
+
+    // Payload principal para a tabela animais
+    const payload = {
+        codigo: animalData.codigo,
+        nome: animalData.nome || null,
+        especie: animalData.especie,
+        raca: animalData.raca,
+        grau_sangue: animalData.grauSangue || null,
+        pelagem: animalData.pelagem || null,
+        data_nascimento: animalData.dataNascimento || null,
+        peso_nascer: animalData.pesoNascer || null,
+        peso_atual: animalData.pesoAtual || null,
+        sexo: animalData.sexo,
+        finalidade: animalData.finalidade || null,
+        lote: animalData.lote || null,
+        observacoes: animalData.observacoes || null,
+        // Campos de fêmea
+        categoria_reprodutiva: animalData.categoriaReprodutiva || null,
+        ecc: animalData.ecc || null,
+        // Genealogia (texto livre - pai_id/mae_id requerem uuid, usamos campos de texto)
+        mae: animalData.mae || null,
+        pai: animalData.pai || null,
+        historico_aborto: animalData.historicoAborto || false,
+        qtd_nascimentos: animalData.qtdNascimentos || 0,
+        nascimentos: animalData.nascimentos || [],
+        // Campos de macho
+        tipo_reprodutor: animalData.tipoReprodutor || null,
+        exame_andrologico: animalData.exameAndrologicoDia || false,
+        ecc_macho: animalData.eccMacho || null,
+        mae_macho: animalData.maeMacho || null,
+        pai_macho: animalData.paiMacho || null,
+        laboratorio: animalData.laboratorio || null,
+        qtd_descendentes: animalData.qtdDescendentes || 0,
+        descendentes: animalData.descendentes || []
+    };
+
+    try {
+        mostrarLoading(true);
+        let animalId;
+
+        if (isEditing) {
+            const { data, error } = await supabaseClient
+                .from('animais')
+                .update(payload)
+                .eq('id', isEditing)
+                .select()
+                .single();
+            if (error) throw error;
+            animalId = isEditing;
+
+            // Apaga e reinsere doenças e abortos ao editar
+            await supabaseClient.from('doencas_animais').delete().eq('animal_id', animalId);
+            await supabaseClient.from('abortos_animais').delete().eq('animal_id', animalId);
+        } else {
+            const { data, error } = await supabaseClient
+                .from('animais')
+                .insert(payload)
+                .select()
+                .single();
+            if (error) throw error;
+            animalId = data.id;
+        }
+
+        // Insere doenças na tabela relacional doencas_animais
+        const doencas = animalData.doencas || [];
+        if (doencas.length > 0) {
+            const doencasPayload = doencas.map(d => ({
+                animal_id: animalId,
+                nome_doenca: d.nome,
+                data_diagnostico: d.dataDiagnostico || null,
+                tratou: d.tratou || false,
+                data_tratamento: d.dataTratamento || null,
+                tipo_tratamento: d.tipoTratamento || null,
+                observacoes: d.observacoesTratamento || null
+            }));
+            const { error: errDoencas } = await supabaseClient
+                .from('doencas_animais')
+                .insert(doencasPayload);
+            if (errDoencas) throw errDoencas;
+        }
+
+        // Insere abortos na tabela relacional abortos_animais
+        const abortos = animalData.abortos || [];
+        if (abortos.length > 0) {
+            const abortosPayload = abortos.map(ab => ({
+                animal_id: animalId,
+                data_aborto: ab.data || null,
+                idade_gestacional_dias: ab.diasGestacao ? parseInt(ab.diasGestacao) : null,
+                causa_suspeita: ab.macho || ab.causa || null,
+                observacoes: ab.observacoes || null
+            }));
+            const { error: errAbortos } = await supabaseClient
+                .from('abortos_animais')
+                .insert(abortosPayload);
+            if (errAbortos) throw errAbortos;
+        }
+
+        window.animalEmEdicao = null;
+        mostrarMensagem(isEditing ? 'Animal atualizado com sucesso!' : 'Animal cadastrado com sucesso!', 'sucesso');
+        fecharModalCadastro();
+        await carregarAnimais(); // Recarrega para refletir dados das sub-tabelas
+
+    } catch (err) {
+        console.error('Erro ao salvar animal:', err);
+        mostrarMensagem('Erro ao salvar: ' + (err.message || 'Verifique os dados e tente novamente.'), 'erro');
+    } finally {
+        mostrarLoading(false);
     }
-    
-    // Coletar dados básicos
+}
+
+async function deletarAnimalDB(id) {
+    try {
+        mostrarLoading(true);
+        // ON DELETE CASCADE apaga doencas_animais e abortos_animais automaticamente
+        const { error } = await supabaseClient
+            .from('animais')
+            .delete()
+            .eq('id', id);
+
+        if (error) throw error;
+
+        animais = animais.filter(a => a.id !== id);
+        renderizarTabela();
+        atualizarDatalists();
+        mostrarMensagem('Animal excluído com sucesso!', 'sucesso');
+    } catch (err) {
+        console.error('Erro ao deletar animal:', err);
+        mostrarMensagem('Erro ao excluir: ' + err.message, 'erro');
+    } finally {
+        mostrarLoading(false);
+    }
+}
+
+// ============================================
+// LOADING INDICATOR
+// ============================================
+function mostrarLoading(show) {
+    let overlay = document.getElementById('loadingOverlay');
+    if (!overlay) {
+        overlay = document.createElement('div');
+        overlay.id = 'loadingOverlay';
+        overlay.style.cssText = `
+            position: fixed; inset: 0; background: rgba(0,0,0,0.35);
+            display: flex; align-items: center; justify-content: center;
+            z-index: 9999; backdrop-filter: blur(2px);
+        `;
+        overlay.innerHTML = `
+            <div style="background:#fff; border-radius:16px; padding:32px 40px; text-align:center; box-shadow:0 8px 32px rgba(0,0,0,0.18);">
+                <i class="fa-solid fa-spinner fa-spin" style="font-size:32px; color:#0d8a4f; margin-bottom:12px; display:block;"></i>
+                <p style="margin:0; color:#1e293b; font-weight:600;">Aguarde...</p>
+            </div>
+        `;
+        document.body.appendChild(overlay);
+    }
+    overlay.style.display = show ? 'flex' : 'none';
+}
+
+// ============================================
+// FUNÇÃO PRINCIPAL - SALVAR ANIMAL (coleta form)
+// ============================================
+function salvarAnimal() {
+    const isEditing = window.animalEmEdicao;
+
     const animal = {
-        id: isEditing || Date.now(),
-        codigo: document.getElementById('formCodigo').value,
-        nome: document.getElementById('formNome').value || '',
+        id: isEditing || null,
+        codigo: document.getElementById('formCodigo').value.trim(),
+        nome: document.getElementById('formNome').value.trim() || '',
         especie: document.getElementById('formEspecie').value,
         raca: document.getElementById('formRaca').value,
         grauSangue: document.getElementById('formGrauSangue').value,
-        pelagem: document.getElementById('formPelagem').value,
+        pelagem: document.getElementById('formPelagem').value.trim(),
         dataNascimento: document.getElementById('formDataNascimento').value,
         pesoNascer: parseFloat(document.getElementById('formPesoNascer').value) || 0,
         pesoAtual: parseFloat(document.getElementById('formPesoAtual').value) || 0,
         sexo: document.getElementById('formSexo').value,
         finalidade: document.getElementById('formFinalidade').value,
-        lote: document.getElementById('formLote').value,
-        observacoes: document.getElementById('formObs').value,
-        dataCadastro: new Date().toISOString(),
+        lote: document.getElementById('formLote').value.trim(),
+        observacoes: document.getElementById('formObs').value.trim(),
         doencas: []
     };
-    
+
     // Validar campos obrigatórios
     if (!animal.codigo || !animal.especie || !animal.raca || !animal.sexo || !animal.dataNascimento) {
         mostrarMensagem('Por favor, preencha todos os campos obrigatórios (*)', 'aviso');
         return;
     }
-    
-    // Adicionar campos específicos baseado no sexo
+
+    // Campos específicos por sexo
     if (animal.sexo === 'Fêmea') {
         animal.categoriaReprodutiva = document.getElementById('formCategoriaFemea').value;
         animal.ecc = parseFloat(document.getElementById('formECC').value) || null;
-        animal.mae = document.getElementById('formMae').value || null;
+        animal.mae = document.getElementById('formMae').value.trim() || null;
         animal.historicoAborto = document.getElementById('formHistoricoAborto').value === 'sim';
-        
+
         if (animal.historicoAborto) {
             animal.qtdAbortos = parseInt(document.getElementById('formQtdAbortos').value) || 0;
             const abortosDetalhes = [];
@@ -670,7 +350,6 @@ function gerarCamposAborto() {
                 const macho = document.getElementById(`abortoMacho_${i}`)?.value;
                 const dias = document.getElementById(`abortoDias_${i}`)?.value;
                 const obs = document.getElementById(`abortoObs_${i}`)?.value;
-                
                 if (data || macho) {
                     abortosDetalhes.push({
                         numero: i,
@@ -682,23 +361,16 @@ function gerarCamposAborto() {
                 }
             }
             animal.abortos = abortosDetalhes;
+        } else {
+            animal.abortos = [];
         }
+
         animal.doencas = coletarDoencas();
-        
-        // Coletar doenças pregressas
-        const doencas = [];
-        document.querySelectorAll('#camposFemea input[type="checkbox"]:checked').forEach(cb => {
-            doencas.push(cb.value);
-        });
-        animal.doencasPregressas = doencas;
-        
-        // ========== CÓDIGO PARA NASCIMENTOS (COM PERGUNTA) ==========
+
         const temCrias = document.getElementById('formTemCrias')?.value;
-        
         if (temCrias === 'sim') {
             const qtdNascimentos = parseInt(document.getElementById('formQtdNascimentos').value) || 0;
             const nascimentos = [];
-            
             for (let i = 1; i <= qtdNascimentos; i++) {
                 const data = document.getElementById(`nascimentoData_${i}`)?.value;
                 if (data) {
@@ -718,23 +390,19 @@ function gerarCamposAborto() {
             animal.nascimentos = [];
             animal.qtdNascimentos = 0;
         }
-        // ========== FIM DO CÓDIGO PARA NASCIMENTOS ==========
-        
+
     } else if (animal.sexo === 'Macho') {
         animal.tipoReprodutor = document.getElementById('formTipoMacho').value;
         animal.exameAndrologicoDia = document.getElementById('formExameAndrologico').value === 'sim';
         animal.eccMacho = document.getElementById('formECCMacho').value || null;
-        animal.maeMacho = document.getElementById('formMaeMacho').value || null;
-        animal.paiMacho = document.getElementById('formPaiMacho').value || null;
-        animal.laboratorio = document.getElementById('formLaboratorio').value || null;
-        
-        // ========== COLETAR DESCENDENTES (COM PERGUNTA) ==========
+        animal.maeMacho = document.getElementById('formMaeMacho').value.trim() || null;
+        animal.paiMacho = document.getElementById('formPaiMacho').value.trim() || null;
+        animal.laboratorio = document.getElementById('formLaboratorio').value.trim() || null;
+
         const temDescendentes = document.getElementById('formTemDescendentes')?.value;
-        
         if (temDescendentes === 'sim') {
             const qtdDescendentes = parseInt(document.getElementById('formQtdDescendentes').value) || 0;
             animal.qtdDescendentes = qtdDescendentes;
-            
             const descendentes = [];
             for (let i = 1; i <= qtdDescendentes; i++) {
                 const nomeDescendente = document.getElementById(`descendenteNome_${i}`)?.value;
@@ -755,86 +423,202 @@ function gerarCamposAborto() {
             animal.qtdDescendentes = 0;
             animal.descendentes = [];
         }
-        // ========== FIM DESCENDENTES ==========
-        
-        // Coletar doenças do macho
+
         animal.doencas = coletarDoencasMacho();
     }
-    
-    // Salvar
-    animais.push(animal);
-    localStorage.setItem('potygen_animais', JSON.stringify(animais));
-    
-    // Depois de salvar, fechar modal e atualizar tudo
-    window.animalEmEdicao = null;
-    mostrarMensagem(isEditing ? 'Animal atualizado com sucesso!' : 'Animal cadastrado com sucesso!', 'sucesso');
-    fecharModalCadastro();
-    renderizarTabela();
-    atualizarDatalists();
+
+    // Envia para o Supabase
+    salvarAnimalDB(animal);
 }
-    // Renderizar tabela
-    function renderizarTabela() {
+
+function deletarAnimal(id) {
+    mostrarConfirmacao(
+        'Tem certeza que deseja excluir este animal? Esta ação não pode ser desfeita!',
+        () => deletarAnimalDB(id),
+        () => console.log('Exclusão cancelada')
+    );
+}
+
+// ============================================
+// RENDERIZAÇÃO DA TABELA
+// ============================================
+function renderizarTabela() {
     const tbody = document.getElementById('tabelaAnimais');
     if (!tbody) return;
-    
+
     if (animais.length === 0) {
-        tbody.innerHTML = '<tr><td colspan="9" style="text-align: center;">Nenhum animal cadastrado</td></tr>';
+        tbody.innerHTML = '<tr><td colspan="9" style="text-align: center; padding: 40px; color: #64748b;">Nenhum animal cadastrado</td></tr>';
         return;
     }
-    
+
     tbody.innerHTML = animais.map(animal => {
-    const idade = calcularIdade(animal.dataNascimento);
-    return `
-        <tr>
-            <td><strong>${animal.nome || 'Sem nome'}</strong><br><small>${animal.codigo}</small></td>
-            <td>${animal.raca} - ${animal.especie}</td>
-            <td>${idade}</td>
-            <td>${animal.pesoAtual} kg</td>
-            <td>${animal.sexo || 'N/A'}</td>
-            <td>${animal.finalidade || '—'}</td>
-            <td>${animal.lote || '—'}</td>
-            <td>${animal.pelagem || '—'}</td>
-            <td class="action-buttons">
-                <button class="action-btn action-view" onclick="visualizarAnimal(${animal.id})">
-                    <i class="fa-solid fa-eye"></i> Ver características
-                </button>
-                <button class="action-btn action-edit" onclick="editarAnimal(${animal.id})">
-                <i class="fa-solid fa-pen"></i> Editar
-             </button>
-                <button class="action-btn action-delete" onclick="deletarAnimal(${animal.id})">
-                    <i class="fa-solid fa-trash"></i> Excluir
-                </button>
-            </td>
-        </tr>
-    `;
-}).join('');
+        const idade = calcularIdade(animal.data_nascimento || animal.dataNascimento);
+        const nome = animal.nome || 'Sem nome';
+        const codigo = animal.codigo || '';
+        const raca = animal.raca || '-';
+        const especie = animal.especie || '-';
+        const pesoAtual = animal.peso_atual ?? animal.pesoAtual ?? 0;
+        const sexo = animal.sexo || 'N/A';
+        const finalidade = animal.finalidade || '—';
+        const lote = animal.lote || '—';
+        const pelagem = animal.pelagem || '—';
+
+        return `
+            <tr>
+                <td><strong>${nome}</strong><br><small>${codigo}</small></td>
+                <td>${raca} - ${especie}</td>
+                <td>${idade}</td>
+                <td>${pesoAtual} kg</td>
+                <td>${sexo}</td>
+                <td>${finalidade}</td>
+                <td>${lote}</td>
+                <td>${pelagem}</td>
+                <td class="action-buttons">
+                    <button class="action-btn action-view" onclick="visualizarAnimal('${animal.id}')">
+                        <i class="fa-solid fa-eye"></i> Ver características
+                    </button>
+                    <button class="action-btn action-edit" onclick="editarAnimal('${animal.id}')">
+                        <i class="fa-solid fa-pen"></i> Editar
+                    </button>
+                    <button class="action-btn action-delete" onclick="deletarAnimal('${animal.id}')">
+                        <i class="fa-solid fa-trash"></i> Excluir
+                    </button>
+                </td>
+            </tr>
+        `;
+    }).join('');
 }
-    
-    function calcularIdade(dataNascimento) {
-        if (!dataNascimento) return 'N/A';
-        const nasc = new Date(dataNascimento);
-        const hoje = new Date();
-        const idadeMeses = (hoje.getFullYear() - nasc.getFullYear()) * 12 + (hoje.getMonth() - nasc.getMonth());
-        
-        if (idadeMeses < 12) {
-            return `${idadeMeses} meses`;
-        } else {
-            const anos = Math.floor(idadeMeses / 12);
-            const meses = idadeMeses % 12;
-            return meses > 0 ? `${anos} anos e ${meses} meses` : `${anos} anos`;
-        }
-    }
-    
-    function visualizarAnimal(id) {
-    // Buscar o animal do array global (já atualizado)
-    const animal = animais.find(a => a.id === id);
-    if (!animal) {
-        console.error("Animal não encontrado! ID:", id);
-        mostrarMensagem('Animal não encontrado!', 'erro');
+
+function renderizarTabelaFiltrada(lista) {
+    const tbody = document.getElementById('tabelaAnimais');
+    if (!tbody) return;
+
+    if (lista.length === 0) {
+        tbody.innerHTML = '<tr><td colspan="9" style="text-align: center; padding: 40px; color: #64748b;">Nenhum animal encontrado</td></tr>';
         return;
     }
-    
-    // Informações básicas (comuns a ambos)
+
+    tbody.innerHTML = lista.map(animal => {
+        const idade = calcularIdade(animal.data_nascimento || animal.dataNascimento);
+        const pesoAtual = animal.peso_atual ?? animal.pesoAtual ?? 0;
+
+        return `
+            <tr>
+                <td><strong>${animal.nome || 'Sem nome'}</strong><br><small>${animal.codigo}</small></td>
+                <td>${animal.raca} - ${animal.especie}</td>
+                <td>${idade}</td>
+                <td>${pesoAtual} kg</td>
+                <td>${animal.sexo === 'Fêmea' ? 'Fêmea' : 'Macho'}</td>
+                <td>${animal.finalidade || '—'}</td>
+                <td>${animal.lote || '—'}</td>
+                <td>${animal.pelagem || '—'}</td>
+                <td class="action-buttons">
+                    <button class="action-btn action-view" onclick="visualizarAnimal('${animal.id}')">
+                        <i class="fa-solid fa-eye"></i> Ver características
+                    </button>
+                    <button class="action-btn action-edit" onclick="editarAnimal('${animal.id}')">
+                        <i class="fa-solid fa-pen"></i> Editar
+                    </button>
+                    <button class="action-btn action-delete" onclick="deletarAnimal('${animal.id}')">
+                        <i class="fa-solid fa-trash"></i> Excluir
+                    </button>
+                </td>
+            </tr>
+        `;
+    }).join('');
+}
+
+// ============================================
+// DATALISTS (mãe/pai)
+// ============================================
+function atualizarDatalists() {
+    const matrizes = animais.filter(a => a.sexo === 'Fêmea');
+    const reprodutores = animais.filter(a => a.sexo === 'Macho');
+
+    ['listaMatrizes', 'listaMatrizesMacho'].forEach(id => {
+        const el = document.getElementById(id);
+        if (el) {
+            el.innerHTML = '';
+            matrizes.forEach(m => {
+                const opt = document.createElement('option');
+                opt.value = `${m.codigo} - ${m.nome || 'Sem nome'}`;
+                el.appendChild(opt);
+            });
+        }
+    });
+
+    ['listaReprodutores', 'listaReprodutoresMacho'].forEach(id => {
+        const el = document.getElementById(id);
+        if (el) {
+            el.innerHTML = '';
+            reprodutores.forEach(r => {
+                const opt = document.createElement('option');
+                opt.value = `${r.codigo} - ${r.nome || 'Sem nome'}`;
+                el.appendChild(opt);
+            });
+        }
+    });
+}
+
+// ============================================
+// CALCULAR IDADE
+// ============================================
+function calcularIdade(dataNascimento) {
+    if (!dataNascimento) return 'N/A';
+    const nasc = new Date(dataNascimento);
+    const hoje = new Date();
+    const idadeMeses = (hoje.getFullYear() - nasc.getFullYear()) * 12 + (hoje.getMonth() - nasc.getMonth());
+
+    if (idadeMeses < 12) return `${idadeMeses} meses`;
+    const anos = Math.floor(idadeMeses / 12);
+    const meses = idadeMeses % 12;
+    return meses > 0 ? `${anos} anos e ${meses} meses` : `${anos} anos`;
+}
+
+function calcularIdadeAnimal() {
+    const dataInput = document.getElementById('formDataNascimento');
+    const idadeDiv = document.getElementById('idadeAnimalPreview');
+    if (!dataInput || !dataInput.value) { if (idadeDiv) idadeDiv.innerHTML = ''; return; }
+
+    const dataNasc = new Date(dataInput.value);
+    const hoje = new Date();
+    if (isNaN(dataNasc.getTime())) { idadeDiv.innerHTML = '⚠️ Data inválida'; return; }
+
+    const diffMeses = (hoje.getFullYear() - dataNasc.getFullYear()) * 12 + (hoje.getMonth() - dataNasc.getMonth());
+    let idadeTexto = '';
+    if (diffMeses < 0) idadeTexto = '⚠️ Data futura';
+    else if (diffMeses < 1) { const d = Math.floor((hoje - dataNasc) / 86400000); idadeTexto = `${d} dias`; }
+    else if (diffMeses < 12) idadeTexto = `${diffMeses} meses`;
+    else { const a = Math.floor(diffMeses / 12), m = diffMeses % 12; idadeTexto = m > 0 ? `${a} anos e ${m} meses` : `${a} anos`; }
+
+    idadeDiv.innerHTML = `<i class="fa-solid fa-calendar"></i> Idade atual: ${idadeTexto}`;
+}
+
+function calcularIdadeCria(numero) {
+    const dataInput = document.getElementById(`nascimentoData_${numero}`);
+    const idadeDiv = document.getElementById(`idadeCria_${numero}`);
+    if (!dataInput || !dataInput.value) { if (idadeDiv) idadeDiv.innerHTML = ''; return; }
+
+    const dataNasc = new Date(dataInput.value);
+    const hoje = new Date();
+    const diffMeses = (hoje.getFullYear() - dataNasc.getFullYear()) * 12 + (hoje.getMonth() - dataNasc.getMonth());
+
+    if (diffMeses < 0) idadeDiv.innerHTML = '⚠️ Data futura';
+    else if (diffMeses < 1) { const d = Math.floor((hoje - dataNasc) / 86400000); idadeDiv.innerHTML = `📅 Idade atual: ${d} dias`; }
+    else if (diffMeses < 12) idadeDiv.innerHTML = `📅 Idade atual: ${diffMeses} meses`;
+    else { const a = Math.floor(diffMeses / 12), m = diffMeses % 12; idadeDiv.innerHTML = m > 0 ? `📅 Idade atual: ${a} anos e ${m} meses` : `📅 Idade atual: ${a} anos`; }
+}
+
+// ============================================
+// VISUALIZAR ANIMAL
+// ============================================
+function visualizarAnimal(id) {
+    const animal = animais.find(a => String(a.id) === String(id));
+    if (!animal) { mostrarMensagem('Animal não encontrado!', 'erro'); return; }
+
+    const dataNasc = animal.data_nascimento || animal.dataNascimento;
+    const pesoAtual = animal.peso_atual ?? animal.pesoAtual ?? 0;
+
     document.getElementById('viewCodigo').textContent = animal.codigo || '-';
     document.getElementById('viewNome').textContent = animal.nome || '-';
     document.getElementById('viewEspecie').textContent = animal.especie || '-';
@@ -842,38 +626,66 @@ function gerarCamposAborto() {
     document.getElementById('viewPelagem').textContent = animal.pelagem || '-';
     document.getElementById('viewLote').textContent = animal.lote || '-';
     document.getElementById('viewFinalidade').textContent = animal.finalidade || '-';
-    document.getElementById('viewGrauSangue').textContent = animal.grauSangue || '-';
-    document.getElementById('viewPeso').textContent = animal.pesoAtual ? `${animal.pesoAtual} kg` : '-';
-    document.getElementById('viewIdade').textContent = calcularIdade(animal.dataNascimento);
+    document.getElementById('viewGrauSangue').textContent = animal.grau_sangue || animal.grauSangue || '-';
+    document.getElementById('viewPeso').textContent = pesoAtual ? `${pesoAtual} kg` : '-';
+    document.getElementById('viewIdade').textContent = calcularIdade(dataNasc);
     document.getElementById('viewStatus').textContent = animal.sexo || '-';
-    
-    // Esconder seções específicas primeiro
+
     const viewFemeaInfo = document.getElementById('viewFemeaInfo');
     const viewMachoInfo = document.getElementById('viewMachoInfo');
     if (viewFemeaInfo) viewFemeaInfo.style.display = 'none';
     if (viewMachoInfo) viewMachoInfo.style.display = 'none';
-    
-    // Se for FÊMEA
+
     if (animal.sexo === 'Fêmea') {
         if (viewFemeaInfo) viewFemeaInfo.style.display = 'block';
-        
-        document.getElementById('viewCategoria').textContent = animal.categoriaReprodutiva || '-';
+        document.getElementById('viewCategoria').textContent = animal.categoria_reprodutiva || animal.categoriaReprodutiva || '-';
         document.getElementById('viewECC').textContent = animal.ecc || '-';
-        document.getElementById('viewQtdCrias').textContent = animal.qtdNascimentos || '0';
-        document.getElementById('viewAborto').textContent = animal.historicoAborto ? 'Sim' : 'Não';
+        document.getElementById('viewQtdCrias').textContent = animal.qtd_nascimentos ?? animal.qtdNascimentos ?? '0';
+        // Usa abortos da tabela relacional
+        const abortos = animal.abortos || [];
+        document.getElementById('viewAborto').textContent = abortos.length > 0 ? `Sim (${abortos.length})` : 'Não';
         document.getElementById('viewMae').textContent = animal.mae || '-';
         document.getElementById('viewPai').textContent = animal.pai || '-';
-        
-        // Mostrar lista de crias/nascimentos
+
+        // Exibe detalhes dos abortos se existirem
+        let viewAbortosContainer = document.getElementById('viewAbortosContainer');
+        if (!viewAbortosContainer) {
+            viewAbortosContainer = document.createElement('div');
+            viewAbortosContainer.id = 'viewAbortosContainer';
+            viewAbortosContainer.className = 'info-block';
+            const nascimentosBlock = document.getElementById('viewNascimentosContainer');
+            if (viewFemeaInfo && nascimentosBlock) {
+                viewFemeaInfo.insertBefore(viewAbortosContainer, nascimentosBlock);
+            }
+        }
+        if (abortos.length > 0) {
+            viewAbortosContainer.style.display = 'block';
+            viewAbortosContainer.innerHTML = `
+                <p class="block-title"><i class="fa-solid fa-triangle-exclamation" style="color:#dc3545;"></i> Histórico de Abortos</p>
+                <div>
+                    ${abortos.map((ab, i) => `
+                        <div style="padding:8px;border-bottom:1px solid #e2e8f0;">
+                            <strong>Aborto #${i + 1}</strong>
+                            ${ab.data ? '<br>📅 Data: ' + ab.data : ''}
+                            ${ab.diasGestacao ? '<br>🗓️ Dias de gestação: ' + ab.diasGestacao : ''}
+                            ${(ab.causa || ab.macho) ? '<br>🔍 Causa/Reprodutor: ' + (ab.causa || ab.macho) : ''}
+                            ${ab.observacoes ? '<br>📝 Obs: ' + ab.observacoes : ''}
+                        </div>
+                    `).join('')}
+                </div>`;
+        } else {
+            viewAbortosContainer.style.display = 'none';
+        }
+
+        const nascimentos = animal.nascimentos || [];
         const nascimentosContainer = document.getElementById('viewNascimentosContainer');
         const listaNascimentos = document.getElementById('viewListaNascimentos');
-        
         if (nascimentosContainer && listaNascimentos) {
-            if (animal.nascimentos && animal.nascimentos.length > 0) {
+            if (nascimentos.length > 0) {
                 nascimentosContainer.style.display = 'block';
-                listaNascimentos.innerHTML = animal.nascimentos.map(n => `
+                listaNascimentos.innerHTML = nascimentos.map(n => `
                     <div style="padding: 8px; border-bottom: 1px solid #e2e8f0;">
-                        <strong>${n.numero}ª cria:</strong> ${n.data || 'Data não registrada'} 
+                        <strong>${n.numero}ª cria:</strong> ${n.data || 'Data não registrada'}
                         ${n.sexo ? `- ${n.sexo}` : ''}
                         ${n.pai ? `<br>👨 Pai: ${n.pai}` : ''}
                         ${n.peso ? `<br>⚖️ Peso: ${n.peso} kg` : ''}
@@ -884,35 +696,27 @@ function gerarCamposAborto() {
             }
         }
     }
-    
-    // Se for MACHO
+
     if (animal.sexo === 'Macho') {
         if (viewMachoInfo) viewMachoInfo.style.display = 'block';
-        
-        // Tipo de Reprodutor com texto amigável
-        let tipoTexto = '-';
-        if (animal.tipoReprodutor === 'local') tipoTexto = 'Reprodutor Local';
-        else if (animal.tipoReprodutor === 'laboratorio') tipoTexto = 'Reprodutor de Laboratório';
-        else if (animal.tipoReprodutor === 'rufiao') tipoTexto = 'Rufião';
-        else if (animal.tipoReprodutor === 'castrado') tipoTexto = 'Castrado';
-        else tipoTexto = animal.tipoReprodutor || '-';
-        
-        document.getElementById('viewTipoMacho').textContent = tipoTexto;
-        document.getElementById('viewExameAndrologico').textContent = animal.exameAndrologicoDia ? 'Sim - Apto' : 'Não ou Vencido';
-        document.getElementById('viewECCMacho').textContent = animal.eccMacho || '-';
-        document.getElementById('viewQtdDescendentes').textContent = animal.qtdDescendentes || '0';
-        document.getElementById('viewMaeMacho').textContent = animal.maeMacho || '-';
-        document.getElementById('viewPaiMacho').textContent = animal.paiMacho || '-';
+
+        const tipoMap = { local: 'Reprodutor Local', laboratorio: 'Reprodutor de Laboratório', rufiao: 'Rufião', castrado: 'Castrado' };
+        const tipoReprodutor = animal.tipo_reprodutor || animal.tipoReprodutor;
+        document.getElementById('viewTipoMacho').textContent = tipoMap[tipoReprodutor] || tipoReprodutor || '-';
+        document.getElementById('viewExameAndrologico').textContent = (animal.exame_andrologico || animal.exame_andrologico_dia || animal.exameAndrologicoDia) ? 'Sim - Apto' : 'Não ou Vencido';
+        document.getElementById('viewECCMacho').textContent = animal.ecc_macho || animal.eccMacho || '-';
+        document.getElementById('viewQtdDescendentes').textContent = animal.qtd_descendentes ?? animal.qtdDescendentes ?? '0';
+        document.getElementById('viewMaeMacho').textContent = animal.mae_macho || animal.maeMacho || '-';
+        document.getElementById('viewPaiMacho').textContent = animal.pai_macho || animal.paiMacho || '-';
         document.getElementById('viewLaboratorio').textContent = animal.laboratorio || '-';
-        
-        // Mostrar lista de descendentes
+
+        const descendentes = animal.descendentes || [];
         const descendentesContainer = document.getElementById('viewDescendentesContainer');
         const listaDescendentes = document.getElementById('viewListaDescendentes');
-        
         if (descendentesContainer && listaDescendentes) {
-            if (animal.descendentes && animal.descendentes.length > 0) {
+            if (descendentes.length > 0) {
                 descendentesContainer.style.display = 'block';
-                listaDescendentes.innerHTML = animal.descendentes.map(d => `
+                listaDescendentes.innerHTML = descendentes.map(d => `
                     <div style="padding: 8px; border-bottom: 1px solid #e2e8f0;">
                         <strong>${d.nome || `Descendente #${d.numero}`}</strong>
                         ${d.sexo ? `<br>🧬 Sexo: ${d.sexo}` : ''}
@@ -925,254 +729,397 @@ function gerarCamposAborto() {
             }
         }
     }
-    
-    // Mostrar doenças (para ambos)
+
+    // Doenças vindas da tabela relacional doencas_animais
     const listaDoencas = document.getElementById('viewListaDoencas');
     if (listaDoencas) {
-        if (animal.doencas && animal.doencas.length > 0) {
-            listaDoencas.innerHTML = animal.doencas.map(d => `
+        const doencas = animal.doencas || [];
+        listaDoencas.innerHTML = doencas.length > 0
+            ? doencas.map(d => `
                 <div style="padding: 8px; border-bottom: 1px solid #e2e8f0;">
                     <strong>${d.nome}</strong>
                     ${d.dataDiagnostico ? `<br>📅 Diagnóstico: ${d.dataDiagnostico}` : ''}
                     ${d.tratou ? `<br>✅ Tratado em: ${d.dataTratamento || 'Data não registrada'}` : '<br>⚠️ Não tratado'}
+                    ${d.tipoTratamento ? `<br>💊 Tratamento: ${d.tipoTratamento}` : ''}
                 </div>
-            `).join('');
-        } else {
-            listaDoencas.innerHTML = '<p style="color: #64748b;">Nenhuma doença registrada</p>';
-        }
+            `).join('')
+            : '<p style="color: #64748b;">Nenhuma doença registrada</p>';
     }
-    
-    // Abrir modal
-    const modalVisualizar = document.getElementById('modalVisualizar');
-    if (modalVisualizar) {
-        modalVisualizar.style.display = 'flex';
-    }
-}
-   function deletarAnimal(id) {
-    mostrarConfirmacao(
-        'Tem certeza que deseja excluir este animal? Esta ação não pode ser desfeita!',
-        function() {
-            // Confirmado
-            animais = animais.filter(a => a.id !== id);
-            localStorage.setItem('potygen_animais', JSON.stringify(animais));
-            renderizarTabela();
-            atualizarDatalists();
-            mostrarMensagem('Animal excluído com sucesso!', 'sucesso');
-        },
-        function() {
-            // Cancelado - não faz nada
-            console.log('Exclusão cancelada');
-        }
-    );
-}
-    
-    function fecharModalCadastro() {
-        document.getElementById('modalForm').style.display = 'none';
-        document.getElementById('formCodigo').value = '';
-        document.getElementById('formNome').value = '';
-        document.getElementById('formEspecie').value = '';
-        document.getElementById('formRaca').value = '';
-        document.getElementById('formSexo').value = '';
-        document.getElementById('camposFemea').style.display = 'none';
-        document.getElementById('camposMacho').style.display = 'none';
-         limparRacaSelecionada();
-    }
-    // Atualiza as opções de finalidade baseado na espécie escolhida
-function atualizarFinalidadePorEspecie() {
-    const especie = document.getElementById('formEspecie').value;
-    const selectFinalidade = document.getElementById('formFinalidade');
-    
-    // Mapeamento das finalidades por espécie
-    const finalidades = {
-        'Bovino': ['Corte', 'Leite', 'Dupla Aptidão', 'Melhoramento Genético'],
-        'Ovino': ['Corte', 'Lã', 'Leite', 'Couro', 'Dupla Aptidão'],
-        'Caprino': ['Corte (Carne)', 'Leite', 'Couro', 'Dupla Aptidão']
-    };
-    
-    // Limpa as opções atuais
-    selectFinalidade.innerHTML = '<option value="">Selecione uma finalidade...</option>';
-    
-    // Se a espécie existe no mapeamento, adiciona as opções
-    if (finalidades[especie]) {
-        finalidades[especie].forEach(finalidade => {
-            const option = document.createElement('option');
-            option.value = finalidade;
-            option.textContent = finalidade;
-            selectFinalidade.appendChild(option);
-        });
-    } else {
-        selectFinalidade.innerHTML = '<option value="">Selecione uma espécie primeiro</option>';
-    }
-}
-// ============================================
-// SISTEMA DE BUSCA DE RAÇAS PRÉ-DEFINIDAS
-// ============================================
 
-// Banco de raças pré-definidas (SEM opção de adicionar nova)
-const racasPreDefinidas = {
-    'Bovino': [
-        'Nelore', 'Angus', 'Hereford','Gir', 'Brahman', 'Guzerá', 
-        'Tabapuã', 'Senepol', 'Caracu', 'Holandês', 'Jersey',
-        'Girolando', 'Sindi', 'Bonsmara', 'Brangus', 'Braford',
-        'Canchim', 'Santa Gertrudes', 'Limousin', 'Charolês',
-        'Devon', 'Red Angus', 'Wagyu','Guerande', 'Normanda', 'Pardo Suíço', 'Lavínia'
-    ],
-    'Ovino': [
-        'Dorper', 'Santa Inês', 'Suffolk', 'Hampshire Down','Morada Nova', 'Bergamácia', 'Crioulo',
-        'Texel', 'Morada Nova', 'Somalis Brasileira', 'Ile de France', 'Rabo Largo', 'Lacaune', 'Cordeiro do Marajó',
-        'Katahdin', 'White Dorper','Corriedale', 'Merino', 'Pantaneiro'       
-    ],
-    'Caprino': [
-        'Boer', 'Saanen', 'Anglo-Nubiana', 'Parda Alpina', 
-        'Toggenburg', 'Moxotó', 'Canindé', 'Marota',
-        'Repartida', 'Azul', 'Gurguéia', 'Bhuj', 'Kalahari Red'
-    ]
+    const modalVisualizar = document.getElementById('modalVisualizar');
+    if (modalVisualizar) modalVisualizar.style.display = 'flex';
+}
+
+// ============================================
+// EDITAR ANIMAL
+// ============================================
+window.editarAnimal = function(id) {
+    const animal = animais.find(a => String(a.id) === String(id));
+    if (!animal) { mostrarMensagem('Animal não encontrado!', 'erro'); return; }
+
+    const modalForm = document.getElementById('modalForm');
+    const modalTitle = document.getElementById('modalTitle');
+    const btnSalvar = document.getElementById('btnSalvar');
+
+    modalTitle.innerText = 'Editar Animal';
+    btnSalvar.innerText = 'Salvar Alterações';
+
+    if (typeof limparFormulario === 'function') limparFormulario();
+
+    // Dados básicos
+    document.getElementById('formCodigo').value = animal.codigo || '';
+    document.getElementById('formNome').value = animal.nome || '';
+    document.getElementById('formEspecie').value = animal.especie || '';
+    document.getElementById('buscaRaca').value = animal.raca || '';
+    document.getElementById('formRaca').value = animal.raca || '';
+    document.getElementById('formGrauSangue').value = animal.grau_sangue || animal.grauSangue || '';
+    document.getElementById('formPelagem').value = animal.pelagem || '';
+    document.getElementById('formDataNascimento').value = animal.data_nascimento || animal.dataNascimento || '';
+    document.getElementById('formPesoNascer').value = animal.peso_nascer ?? animal.pesoNascer ?? '';
+    document.getElementById('formPesoAtual').value = animal.peso_atual ?? animal.pesoAtual ?? '';
+    document.getElementById('formSexo').value = animal.sexo || '';
+    document.getElementById('formFinalidade').value = animal.finalidade || '';
+    document.getElementById('formLote').value = animal.lote || '';
+    document.getElementById('formObs').value = animal.observacoes || '';
+
+    if (animal.data_nascimento || animal.dataNascimento) calcularIdadeAnimal();
+
+    // Dispara change na espécie ANTES de preencher finalidade e raça,
+    // para que atualizarFinalidadePorEspecie() popule as options primeiro.
+    // Depois re-aplica os valores salvos por cima.
+    const especieSelect = document.getElementById('formEspecie');
+    const sexoSelect = document.getElementById('formSexo');
+    if (especieSelect) especieSelect.dispatchEvent(new Event('change'));
+
+    // Re-aplica raça e finalidade (o dispatchEvent acima os teria limpado)
+    document.getElementById('buscaRaca').value = animal.raca || '';
+    document.getElementById('formRaca').value = animal.raca || '';
+    if (animal.raca) mostrarBadgeRacaSelecionada(animal.raca);
+    document.getElementById('formFinalidade').value = animal.finalidade || '';
+
+    toggleCamposPorSexo();
+    if (sexoSelect) sexoSelect.dispatchEvent(new Event('change'));
+
+    if (animal.sexo === 'Fêmea') {
+        const set = (id, val) => { const el = document.getElementById(id); if (el) el.value = val || ''; };
+        set('formCategoriaFemea', animal.categoria_reprodutiva || animal.categoriaReprodutiva);
+        set('formECC', animal.ecc);
+        set('formMae', animal.mae);
+        set('formPai', animal.pai);
+
+        // Histórico de aborto baseado nos registros da tabela relacional
+        const abortos = animal.abortos || [];
+        const temAborto = abortos.length > 0;
+        set('formHistoricoAborto', temAborto ? 'sim' : 'nao');
+        if (temAborto) {
+            toggleCamposAborto();
+            set('formQtdAbortos', abortos.length);
+            setTimeout(() => {
+                gerarCamposAborto();
+                setTimeout(() => {
+                    abortos.forEach((ab, i) => {
+                        const n = i + 1;
+                        const f = (s, v) => { const el = document.getElementById(s); if (el) el.value = v || ''; };
+                        f(`abortoData_${n}`, ab.data);
+                        f(`abortoMacho_${n}`, ab.causa || ab.macho);
+                        f(`abortoDias_${n}`, ab.diasGestacao);
+                        f(`abortoObs_${n}`, ab.observacoes);
+                    });
+                }, 150);
+            }, 100);
+        }
+
+        const nascimentos = animal.nascimentos || [];
+        const qtdCrias = nascimentos.length || animal.qtd_nascimentos || animal.qtdNascimentos || 0;
+        const temCriasSelect = document.getElementById('formTemCrias');
+        if (temCriasSelect) { temCriasSelect.value = qtdCrias > 0 ? 'sim' : 'nao'; if (typeof toggleCamposCrias === 'function') toggleCamposCrias(); }
+        set('formQtdNascimentos', qtdCrias);
+
+        if (qtdCrias > 0) {
+            setTimeout(() => {
+                gerarCamposNascimentos();
+                setTimeout(() => {
+                    nascimentos.forEach(n => {
+                        const f = (s, v) => { const el = document.getElementById(s); if (el) el.value = v || ''; };
+                        f(`nascimentoData_${n.numero}`, n.data);
+                        f(`nascimentoSexo_${n.numero}`, n.sexo);
+                        f(`nascimentoPai_${n.numero}`, n.pai);
+                        f(`nascimentoPeso_${n.numero}`, n.peso);
+                        f(`nascimentoObs_${n.numero}`, n.observacoes);
+                    });
+                }, 100);
+            }, 100);
+        }
+
+        // Pré-selecionar doenças registradas
+        const doencas = animal.doencas || [];
+        if (doencas.length > 0) {
+            setTimeout(() => {
+                doencas.forEach(d => {
+                    const cb = document.querySelector(`.doenca-checkbox[value="${d.nome.replace(/"/g, '&quot;')}"]`);
+                    if (cb) {
+                        cb.checked = true;
+                        const id = d.nome.replace(/[^a-zA-Z0-9]/g, '_');
+                        toggleDoencaDetalhes(cb, id);
+                        setTimeout(() => {
+                            const f = (s, v) => { const el = document.getElementById(s); if (el) el.value = v || ''; };
+                            f(`dataDoenca_${id}`, d.dataDiagnostico);
+                            f(`tratouDoenca_${id}`, d.tratou ? 'sim' : 'nao');
+                            if (d.tratou) {
+                                const sel = document.getElementById(`tratouDoenca_${id}`);
+                                if (sel) toggleTratamentoCampos(sel, id);
+                                f(`dataTratamento_${id}`, d.dataTratamento);
+                                f(`tipoTratamento_${id}`, d.tipoTratamento);
+                                f(`obsTratamento_${id}`, d.observacoesTratamento);
+                            }
+                        }, 100);
+                    }
+                });
+            }, 200);
+        }
+    }
+
+    if (animal.sexo === 'Macho') {
+        const set = (id, val) => { const el = document.getElementById(id); if (el) el.value = val || ''; };
+        set('formTipoMacho', animal.tipo_reprodutor || animal.tipoReprodutor);
+        set('formExameAndrologico', (animal.exame_andrologico || animal.exame_andrologico_dia || animal.exameAndrologicoDia) ? 'sim' : 'nao');
+        set('formECCMacho', animal.ecc_macho || animal.eccMacho);
+        set('formMaeMacho', animal.mae_macho || animal.maeMacho);
+        set('formPaiMacho', animal.pai_macho || animal.paiMacho);
+        set('formLaboratorio', animal.laboratorio);
+
+        const campoLab = document.getElementById('campoLaboratorio');
+        if (campoLab) campoLab.style.display = (animal.tipo_reprodutor || animal.tipoReprodutor) === 'laboratorio' ? 'block' : 'none';
+
+        const descendentes = animal.descendentes || [];
+        const qtdDesc = descendentes.length || animal.qtd_descendentes || animal.qtdDescendentes || 0;
+        const temDescSelect = document.getElementById('formTemDescendentes');
+        if (temDescSelect) { temDescSelect.value = qtdDesc > 0 ? 'sim' : 'nao'; if (typeof toggleCamposDescendentes === 'function') toggleCamposDescendentes(); }
+        set('formQtdDescendentes', qtdDesc);
+
+        if (qtdDesc > 0) {
+            setTimeout(() => {
+                gerarCamposDescendentes();
+                setTimeout(() => {
+                    descendentes.forEach(d => {
+                        const f = (s, v) => { const el = document.getElementById(s); if (el) el.value = v || ''; };
+                        f(`descendenteNome_${d.numero}`, d.nome);
+                        f(`descendenteSexo_${d.numero}`, d.sexo);
+                        f(`descendenteMae_${d.numero}`, d.mae);
+                        f(`descendenteData_${d.numero}`, d.dataNascimento);
+                        f(`descendentePeso_${d.numero}`, d.pesoNascer);
+                        f(`descendenteObs_${d.numero}`, d.observacoes);
+                    });
+                }, 100);
+            }, 100);
+        }
+
+        // Pré-selecionar doenças do macho
+        const doencas = animal.doencas || [];
+        if (doencas.length > 0) {
+            setTimeout(() => {
+                doencas.forEach(d => {
+                    const cb = document.querySelector(`.doenca-checkbox-macho[value="${d.nome.replace(/"/g, '&quot;')}"]`);
+                    if (cb) {
+                        cb.checked = true;
+                        const id = 'macho_' + d.nome.replace(/[^a-zA-Z0-9]/g, '_');
+                        toggleDoencaDetalhesMacho(cb, id);
+                        setTimeout(() => {
+                            const f = (s, v) => { const el = document.getElementById(s); if (el) el.value = v || ''; };
+                            f(`dataDoencaMacho_${id}`, d.dataDiagnostico);
+                            f(`tratouDoencaMacho_${id}`, d.tratou ? 'sim' : 'nao');
+                            if (d.tratou) {
+                                const sel = document.getElementById(`tratouDoencaMacho_${id}`);
+                                if (sel) toggleTratamentoCamposMacho(sel, id);
+                                f(`dataTratamentoMacho_${id}`, d.dataTratamento);
+                                f(`tipoTratamentoMacho_${id}`, d.tipoTratamento);
+                                f(`obsTratamentoMacho_${id}`, d.observacoesTratamento);
+                            }
+                        }, 100);
+                    }
+                });
+            }, 200);
+        }
+    }
+
+    window.animalEmEdicao = animal.id;
+    if (modalForm) modalForm.style.display = 'flex';
 };
 
-// Função para obter raças da espécie selecionada
-function getRacasDaEspecie(especie) {
-    return racasPreDefinidas[especie] || [];
+// ============================================
+// FECHAR MODAL
+// ============================================
+function fecharModalCadastro() {
+    document.getElementById('modalForm').style.display = 'none';
+    ['formCodigo','formNome','formEspecie','formRaca','formSexo'].forEach(id => {
+        const el = document.getElementById(id); if (el) el.value = '';
+    });
+    const cf = document.getElementById('camposFemea'); if (cf) cf.style.display = 'none';
+    const cm = document.getElementById('camposMacho'); if (cm) cm.style.display = 'none';
+    if (typeof limparRacaSelecionada === 'function') limparRacaSelecionada();
 }
 
-// Função para filtrar raças baseado no texto digitado
-function filtrarListaRacas(texto) {
+function limparFormulario() {
+    const inputs = document.getElementById('modalForm').querySelectorAll('input, select, textarea');
+    inputs.forEach(input => input.value = '');
+}
+
+// ============================================
+// CAMPOS DINÂMICOS
+// ============================================
+
+function toggleCamposPorSexo() {
+    const sexo = document.getElementById('formSexo').value;
+    const camposFemea = document.getElementById('camposFemea');
+    const camposMacho = document.getElementById('camposMacho');
     const especie = document.getElementById('formEspecie').value;
-    const dropdown = document.getElementById('listaRacasResultados');
-    const buscaInput = document.getElementById('buscaRaca');
-    
-    if (!especie) {
-        dropdown.style.display = 'none';
-        if (buscaInput) {
-            buscaInput.placeholder = 'Selecione a espécie primeiro';
-            buscaInput.disabled = true;
-        }
-        return;
-    }
-    
-    if (buscaInput) buscaInput.disabled = false;
-    const todasRacas = getRacasDaEspecie(especie);
-    const textoLower = texto.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '');
-    
-    let racasFiltradas;
-    
-    if (texto === '') {
-        racasFiltradas = todasRacas;
+    const sexoNorm = sexo ? sexo.trim().toLowerCase() : '';
+
+    if (sexoNorm === 'fêmea' || sexoNorm === 'femea') {
+        if (camposFemea) camposFemea.style.display = 'block';
+        if (camposMacho) camposMacho.style.display = 'none';
+        if (especie) atualizarListaDoencas();
+    } else if (sexoNorm === 'macho') {
+        if (camposFemea) camposFemea.style.display = 'none';
+        if (camposMacho) camposMacho.style.display = 'block';
+        if (especie) atualizarListaDoencasMacho();
     } else {
-        racasFiltradas = todasRacas.filter(raca => {
-            const racaLower = raca.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '');
-            return racaLower.includes(textoLower);
-        });
-    }
-    
-    if (racasFiltradas.length === 0) {
-        dropdown.innerHTML = `
-            <div class="raca-item" style="color: #dc3545; cursor: default;">
-                <i class="fa-solid fa-circle-exclamation"></i> 
-                Nenhuma raça encontrada com "${texto}"
-            </div>
-        `;
-        dropdown.style.display = 'block';
-        return;
-    }
-    
-    dropdown.innerHTML = racasFiltradas.map(raca => `
-        <div class="raca-item" onclick="selecionarRaca('${raca.replace(/'/g, "\\'")}')">
-            <i class="fa-solid fa-paw" style="color: #0d8a4f; margin-right: 8px;"></i>
-            ${raca}
-        </div>
-    `).join('');
-    
-    dropdown.style.display = 'block';
-}
-
-// Função para mostrar todas as raças quando clicar no campo
-function mostrarTodasRacas() {
-    const especie = document.getElementById('formEspecie').value;
-    const buscaInput = document.getElementById('buscaRaca');
-    if (especie && buscaInput) {
-        filtrarListaRacas(buscaInput.value);
+        if (camposFemea) camposFemea.style.display = 'none';
+        if (camposMacho) camposMacho.style.display = 'none';
     }
 }
 
-// Função para selecionar uma raça
-function selecionarRaca(raca) {
-    const hiddenInput = document.getElementById('formRaca');
-    const buscaInput = document.getElementById('buscaRaca');
-    const dropdown = document.getElementById('listaRacasResultados');
-    
-    if (hiddenInput) hiddenInput.value = raca;
-    if (buscaInput) buscaInput.value = raca;
-    if (dropdown) dropdown.style.display = 'none';
-    
-    mostrarBadgeRacaSelecionada(raca);
-}
-
-// Mostrar badge visual da raça selecionada
-function mostrarBadgeRacaSelecionada(raca) {
-    let badgeDiv = document.getElementById('racaSelecionadaBadge');
-    if (!badgeDiv) {
-        badgeDiv = document.createElement('div');
-        badgeDiv.id = 'racaSelecionadaBadge';
-        badgeDiv.className = 'raca-selecionada-badge';
-        const container = document.querySelector('.raca-busca-container');
-        if (container && container.parentNode) {
-            container.parentNode.insertBefore(badgeDiv, container.nextSibling);
-        }
-    }
-    badgeDiv.innerHTML = `<i class="fa-solid fa-check-circle"></i> Raça selecionada: ${raca}`;
-    badgeDiv.style.display = 'block';
-}
-
-// Limpar seleção de raça
-function limparRacaSelecionada() {
-    const hiddenInput = document.getElementById('formRaca');
-    const buscaInput = document.getElementById('buscaRaca');
-    const badge = document.getElementById('racaSelecionadaBadge');
-    
-    if (hiddenInput) hiddenInput.value = '';
-    if (buscaInput) buscaInput.value = '';
-    if (badge) badge.style.display = 'none';
-}
-
-// Atualizar raças quando a espécie mudar
-function atualizarRacasPorEspecie() {
-    const especie = document.getElementById('formEspecie').value;
-    const buscaInput = document.getElementById('buscaRaca');
-    const dropdown = document.getElementById('listaRacasResultados');
-    
-    limparRacaSelecionada();
-    
-    if (!especie) {
-        if (buscaInput) {
-            buscaInput.placeholder = 'Selecione a espécie primeiro';
-            buscaInput.disabled = true;
-            buscaInput.value = '';
-        }
-        if (dropdown) dropdown.style.display = 'none';
+function toggleCamposAborto() {
+    const temAborto = document.getElementById('formHistoricoAborto').value;
+    const subCampos = document.getElementById('subCamposAborto');
+    if (temAborto === 'sim') {
+        subCampos.style.display = 'block';
+        gerarCamposAborto();
     } else {
-        if (buscaInput) {
-            buscaInput.placeholder = 'Digite para buscar raça...';
-            buscaInput.disabled = false;
-            buscaInput.value = '';
-            buscaInput.focus();
-        }
-        filtrarListaRacas('');
+        subCampos.style.display = 'none';
+        document.getElementById('formQtdAbortos').value = 0;
+        document.getElementById('listaAbortosContainer').innerHTML = '';
     }
 }
 
-// Fechar dropdown ao clicar fora
-document.addEventListener('click', function(e) {
-    const container = document.querySelector('.raca-busca-container');
-    const dropdown = document.getElementById('listaRacasResultados');
-    if (container && !container.contains(e.target) && dropdown) {
-        dropdown.style.display = 'none';
+function gerarCamposAborto() {
+    const qtd = parseInt(document.getElementById('formQtdAbortos').value) || 0;
+    const container = document.getElementById('listaAbortosContainer');
+    if (qtd === 0) { container.innerHTML = '<p style="color:#64748b;font-size:13px;">Nenhum aborto registrado</p>'; return; }
+
+    let html = '<div style="margin-top:15px;"><label style="font-weight:600;margin-bottom:10px;display:block;">Detalhes de cada aborto:</label>';
+    for (let i = 1; i <= qtd; i++) {
+        html += `
+            <div class="sub-block" style="margin-bottom:15px;border-left-color:#dc3545;">
+                <h4 style="color:#dc3545;">Aborto #${i}</h4>
+                <div class="form-grid">
+                    <div class="input-group"><label>Data do Aborto</label><input type="date" id="abortoData_${i}"></div>
+                    <div class="input-group"><label>Reprodutor / Causa Suspeita</label><input type="text" id="abortoMacho_${i}" placeholder="Ex: Neosporose / Nome do touro" list="listaReprodutores"></div>
+                </div>
+                <div class="form-grid">
+                    <div class="input-group"><label>Dias de Gestação</label><input type="number" id="abortoDias_${i}" min="0" max="300" placeholder="Ex: 120"></div>
+                    <div class="input-group"><label>Observações</label><input type="text" id="abortoObs_${i}" placeholder="Detalhes adicionais..."></div>
+                </div>
+            </div>`;
     }
-});
-// Função para mostrar/esconder campo de nascimentos baseado na categoria
+    html += '</div>';
+    container.innerHTML = html;
+}
+
+function gerarCamposNascimentos() {
+    const qtd = parseInt(document.getElementById('formQtdNascimentos').value) || 0;
+    const container = document.getElementById('listaNascimentosContainer');
+    if (qtd === 0) { container.innerHTML = '<p style="color:#64748b;font-size:13px;">Nenhuma cria registrada</p>'; return; }
+
+    let html = '<div style="margin-top:15px;"><label style="font-weight:600;">Detalhes de cada cria:</label>';
+    for (let i = 1; i <= qtd; i++) {
+        html += `
+            <div class="sub-block" style="margin-bottom:15px;">
+                <h4>🐄 Cria #${i}</h4>
+                <div class="form-grid">
+                    <div class="input-group"><label>Data do Nascimento</label><input type="date" id="nascimentoData_${i}" onchange="calcularIdadeCria(${i})"><div id="idadeCria_${i}" class="help-text" style="color:#0d8a4f;"></div></div>
+                    <div class="input-group"><label>Gênero da Cria</label><select id="nascimentoSexo_${i}"><option value="">Selecione...</option><option>Macho</option><option>Fêmea</option></select></div>
+                </div>
+                <div class="form-grid">
+                    <div class="input-group"><label>Nome do Reprodutor (Pai)</label><input type="text" id="nascimentoPai_${i}" placeholder="Código/Nome" list="listaReprodutores"></div>
+                    <div class="input-group"><label>Peso ao Nascer (kg)</label><input type="number" id="nascimentoPeso_${i}" step="0.1" placeholder="0.0"></div>
+                </div>
+                <div class="input-group"><label>Observações</label><input type="text" id="nascimentoObs_${i}" placeholder="Ex: Parto normal, gêmeos..."></div>
+            </div>`;
+    }
+    html += '</div>';
+    container.innerHTML = html;
+}
+
+function gerarCamposDescendentes() {
+    const qtd = parseInt(document.getElementById('formQtdDescendentes').value) || 0;
+    const container = document.getElementById('listaDescendentesContainer');
+    if (qtd === 0) { container.innerHTML = '<p style="color:#64748b;font-size:13px;">Nenhum descendente registrado</p>'; return; }
+
+    let html = '<div style="margin-top:15px;"><label style="font-weight:600;margin-bottom:10px;display:block;">📋 Informações dos Descendentes:</label>';
+    for (let i = 1; i <= qtd; i++) {
+        html += `
+            <div class="sub-block" style="margin-bottom:15px;border-left:3px solid #0d8a4f;">
+                <h4>🐄 Descendente #${i}</h4>
+                <div class="form-grid">
+                    <div class="input-group"><label>Nome/ID do Descendente</label><input type="text" id="descendenteNome_${i}" placeholder="Ex: BR2024-01"></div>
+                    <div class="input-group"><label>Sexo</label><select id="descendenteSexo_${i}"><option value="">Selecione...</option><option>Macho</option><option>Fêmea</option></select></div>
+                </div>
+                <div class="form-grid">
+                    <div class="input-group"><label>🐄 Nome da Mãe</label><input type="text" id="descendenteMae_${i}" placeholder="Código/Nome da mãe" list="listaMatrizes"></div>
+                    <div class="input-group"><label>Data de Nascimento</label><input type="date" id="descendenteData_${i}"></div>
+                </div>
+                <div class="form-grid">
+                    <div class="input-group"><label>Peso ao Nascer (kg)</label><input type="number" id="descendentePeso_${i}" step="0.1" placeholder="0.0"></div>
+                    <div class="input-group"><label>Observações</label><input type="text" id="descendenteObs_${i}" placeholder="Ex: Gêmeos..."></div>
+                </div>
+            </div>`;
+    }
+    html += '</div>';
+    container.innerHTML = html;
+}
+
+function toggleCamposCrias() {
+    const temCrias = document.getElementById('formTemCrias').value;
+    const camposQtd = document.getElementById('camposQuantidadeCrias');
+    if (temCrias === 'sim') {
+        camposQtd.style.display = 'block';
+        const qtd = document.getElementById('formQtdNascimentos').value;
+        if (qtd && parseInt(qtd) > 0) gerarCamposNascimentos();
+    } else {
+        camposQtd.style.display = 'none';
+        document.getElementById('formQtdNascimentos').value = 0;
+        document.getElementById('listaNascimentosContainer').innerHTML = '';
+    }
+}
+
+function toggleCamposDescendentes() {
+    const temDesc = document.getElementById('formTemDescendentes').value;
+    const camposQtd = document.getElementById('camposQuantidadeDescendentes');
+    if (temDesc === 'sim') {
+        camposQtd.style.display = 'block';
+        const qtd = document.getElementById('formQtdDescendentes').value;
+        if (qtd && parseInt(qtd) > 0) gerarCamposDescendentes();
+    } else {
+        camposQtd.style.display = 'none';
+        document.getElementById('formQtdDescendentes').value = 0;
+        document.getElementById('listaDescendentesContainer').innerHTML = '';
+    }
+}
+
+function toggleCamposReprodutor() {
+    const tipo = document.getElementById('formTipoMacho').value;
+    const campo = document.getElementById('campoLaboratorio');
+    if (campo) {
+        campo.style.display = tipo === 'laboratorio' ? 'block' : 'none';
+        if (tipo !== 'laboratorio') document.getElementById('formLaboratorio').value = '';
+    }
+}
+
 function toggleCamposNascimentosPorCategoria() {
     const categoria = document.getElementById('formCategoriaFemea').value;
     const subCampos = document.getElementById('subCamposNascimentos');
-    
+    if (!subCampos) return;
     if (categoria === 'primipara' || categoria === 'multipara') {
         subCampos.style.display = 'block';
         gerarCamposNascimentos();
@@ -1182,177 +1129,326 @@ function toggleCamposNascimentosPorCategoria() {
     }
 }
 
-// Função para gerar campos de nascimento
-function gerarCamposNascimentos() {
-    const qtd = parseInt(document.getElementById('formQtdNascimentos').value) || 0;
-    const container = document.getElementById('listaNascimentosContainer');
-    
-    if (qtd === 0) {
-        container.innerHTML = '<p style="color: #64748b; font-size: 13px;">Nenhuma cria registrada</p>';
-        return;
-    }
-    
-    let html = '<div style="margin-top: 15px;"><label style="font-weight: 600;">Detalhes de cada cria:</label>';
-    
-    for (let i = 1; i <= qtd; i++) {
-        html += `
-            <div class="sub-block" style="margin-bottom: 15px;">
-                <h4>🐄 Cria #${i}</h4>
+// ============================================
+// DOENÇAS
+// ============================================
+function atualizarListaDoencas() {
+    const especie = document.getElementById('formEspecie').value;
+    const container = document.getElementById('listaDoencasContainer');
+    if (!container) return;
+    if (!especie) { container.innerHTML = '<p style="color:#64748b;font-size:13px;">Selecione espécie e sexo primeiro</p>'; return; }
+
+    const doencas = bancoDoencas[especie]?.['Fêmea'] || [];
+    if (doencas.length === 0) { container.innerHTML = '<p style="color:#64748b;font-size:13px;">Nenhuma doença cadastrada</p>'; return; }
+
+    let html = '<div class="section-title" style="margin-top:10px;">Doenças Registradas</div><div class="form-grid" style="flex-direction:column;gap:15px;">';
+    doencas.forEach(doenca => {
+        const id = doenca.replace(/[^a-zA-Z0-9]/g, '_');
+        html += `<div class="doenca-card" style="background:#f8fafc;border-radius:12px;padding:15px;border:1px solid #e2e8f0;">
+            <label style="display:flex;align-items:center;gap:10px;font-weight:600;cursor:pointer;margin-bottom:10px;">
+                <input type="checkbox" value="${doenca.replace(/"/g, '&quot;')}" class="doenca-checkbox" onchange="toggleDoencaDetalhes(this,'${id}')">
+                ${doenca}
+            </label>
+            <div id="detalhes_${id}" style="display:none;margin-top:15px;padding-top:15px;border-top:1px solid #e2e8f0;">
                 <div class="form-grid">
-                    <div class="input-group">
-                        <label>Data do Nascimento</label>
-                        <input type="date" id="nascimentoData_${i}" class="nascimento-data" onchange="calcularIdadeCria(${i})">
-                        <div id="idadeCria_${i}" class="help-text" style="color: #0d8a4f;"></div>
-                    </div>
-                    <div class="input-group">
-                        <label>Gênero da Cria</label>
-                        <select id="nascimentoSexo_${i}" class="nascimento-sexo">
-                            <option value="">Selecione...</option>
-                            <option value="Macho">Macho</option>
-                            <option value="Fêmea">Fêmea</option>
-                        </select>
-                    </div>
+                    <div class="input-group"><label>Data do Diagnóstico</label><input type="date" id="dataDoenca_${id}" style="width:100%;padding:10px;border-radius:8px;border:1px solid #e2e8f0;"></div>
+                    <div class="input-group"><label>Já tratou?</label><select id="tratouDoenca_${id}" onchange="toggleTratamentoCampos(this,'${id}')" style="width:100%;padding:10px;border-radius:8px;border:1px solid #e2e8f0;"><option value="">Selecione...</option><option value="sim">Sim</option><option value="nao">Não</option></select></div>
                 </div>
-                <div class="form-grid">
-                    <div class="input-group">
-                        <label>Nome do Reprodutor (Pai)</label>
-                        <input type="text" id="nascimentoPai_${i}" class="nascimento-pai" 
-                               placeholder="Código/Nome do touro/carneiro/bode" list="listaReprodutores">
+                <div id="tratamentoCampos_${id}" style="display:none;">
+                    <div class="form-grid">
+                        <div class="input-group"><label>Data do Tratamento</label><input type="date" id="dataTratamento_${id}" style="width:100%;padding:10px;border-radius:8px;border:1px solid #e2e8f0;"></div>
+                        <div class="input-group"><label>Tipo de Tratamento</label><input type="text" id="tipoTratamento_${id}" placeholder="Ex: Antibiótico..." style="width:100%;padding:10px;border-radius:8px;border:1px solid #e2e8f0;"></div>
                     </div>
-                    <div class="input-group">
-                        <label>Peso ao Nascer (kg)</label>
-                        <input type="number" id="nascimentoPeso_${i}" class="nascimento-peso" step="0.1" placeholder="0.0">
-                    </div>
-                </div>
-                <div class="input-group">
-                    <label>Observações</label>
-                    <input type="text" id="nascimentoObs_${i}" class="nascimento-obs" placeholder="Ex: Parto normal, gêmeos, natimorto...">
+                    <div class="input-group"><label>Observações</label><textarea id="obsTratamento_${id}" rows="2" style="width:100%;padding:10px;border-radius:8px;border:1px solid #e2e8f0;"></textarea></div>
                 </div>
             </div>
-        `;
-    }
-    
+        </div>`;
+    });
+    html += '</div>';
     container.innerHTML = html;
 }
-function toggleCamposPorSexo() {
-    const sexo = document.getElementById('formSexo').value;
-    const camposFemea = document.getElementById('camposFemea');
-    const camposMacho = document.getElementById('camposMacho');
-    
-    if (sexo === 'Fêmea') {
-        camposFemea.style.display = 'block';
-        camposMacho.style.display = 'none';
-    } else if (sexo === 'Macho') {
-        camposFemea.style.display = 'none';
-        camposMacho.style.display = 'block';
-    } else {
-        camposFemea.style.display = 'none';
-        camposMacho.style.display = 'none';
-    }
-}
-// Função para calcular idade da cria em tempo real
-function calcularIdadeCria(numero) {
-    const dataInput = document.getElementById(`nascimentoData_${numero}`);
-    const idadeDiv = document.getElementById(`idadeCria_${numero}`);
-    
-    if (!dataInput || !dataInput.value) {
-        idadeDiv.innerHTML = '';
-        return;
-    }
-    
-    const dataNasc = new Date(dataInput.value);
-    const hoje = new Date();
-    const diffMeses = (hoje.getFullYear() - dataNasc.getFullYear()) * 12 + (hoje.getMonth() - dataNasc.getMonth());
-    
-    if (diffMeses < 0) {
-        idadeDiv.innerHTML = '⚠️ Data futura';
-    } else if (diffMeses < 1) {
-        const diffDias = Math.floor((hoje - dataNasc) / (1000 * 60 * 60 * 24));
-        idadeDiv.innerHTML = `📅 Idade atual: ${diffDias} dias`;
-    } else if (diffMeses < 12) {
-        idadeDiv.innerHTML = `📅 Idade atual: ${diffMeses} meses`;
-    } else {
-        const anos = Math.floor(diffMeses / 12);
-        const meses = diffMeses % 12;
-        idadeDiv.innerHTML = meses > 0 ? `📅 Idade atual: ${anos} anos e ${meses} meses` : `📅 Idade atual: ${anos} anos`;
-    }
-}
-    // Event Listeners
-    document.addEventListener('DOMContentLoaded', () => {
-    renderizarTabela();
-    atualizarDatalists();
-    document.getElementById('formQtdDescendentes').addEventListener('input', gerarCamposDescendentes);
-    // Evento para espécie (atualiza finalidade, raças e doenças)
-    document.getElementById('formEspecie').addEventListener('change', function() {
-    atualizarFinalidadePorEspecie();
-    atualizarRacasPorEspecie();
-    // Adicione ESTES event listeners dentro do seu DOMContentLoaded existente
 
-document.getElementById('formEspecie').addEventListener('change', function() {
-    const sexo = document.getElementById('formSexo').value;
-    if (sexo === 'Fêmea') {
-        atualizarListaDoencas();
-    } else if (sexo === 'Macho') {
-        atualizarListaDoencasMacho();
-    }
-});
-
-document.getElementById('formSexo').addEventListener('change', function() {
+function atualizarListaDoencasMacho() {
     const especie = document.getElementById('formEspecie').value;
-    if (especie) {
-        if (this.value === 'Fêmea') {
-            atualizarListaDoencas();
-        } else if (this.value === 'Macho') {
-            atualizarListaDoencasMacho();
-        }
-    }
-});
-    
-    // Atualizar doenças baseado na espécie e sexo atual
-    const sexo = document.getElementById('formSexo').value;
-    if (sexo === 'Fêmea') {
-        atualizarListaDoencas();
-    } else if (sexo === 'Macho') {
-        atualizarListaDoencasMacho();
-    }
-});
-    
-    // Evento para sexo (mostra campos específicos e atualiza doenças)
-    document.getElementById('formSexo').addEventListener('change', function() {
-        toggleCamposPorSexo();
-        
-        // Atualizar doenças quando mudar o sexo
-        const especie = document.getElementById('formEspecie').value;
-        if (especie) {
-            if (this.value === 'Fêmea') {
-                atualizarListaDoencas();
-            } else if (this.value === 'Macho') {
-                atualizarListaDoencasMacho();
-            }
+    const container = document.getElementById('listaDoencasContainerMacho');
+    if (!container) return;
+    if (!especie) { container.innerHTML = '<p style="color:#64748b;font-size:13px;">Selecione a espécie primeiro</p>'; return; }
+
+    const doencas = bancoDoencas[especie]?.['Macho'] || [];
+    if (doencas.length === 0) { container.innerHTML = '<p style="color:#64748b;font-size:13px;">Nenhuma doença cadastrada</p>'; return; }
+
+    let html = '<div class="section-title" style="margin-top:10px;">Doenças Registradas (Macho)</div><div class="form-grid" style="flex-direction:column;gap:15px;">';
+    doencas.forEach(doenca => {
+        const id = 'macho_' + doenca.replace(/[^a-zA-Z0-9]/g, '_');
+        html += `<div class="doenca-card" style="background:#f8fafc;border-radius:12px;padding:15px;border:1px solid #e2e8f0;">
+            <label style="display:flex;align-items:center;gap:10px;font-weight:600;cursor:pointer;margin-bottom:10px;">
+                <input type="checkbox" value="${doenca.replace(/"/g, '&quot;')}" class="doenca-checkbox-macho" onchange="toggleDoencaDetalhesMacho(this,'${id}')">
+                ${doenca}
+            </label>
+            <div id="detalhes_${id}" style="display:none;margin-top:15px;padding-top:15px;border-top:1px solid #e2e8f0;">
+                <div class="form-grid">
+                    <div class="input-group"><label>Data do Diagnóstico</label><input type="date" id="dataDoencaMacho_${id}" style="width:100%;padding:10px;border-radius:8px;border:1px solid #e2e8f0;"></div>
+                    <div class="input-group"><label>Já tratou?</label><select id="tratouDoencaMacho_${id}" onchange="toggleTratamentoCamposMacho(this,'${id}')" style="width:100%;padding:10px;border-radius:8px;border:1px solid #e2e8f0;"><option value="">Selecione...</option><option value="sim">Sim</option><option value="nao">Não</option></select></div>
+                </div>
+                <div id="tratamentoCamposMacho_${id}" style="display:none;">
+                    <div class="form-grid">
+                        <div class="input-group"><label>Data do Tratamento</label><input type="date" id="dataTratamentoMacho_${id}" style="width:100%;padding:10px;border-radius:8px;border:1px solid #e2e8f0;"></div>
+                        <div class="input-group"><label>Tipo de Tratamento</label><input type="text" id="tipoTratamentoMacho_${id}" placeholder="Ex: Antibiótico..." style="width:100%;padding:10px;border-radius:8px;border:1px solid #e2e8f0;"></div>
+                    </div>
+                    <div class="input-group"><label>Observações</label><textarea id="obsTratamentoMacho_${id}" rows="2" style="width:100%;padding:10px;border-radius:8px;border:1px solid #e2e8f0;"></textarea></div>
+                </div>
+            </div>
+        </div>`;
+    });
+    html += '</div>';
+    container.innerHTML = html;
+}
+
+function toggleDoencaDetalhes(checkbox, id) {
+    const el = document.getElementById(`detalhes_${id}`);
+    if (el) el.style.display = checkbox.checked ? 'block' : 'none';
+}
+function toggleDoencaDetalhesMacho(checkbox, id) {
+    const el = document.getElementById(`detalhes_${id}`);
+    if (el) el.style.display = checkbox.checked ? 'block' : 'none';
+}
+function toggleTratamentoCampos(select, id) {
+    const el = document.getElementById(`tratamentoCampos_${id}`);
+    if (el) el.style.display = select.value === 'sim' ? 'block' : 'none';
+}
+function toggleTratamentoCamposMacho(select, id) {
+    const el = document.getElementById(`tratamentoCamposMacho_${id}`);
+    if (el) el.style.display = select.value === 'sim' ? 'block' : 'none';
+}
+
+function coletarDoencas() {
+    const doencas = [];
+    const especie = document.getElementById('formEspecie').value;
+    if (!especie) return [];
+    (bancoDoencas[especie]?.['Fêmea'] || []).forEach(doenca => {
+        const id = doenca.replace(/[^a-zA-Z0-9]/g, '_');
+        const cb = document.querySelector(`.doenca-checkbox[value="${doenca.replace(/"/g, '&quot;')}"]`);
+        if (cb && cb.checked) {
+            doencas.push({
+                nome: doenca,
+                dataDiagnostico: document.getElementById(`dataDoenca_${id}`)?.value || null,
+                tratou: document.getElementById(`tratouDoenca_${id}`)?.value === 'sim',
+                dataTratamento: document.getElementById(`dataTratamento_${id}`)?.value || null,
+                tipoTratamento: document.getElementById(`tipoTratamento_${id}`)?.value || null,
+                observacoesTratamento: document.getElementById(`obsTratamento_${id}`)?.value || null
+            });
         }
     });
-    
-    // Evento para categoria da fêmea
-    document.getElementById('formCategoriaFemea').addEventListener('change', toggleCamposNascimentosPorCategoria);
-    
-    // Evento para pai do macho (buscar crias)
-    document.getElementById('formPaiMacho')?.addEventListener('input', buscarCriasPorPai);
-    
-    // Evento para quantidade de crias da fêmea
-    document.getElementById('formQtdNascimentos').addEventListener('input', gerarCamposNascimentos);
-    
-    // Evento para histórico de aborto
-    document.getElementById('formHistoricoAborto').addEventListener('change', toggleCamposAborto);
-    document.getElementById('formQtdAbortos').addEventListener('input', gerarCamposAborto);
-    
+    return doencas;
+}
+
+function coletarDoencasMacho() {
+    const doencas = [];
+    const especie = document.getElementById('formEspecie').value;
+    if (!especie) return [];
+    (bancoDoencas[especie]?.['Macho'] || []).forEach(doenca => {
+        const id = 'macho_' + doenca.replace(/[^a-zA-Z0-9]/g, '_');
+        const cb = document.querySelector(`.doenca-checkbox-macho[value="${doenca.replace(/"/g, '&quot;')}"]`);
+        if (cb && cb.checked) {
+            doencas.push({
+                nome: doenca,
+                dataDiagnostico: document.getElementById(`dataDoencaMacho_${id}`)?.value || null,
+                tratou: document.getElementById(`tratouDoencaMacho_${id}`)?.value === 'sim',
+                dataTratamento: document.getElementById(`dataTratamentoMacho_${id}`)?.value || null,
+                tipoTratamento: document.getElementById(`tipoTratamentoMacho_${id}`)?.value || null,
+                observacoesTratamento: document.getElementById(`obsTratamentoMacho_${id}`)?.value || null
+            });
+        }
+    });
+    return doencas;
+}
+
+// ============================================
+// SISTEMA DE RAÇAS
+// ============================================
+const racasPreDefinidas = {
+    'Bovino': ['Nelore','Angus','Hereford','Gir','Brahman','Guzerá','Tabapuã','Senepol','Caracu','Holandês','Jersey','Girolando','Sindi','Bonsmara','Brangus','Braford','Canchim','Santa Gertrudes','Limousin','Charolês','Devon','Red Angus','Wagyu','Guerande','Normanda','Pardo Suíço','Lavínia'],
+    'Ovino': ['Dorper','Santa Inês','Suffolk','Hampshire Down','Morada Nova','Bergamácia','Crioulo','Texel','Somalis Brasileira','Ile de France','Rabo Largo','Lacaune','Katahdin','White Dorper','Corriedale','Merino','Pantaneiro'],
+    'Caprino': ['Boer','Saanen','Anglo-Nubiana','Parda Alpina','Toggenburg','Moxotó','Canindé','Marota','Repartida','Azul','Gurguéia','Bhuj','Kalahari Red']
+};
+
+function filtrarListaRacas(texto) {
+    const especie = document.getElementById('formEspecie').value;
+    const dropdown = document.getElementById('listaRacasResultados');
+    const buscaInput = document.getElementById('buscaRaca');
+    if (!especie) { if (dropdown) dropdown.style.display = 'none'; if (buscaInput) { buscaInput.placeholder = 'Selecione a espécie primeiro'; buscaInput.disabled = true; } return; }
+    if (buscaInput) buscaInput.disabled = false;
+    const todas = racasPreDefinidas[especie] || [];
+    const t = texto.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '');
+    const filtradas = texto === '' ? todas : todas.filter(r => r.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '').includes(t));
+    if (filtradas.length === 0) { dropdown.innerHTML = `<div class="raca-item" style="color:#dc3545;cursor:default;"><i class="fa-solid fa-circle-exclamation"></i> Nenhuma raça encontrada</div>`; dropdown.style.display = 'block'; return; }
+    dropdown.innerHTML = filtradas.map(r => `<div class="raca-item" onclick="selecionarRaca('${r.replace(/'/g, "\\'")}')"><i class="fa-solid fa-paw" style="color:#0d8a4f;margin-right:8px;"></i>${r}</div>`).join('');
+    dropdown.style.display = 'block';
+}
+
+function mostrarTodasRacas() {
+    const especie = document.getElementById('formEspecie').value;
+    const buscaInput = document.getElementById('buscaRaca');
+    if (especie && buscaInput) filtrarListaRacas(buscaInput.value);
+}
+
+function selecionarRaca(raca) {
+    const h = document.getElementById('formRaca'); if (h) h.value = raca;
+    const b = document.getElementById('buscaRaca'); if (b) b.value = raca;
+    const d = document.getElementById('listaRacasResultados'); if (d) d.style.display = 'none';
+    mostrarBadgeRacaSelecionada(raca);
+}
+
+function mostrarBadgeRacaSelecionada(raca) {
+    let badge = document.getElementById('racaSelecionadaBadge');
+    if (!badge) {
+        badge = document.createElement('div');
+        badge.id = 'racaSelecionadaBadge';
+        badge.className = 'raca-selecionada-badge';
+        const container = document.querySelector('.raca-busca-container');
+        if (container && container.parentNode) container.parentNode.insertBefore(badge, container.nextSibling);
+    }
+    badge.innerHTML = `<i class="fa-solid fa-check-circle"></i> Raça selecionada: ${raca}`;
+    badge.style.display = 'block';
+}
+
+function limparRacaSelecionada() {
+    const h = document.getElementById('formRaca'); if (h) h.value = '';
+    const b = document.getElementById('buscaRaca'); if (b) b.value = '';
+    const badge = document.getElementById('racaSelecionadaBadge'); if (badge) badge.style.display = 'none';
+}
+
+function atualizarRacasPorEspecie() {
+    const especie = document.getElementById('formEspecie').value;
+    const buscaInput = document.getElementById('buscaRaca');
+    const dropdown = document.getElementById('listaRacasResultados');
+    limparRacaSelecionada();
+    if (!especie) {
+        if (buscaInput) { buscaInput.placeholder = 'Selecione a espécie primeiro'; buscaInput.disabled = true; buscaInput.value = ''; }
+        if (dropdown) dropdown.style.display = 'none';
+    } else {
+        if (buscaInput) { buscaInput.placeholder = 'Digite para buscar raça...'; buscaInput.disabled = false; buscaInput.value = ''; buscaInput.focus(); }
+        filtrarListaRacas('');
+    }
+}
+
+function atualizarFinalidadePorEspecie() {
+    const especie = document.getElementById('formEspecie').value;
+    const select = document.getElementById('formFinalidade');
+    const finalidades = {
+        'Bovino': ['Corte','Leite','Dupla Aptidão','Melhoramento Genético'],
+        'Ovino': ['Corte','Lã','Leite','Couro','Dupla Aptidão'],
+        'Caprino': ['Corte (Carne)','Leite','Couro','Dupla Aptidão']
+    };
+    select.innerHTML = '<option value="">Selecione uma finalidade...</option>';
+    if (finalidades[especie]) {
+        finalidades[especie].forEach(f => {
+            const opt = document.createElement('option');
+            opt.value = f; opt.textContent = f;
+            select.appendChild(opt);
+        });
+    } else {
+        select.innerHTML = '<option value="">Selecione uma espécie primeiro</option>';
+    }
+}
+
+function buscarCriasPorPai() {
+    const paiNome = document.getElementById('formPaiMacho')?.value;
+    const container = document.getElementById('listaCriasMachoContainer');
+    if (!container) return;
+    if (!paiNome) { container.innerHTML = '<p style="color:#64748b;font-size:13px;">Digite o nome/código do pai para buscar suas crias</p>'; return; }
+    const crias = animais.filter(a => {
+        const p = a.pai || a.pai_macho || a.paiMacho;
+        return p && p.includes(paiNome);
+    });
+    if (crias.length > 0) {
+        let html = '<div class="sub-block"><h4>🐄 Crias/Descendentes Registrados</h4><div style="max-height:200px;overflow-y:auto;">';
+        crias.forEach(c => {
+            html += `<div style="display:flex;justify-content:space-between;align-items:center;padding:8px;border-bottom:1px solid #e2e8f0;"><div><strong>${c.codigo}</strong> - ${c.nome || 'Sem nome'}<span style="color:#64748b;font-size:12px;margin-left:10px;">${calcularIdade(c.data_nascimento||c.dataNascimento)}</span></div><span style="background:#e2e8f0;padding:2px 8px;border-radius:20px;font-size:11px;">${c.sexo}</span></div>`;
+        });
+        html += '</div></div>';
+        container.innerHTML = html;
+    } else {
+        container.innerHTML = '<p style="color:#64748b;font-size:13px;">Nenhuma cria encontrada para este pai</p>';
+    }
+}
+
+// ============================================
+// MODAIS DE MENSAGEM E CONFIRMAÇÃO
+// ============================================
+function mostrarMensagem(mensagem, tipo = 'info', titulo = '') {
+    let modal = document.getElementById('modalMensagem');
+    if (!modal) {
+        modal = document.createElement('div');
+        modal.id = 'modalMensagem';
+        modal.className = 'modal-confirmacao';
+        modal.style.display = 'none';
+        modal.innerHTML = `<div class="modal-confirmacao-content"><div class="modal-confirmacao-header" id="modalMensagemHeader"><i class="fa-solid fa-circle-info" style="font-size:24px;" id="modalMensagemIcone"></i><h3 id="modalMensagemTitulo">Atenção</h3></div><div class="modal-confirmacao-body"><p id="modalMensagemTexto">Mensagem aqui</p></div><div class="modal-confirmacao-footer" id="modalMensagemFooter"><button class="btn-confirmar-ok" id="btnOkMensagem"><i class="fa-solid fa-check"></i> OK</button></div></div>`;
+        document.body.appendChild(modal);
+    }
+    const icone = document.getElementById('modalMensagemIcone');
+    const tituloEl = document.getElementById('modalMensagemTitulo');
+    const textoEl = document.getElementById('modalMensagemTexto');
+    const header = document.getElementById('modalMensagemHeader');
+    if (tipo === 'sucesso') { icone.className = 'fa-solid fa-check-circle'; icone.style.color = '#0d8a4f'; tituloEl.textContent = titulo || 'Sucesso!'; header.className = 'modal-confirmacao-header sucesso'; }
+    else if (tipo === 'erro') { icone.className = 'fa-solid fa-circle-exclamation'; icone.style.color = '#dc3545'; tituloEl.textContent = titulo || 'Erro!'; header.className = 'modal-confirmacao-header erro'; }
+    else if (tipo === 'aviso') { icone.className = 'fa-solid fa-triangle-exclamation'; icone.style.color = '#ff9800'; tituloEl.textContent = titulo || 'Atenção'; header.className = 'modal-confirmacao-header aviso'; }
+    else { icone.className = 'fa-solid fa-circle-info'; icone.style.color = '#0d8a4f'; tituloEl.textContent = titulo || 'Informação'; header.className = 'modal-confirmacao-header'; }
+    textoEl.textContent = mensagem;
+    modal.style.display = 'flex';
+    const btnOk = document.getElementById('btnOkMensagem');
+    const close = () => { modal.style.display = 'none'; btnOk.removeEventListener('click', close); };
+    btnOk.addEventListener('click', close);
+    modal.addEventListener('click', e => { if (e.target === modal) modal.style.display = 'none'; });
+}
+
+function mostrarConfirmacao(mensagem, onConfirm, onCancel) {
+    let modal = document.getElementById('modalConfirmacao');
+    if (!modal) {
+        modal = document.createElement('div');
+        modal.id = 'modalConfirmacao';
+        modal.className = 'modal-confirmacao';
+        modal.style.display = 'none';
+        modal.innerHTML = `<div class="modal-confirmacao-content"><div class="modal-confirmacao-header"><i class="fa-solid fa-triangle-exclamation" style="color:#dc3545;font-size:24px;"></i><h3>Confirmar Exclusão</h3></div><div class="modal-confirmacao-body"><p id="confirmacaoMensagem">Tem certeza?</p><p style="color:#64748b;font-size:14px;margin-top:8px;">Esta ação não pode ser desfeita!</p></div><div class="modal-confirmacao-footer"><button class="btn-confirmar-cancelar" id="btnCancelarExclusao"><i class="fa-solid fa-times"></i> Cancelar</button><button class="btn-confirmar-excluir" id="btnConfirmarExclusao"><i class="fa-solid fa-trash"></i> Sim, Excluir</button></div></div>`;
+        document.body.appendChild(modal);
+    }
+    document.getElementById('confirmacaoMensagem').textContent = mensagem;
+    modal.style.display = 'flex';
+    const btnC = document.getElementById('btnConfirmarExclusao').cloneNode(true);
+    const btnX = document.getElementById('btnCancelarExclusao').cloneNode(true);
+    document.getElementById('btnConfirmarExclusao').replaceWith(btnC);
+    document.getElementById('btnCancelarExclusao').replaceWith(btnX);
+    btnC.addEventListener('click', () => { modal.style.display = 'none'; if (onConfirm) onConfirm(); });
+    btnX.addEventListener('click', () => { modal.style.display = 'none'; if (onCancel) onCancel(); });
+    modal.addEventListener('click', e => { if (e.target === modal) { modal.style.display = 'none'; if (onCancel) onCancel(); } });
+}
+
+// ============================================
+// INICIALIZAÇÃO DO DOM
+// ============================================
+document.addEventListener('DOMContentLoaded', () => {
+    // Carregar animais do Supabase ao iniciar
+    carregarAnimais();
+
+    // Fechar dropdown de raça ao clicar fora
+    document.addEventListener('click', function(e) {
+        const container = document.querySelector('.raca-busca-container');
+        const dropdown = document.getElementById('listaRacasResultados');
+        if (container && !container.contains(e.target) && dropdown) dropdown.style.display = 'none';
+    });
+
     // Botão novo animal
     document.getElementById('btnNovoAnimal').addEventListener('click', () => {
+        window.animalEmEdicao = null;
+        limparFormulario();
+        document.getElementById('modalTitle').innerText = 'Cadastrar Novo Animal';
+        document.getElementById('btnSalvar').innerText = 'Cadastrar Animal';
         document.getElementById('modalForm').style.display = 'flex';
     });
-    
+
     // Botão salvar
     document.getElementById('btnSalvar').addEventListener('click', salvarAnimal);
-    
+
     // Fechar modais
     document.querySelectorAll('.close, .btn-close-modal').forEach(btn => {
         btn.addEventListener('click', () => {
@@ -1360,824 +1456,75 @@ document.getElementById('formSexo').addEventListener('change', function() {
             document.getElementById('modalVisualizar').style.display = 'none';
         });
     });
-    
-    // Filtro de busca
-    document.getElementById('busca').addEventListener('input', (e) => {
-        const termo = e.target.value.toLowerCase();
-        const filtrados = animais.filter(a => 
-            a.codigo.toLowerCase().includes(termo) || 
-            (a.nome && a.nome.toLowerCase().includes(termo)) ||
-            (a.lote && a.lote.toLowerCase().includes(termo))
-        );
-        renderizarTabelaFiltrada(filtrados);
+    window.addEventListener('click', e => {
+        if (e.target.className === 'modal') {
+            document.getElementById('modalForm').style.display = 'none';
+            document.getElementById('modalVisualizar').style.display = 'none';
+        }
     });
-});
-       // ============================================
-        // EVENTOS DOS MODAIS E FORMULÁRIOS
-        // ============================================
-        document.getElementById('btnNovoAnimal').addEventListener('click', () => {
-            window.animalEmEdicao = null;  // ← ESSA LINHA É IMPORTANTE
-            limparFormulario();
-            document.getElementById('modalForm').style.display = 'flex';
-        });
-        
-        document.getElementById('formQtdAbortos').addEventListener('input', gerarCamposAborto);
-        document.getElementById('formSexo').addEventListener('change', toggleCamposPorSexo);
-        document.getElementById('formHistoricoAborto').addEventListener('change', toggleCamposAborto);
-        
-        document.getElementById('btnSalvar').addEventListener('click', salvarAnimal);
-        
-        // Fechar modais
-        document.querySelectorAll('.close, .btn-close-modal').forEach(btn => {
-            btn.addEventListener('click', () => {
-                document.getElementById('modalForm').style.display = 'none';
-                document.getElementById('modalVisualizar').style.display = 'none';
-            });
-        });
-        
-        // ============================================
-        // SISTEMA DE FILTRAGEM UNIFICADO (BUSCA + DROPDOWN)
-        // ============================================
-        let especieSelecionada = 'todas';
-    
-        const dropdownBtn = document.getElementById('dropdownBtn');
-        const dropdownMenu = document.getElementById('dropdownMenu');
-        const selectedEspecieText = document.getElementById('selectedEspecie');
-    
-        // 1. Abrir e fechar o menu dinâmico de espécies
-        if (dropdownBtn && dropdownMenu) {
-            dropdownBtn.addEventListener('click', (e) => {
-                e.stopPropagation();
-                const estaAberto = dropdownMenu.style.display === 'block';
-                dropdownMenu.style.display = estaAberto ? 'none' : 'block';
-            });
-    
-            // Fechar o menu se clicar em qualquer outro lugar da tela
-            document.addEventListener('click', () => {
-                dropdownMenu.style.display = 'none';
-            });
-    
-            // 2. Escutar o clique em cada opção do menu (Todas, Bovino, etc.)
-            document.querySelectorAll('.dropdown-item').forEach(item => {
-                item.addEventListener('click', function() {
-                    // Remove destaque visual do antigo e coloca no novo
-                    document.querySelectorAll('.dropdown-item').forEach(i => i.classList.remove('selected'));
-                    this.classList.add('selected');
-    
-                    // Atualiza o texto visual que fica no botão do menu
-                    selectedEspecieText.textContent = this.textContent;
-    
-                    // Captura o valor ('todas', 'Bovino', 'Ovino'...)
-                    especieSelecionada = this.getAttribute('data-value');
-    
-                    // Executa a filtragem combinada
-                    executarFiltroGeral();
-                });
-            });
-        }
-        
-        // 3. Escutar o que o usuário digita no campo de busca
-        // Event listener da busca
-document.getElementById('busca').addEventListener('input', (e) => {
-    const termo = e.target.value.toLowerCase();
-    const filtrados = animais.filter(animal => 
-        animal.codigo.toLowerCase().includes(termo) || 
-        (animal.nome && animal.nome.toLowerCase().includes(termo)) ||
-        (animal.lote && animal.lote.toLowerCase().includes(termo)) ||
-        (animal.pelagem && animal.pelagem.toLowerCase().includes(termo)) ||
-        (animal.finalidade && animal.finalidade.toLowerCase().includes(termo)) ||
-        (animal.raca && animal.raca.toLowerCase().includes(termo))
-    );
-    renderizarTabelaFiltrada(filtrados);
-});
-    
-        // 4. Função que faz a mágica de filtrar por Texto E Espécie ao mesmo tempo
-        function executarFiltroGeral() {
-            const termoBusca = document.getElementById('busca').value.toLowerCase();
-            
-            const listaFiltrada = animais.filter(animal => {
-                // Critério A: Verifica se bate com o termo digitado
-                const codigoBate = animal.codigo.toLowerCase().includes(termoBusca);
-                const nomeBate = animal.nome && animal.nome.toLowerCase().includes(termoBusca);
-                const loteBate = animal.lote && animal.lote.toLowerCase().includes(termoBusca);
-                const textoValido = codigoBate || nomeBate || loteBate;
-    
-                // Critério B: Verifica se bate com a espécie (se for 'todas', aceita qualquer um)
-                const especieValida = (especieSelecionada === 'todas') || (animal.especie === especieSelecionada);
-    
-                // Só exibe o animal se ele passar nas duas regras juntas
-                return textoValido && especieValida;
-            });
-    
-            renderizarTabelaFiltrada(listaFiltrada);
-        }
-        
-        // ============================================
-        // RENDERIZAÇÃO DA TABELA
-        // ============================================
-        function renderizarTabelaFiltrada(lista) {
-    const tbody = document.getElementById('tabelaAnimais');
-    if (!tbody) return;
-    
-    if (lista.length === 0) {
-        tbody.innerHTML = '<tr><td colspan="9" style="text-align: center;">Nenhum animal encontrado</td></tr>';
-        return;
-    }
-    
-    tbody.innerHTML = lista.map(animal => {
-        const idade = calcularIdade(animal.dataNascimento);
-        return `
-            <tr>
-                <td><strong>${animal.nome || 'Sem nome'}</strong><br><small>${animal.codigo}</small></td>
-                <td>${animal.raca} - ${animal.especie}</td>
-                <td>${idade}</td>
-                <td>${animal.pesoAtual} kg</td>
-                <td>${animal.sexo === 'Fêmea' ? 'Fêmea' : 'Macho'}</td>
-                <td>${animal.finalidade || '—'}</td>
-                <td>${animal.lote || '—'}</td>
-                <td>${animal.pelagem || '—'}</td>
-                <td class="action-buttons">
-                    <button class="action-btn action-view" onclick="visualizarAnimal(${animal.id})">
-                        <i class="fa-solid fa-eye"></i> Ver características
-                    </button>
-                    <button class="action-btn action-edit" onclick="editarAnimal(${animal.id})">
-                        <i class="fa-solid fa-pen"></i> Editar
-                    </button>
-                    <button class="action-btn action-delete" onclick="deletarAnimal(${animal.id})">
-                        <i class="fa-solid fa-trash"></i> Excluir
-                    </button>
-                </td>
-            </tr>
-        `;
-    }).join('');
-}
-        
-    function editarAnimal(id) {
-    const animal = animais.find(a => a.id === id);
-    if (!animal) {
-        mostrarMensagem('Animal não encontrado!', 'erro');
-        return;
-    }
-    
-    // Limpar formulário primeiro
-    limparFormulario();
-    
-    // Abrir modal
-    const modalForm = document.getElementById('modalForm');
-    const modalTitle = document.getElementById('modalTitle');
-    const btnSalvar = document.getElementById('btnSalvar');
-    
-    modalTitle.innerText = "Editar Animal";
-    btnSalvar.innerText = "Salvar Alterações";
-    
-    // ========== PREENCHER DADOS BÁSICOS ==========
-    document.getElementById('formCodigo').value = animal.codigo || '';
-    document.getElementById('formNome').value = animal.nome || '';
-    document.getElementById('formEspecie').value = animal.especie || '';
-    document.getElementById('buscaRaca').value = animal.raca || '';
-    document.getElementById('formRaca').value = animal.raca || '';
-    document.getElementById('formGrauSangue').value = animal.grauSangue || '';
-    document.getElementById('formPelagem').value = animal.pelagem || '';
-    document.getElementById('formDataNascimento').value = animal.dataNascimento || '';
-    document.getElementById('formPesoNascer').value = animal.pesoNascer || '';
-    document.getElementById('formPesoAtual').value = animal.pesoAtual || '';
-    document.getElementById('formSexo').value = animal.sexo || '';
-    document.getElementById('formFinalidade').value = animal.finalidade || '';
-    document.getElementById('formLote').value = animal.lote || '';
-    document.getElementById('formObs').value = animal.observacoes || '';
-    
-    // Calcular idade
-    if (animal.dataNascimento) {
-        calcularIdadeAnimal();
-    }
-    
-    // Mostrar campos corretos baseado no sexo
-    toggleCamposPorSexo();
-    
-    // ========== SE FOR FÊMEA ==========
-    if (animal.sexo === 'Fêmea') {
-        document.getElementById('formCategoriaFemea').value = animal.categoriaReprodutiva || '';
-        document.getElementById('formECC').value = animal.ecc || '';
-        document.getElementById('formMae').value = animal.mae || '';
-        document.getElementById('formPai').value = animal.pai || '';
-        document.getElementById('formHistoricoAborto').value = animal.historicoAborto ? 'sim' : 'nao';
-        
-        const qtdCrias = (animal.nascimentos && animal.nascimentos.length) || animal.qtdNascimentos || 0;
-        document.getElementById('formQtdNascimentos').value = qtdCrias;
-        
-        if (qtdCrias > 0) {
-            gerarCamposNascimentos();
-            setTimeout(() => {
-                if (animal.nascimentos) {
-                    animal.nascimentos.forEach(n => {
-                        const dataField = document.getElementById(`nascimentoData_${n.numero}`);
-                        if (dataField) dataField.value = n.data || '';
-                        const sexoField = document.getElementById(`nascimentoSexo_${n.numero}`);
-                        if (sexoField) sexoField.value = n.sexo || '';
-                        const paiField = document.getElementById(`nascimentoPai_${n.numero}`);
-                        if (paiField) paiField.value = n.pai || '';
-                        const pesoField = document.getElementById(`nascimentoPeso_${n.numero}`);
-                        if (pesoField) pesoField.value = n.peso || '';
-                    });
-                }
-            }, 100);
-        }
-    }
-    
-    // ========== SE FOR MACHO ==========
-    if (animal.sexo === 'Macho') {
-        document.getElementById('formTipoMacho').value = animal.tipoReprodutor || '';
-        document.getElementById('formExameAndrologico').value = animal.exameAndrologicoDia ? 'sim' : 'nao';
-        document.getElementById('formECCMacho').value = animal.eccMacho || '';
-        document.getElementById('formMaeMacho').value = animal.maeMacho || '';
-        document.getElementById('formPaiMacho').value = animal.paiMacho || '';
-        document.getElementById('formLaboratorio').value = animal.laboratorio || '';
-        
-        if (animal.tipoReprodutor === 'laboratorio') {
-            document.getElementById('campoLaboratorio').style.display = 'block';
-        }
-        
-        const qtdDesc = (animal.descendentes && animal.descendentes.length) || animal.qtdDescendentes || 0;
-        document.getElementById('formQtdDescendentes').value = qtdDesc;
-        
-        if (qtdDesc > 0) {
-            gerarCamposDescendentes();
-            setTimeout(() => {
-                if (animal.descendentes) {
-                    animal.descendentes.forEach(d => {
-                        const nomeField = document.getElementById(`descendenteNome_${d.numero}`);
-                        if (nomeField) nomeField.value = d.nome || '';
-                        const sexoField = document.getElementById(`descendenteSexo_${d.numero}`);
-                        if (sexoField) sexoField.value = d.sexo || '';
-                        const maeField = document.getElementById(`descendenteMae_${d.numero}`);
-                        if (maeField) maeField.value = d.mae || '';
-                        const dataField = document.getElementById(`descendenteData_${d.numero}`);
-                        if (dataField) dataField.value = d.dataNascimento || '';
-                    });
-                }
-            }, 100);
-        }
-    }
-    
-    // Guardar ID para saber que é edição
-    window.animalEmEdicao = animal.id;
-    
-    // Abrir modal
-    modalForm.style.display = "flex";
-}
-        // Função para gerar campos de descendentes com nome da mãe
-function gerarCamposDescendentes() {
-    const qtd = parseInt(document.getElementById('formQtdDescendentes').value) || 0;
-    const container = document.getElementById('listaDescendentesContainer');
-    
-    if (qtd === 0) {
-        container.innerHTML = '<p style="color: #64748b; font-size: 13px;">Nenhum descendente registrado</p>';
-        return;
-    }
-    
-    let html = '<div style="margin-top: 15px;"><label style="font-weight: 600; margin-bottom: 10px; display: block;">📋 Informações dos Descendentes:</label>';
-    
-    for (let i = 1; i <= qtd; i++) {
-        html += `
-            <div class="sub-block" style="margin-bottom: 15px; border-left: 3px solid #0d8a4f;">
-                <h4>🐄 Descendente #${i}</h4>
-                <div class="form-grid">
-                    <div class="input-group">
-                        <label>Nome/ID do Descendente</label>
-                        <input type="text" id="descendenteNome_${i}" placeholder="Ex: BR2024-01" class="descendente-nome">
-                    </div>
-                    <div class="input-group">
-                        <label>Sexo do Descendente</label>
-                        <select id="descendenteSexo_${i}" class="descendente-sexo">
-                            <option value="">Selecione...</option>
-                            <option value="Macho">Macho</option>
-                            <option value="Fêmea">Fêmea</option>
-                        </select>
-                    </div>
-                </div>
-                <div class="form-grid">
-                    <div class="input-group">
-                        <label>🐄 Nome da Mãe (Fêmea)</label>
-                        <input type="text" id="descendenteMae_${i}" class="descendente-mae" 
-                               placeholder="Código/Nome da mãe" list="listaMatrizes">
-                        <div class="help-text">Selecione a matriz que gerou este descendente</div>
-                    </div>
-                    <div class="input-group">
-                        <label>Data de Nascimento</label>
-                        <input type="date" id="descendenteData_${i}" class="descendente-data">
-                    </div>
-                </div>
-                <div class="form-grid">
-                    <div class="input-group">
-                        <label>Peso ao Nascer (kg)</label>
-                        <input type="number" id="descendentePeso_${i}" class="descendente-peso" step="0.1" placeholder="0.0">
-                    </div>
-                    <div class="input-group">
-                        <label>Observações</label>
-                        <input type="text" id="descendenteObs_${i}" class="descendente-obs" placeholder="Ex: Gêmeos, parto normal...">
-                    </div>
-                </div>
-            </div>
-        `;
-    }
-    
-    html += '</div>';
-    container.innerHTML = html;
-}// Função para mostrar/esconder campos de laboratório
-function toggleCamposReprodutor() {
-    const tipoReprodutor = document.getElementById('formTipoMacho').value;
-    const campoLaboratorio = document.getElementById('campoLaboratorio');
-    
-    if (tipoReprodutor === 'laboratorio') {
-        campoLaboratorio.style.display = 'block';
-    } else {
-        campoLaboratorio.style.display = 'none';
-        // Limpar campos se não for laboratório
-        document.getElementById('formLaboratorio').value = '';
-       
-    }
-}
-// TESTE - Função de edição simplificada
-// ============================================
-// FUNÇÃO EDITAR ANIMAL (COMPLETA)
-window.editarAnimal = function(id) {
-    const animal = animais.find(a => a.id === id);
-    if (!animal) {
-        mostrarMensagem('Animal não encontrado!', 'erro');
-        return;
-    }
-    
-    console.log("Editando animal:", animal);
-    
-    // Abrir modal
-    const modalForm = document.getElementById('modalForm');
-    const modalTitle = document.getElementById('modalTitle');
-    const btnSalvar = document.getElementById('btnSalvar');
-    
-    modalTitle.innerText = "Editar Animal";
-    btnSalvar.innerText = "Salvar Alterações";
-    
-    // Limpar formulário primeiro
-    if (typeof limparFormulario === 'function') {
-        limparFormulario();
-    }
-    
-    // PREENCHER DADOS BÁSICOS
-    document.getElementById('formCodigo').value = animal.codigo || '';
-    document.getElementById('formNome').value = animal.nome || '';
-    document.getElementById('formEspecie').value = animal.especie || '';
-    document.getElementById('buscaRaca').value = animal.raca || '';
-    document.getElementById('formRaca').value = animal.raca || '';
-    document.getElementById('formGrauSangue').value = animal.grauSangue || '';
-    document.getElementById('formPelagem').value = animal.pelagem || '';
-    document.getElementById('formDataNascimento').value = animal.dataNascimento || '';
-    document.getElementById('formPesoNascer').value = animal.pesoNascer || '';
-    document.getElementById('formPesoAtual').value = animal.pesoAtual || '';
-    document.getElementById('formSexo').value = animal.sexo || '';
-    document.getElementById('formFinalidade').value = animal.finalidade || '';
-    document.getElementById('formLote').value = animal.lote || '';
-    document.getElementById('formObs').value = animal.observacoes || '';
-    
-    // Calcular idade
-    if (animal.dataNascimento && typeof calcularIdadeAnimal === 'function') {
-        calcularIdadeAnimal();
-    }
-    
-    // Mostrar campos corretos baseado no sexo
-    if (typeof toggleCamposPorSexo === 'function') {
+
+    // Eventos do formulário
+    document.getElementById('formEspecie').addEventListener('change', function() {
+        atualizarFinalidadePorEspecie();
+        atualizarRacasPorEspecie();
+        const sexo = document.getElementById('formSexo').value;
+        if (sexo === 'Fêmea') atualizarListaDoencas();
+        else if (sexo === 'Macho') atualizarListaDoencasMacho();
+    });
+
+    document.getElementById('formSexo').addEventListener('change', function() {
         toggleCamposPorSexo();
-    }
-    
-    // Disparar eventos change para ativar as funções
-    const especieSelect = document.getElementById('formEspecie');
-    const sexoSelect = document.getElementById('formSexo');
-    if (especieSelect) especieSelect.dispatchEvent(new Event('change'));
-    if (sexoSelect) sexoSelect.dispatchEvent(new Event('change'));
-    
-    // ========== SE FOR FÊMEA ==========
-    if (animal.sexo === 'Fêmea') {
-        // Dados básicos da fêmea
-        const catElem = document.getElementById('formCategoriaFemea');
-        if (catElem) catElem.value = animal.categoriaReprodutiva || '';
-        
-        const eccElem = document.getElementById('formECC');
-        if (eccElem) eccElem.value = animal.ecc || '';
-        
-        const maeElem = document.getElementById('formMae');
-        if (maeElem) maeElem.value = animal.mae || '';
-        
-        const paiElem = document.getElementById('formPai');
-        if (paiElem) paiElem.value = animal.pai || '';
-        
-        const abortoElem = document.getElementById('formHistoricoAborto');
-        if (abortoElem) abortoElem.value = animal.historicoAborto ? 'sim' : 'nao';
-        
-        // ========== CARREGAR PERGUNTA "JÁ TEVE CRIAS?" ==========
-        const temCrias = (animal.qtdNascimentos && animal.qtdNascimentos > 0) || 
-                         (animal.nascimentos && animal.nascimentos.length > 0);
-        const temCriasSelect = document.getElementById('formTemCrias');
-        if (temCriasSelect) {
-            temCriasSelect.value = temCrias ? 'sim' : 'nao';
-            if (typeof toggleCamposCrias === 'function') {
-                toggleCamposCrias();
-            }
-        }
-        
-        // ========== CARREGAR CRIAS ==========
-        const qtdCrias = (animal.nascimentos && animal.nascimentos.length) || animal.qtdNascimentos || 0;
-        const qtdElem = document.getElementById('formQtdNascimentos');
-        if (qtdElem) qtdElem.value = qtdCrias;
-        
-        if (qtdCrias > 0 && typeof gerarCamposNascimentos === 'function') {
-            setTimeout(() => {
-                gerarCamposNascimentos();
-                setTimeout(() => {
-                    if (animal.nascimentos) {
-                        animal.nascimentos.forEach(n => {
-                            const dataField = document.getElementById(`nascimentoData_${n.numero}`);
-                            if (dataField) dataField.value = n.data || '';
-                            const sexoField = document.getElementById(`nascimentoSexo_${n.numero}`);
-                            if (sexoField) sexoField.value = n.sexo || '';
-                            const paiField = document.getElementById(`nascimentoPai_${n.numero}`);
-                            if (paiField) paiField.value = n.pai || '';
-                            const pesoField = document.getElementById(`nascimentoPeso_${n.numero}`);
-                            if (pesoField) pesoField.value = n.peso || '';
-                            const obsField = document.getElementById(`nascimentoObs_${n.numero}`);
-                            if (obsField) obsField.value = n.observacoes || '';
-                        });
-                    }
-                }, 100);
-            }, 100);
-        }
-        
-        // ========== CARREGAR ABORTOS ==========
-        if (animal.historicoAborto && typeof toggleCamposAborto === 'function') {
-            setTimeout(() => {
-                toggleCamposAborto();
-                setTimeout(() => {
-                    if (animal.abortos && animal.abortos.length > 0) {
-                        const qtdAbortos = animal.abortos.length;
-                        const qtdAbortosElem = document.getElementById('formQtdAbortos');
-                        if (qtdAbortosElem) qtdAbortosElem.value = qtdAbortos;
-                        
-                        if (typeof gerarCamposAborto === 'function') {
-                            gerarCamposAborto();
-                        }
-                        
-                        setTimeout(() => {
-                            animal.abortos.forEach(aborto => {
-                                const dataField = document.getElementById(`abortoData_${aborto.numero}`);
-                                if (dataField) dataField.value = aborto.data || '';
-                                const machoField = document.getElementById(`abortoMacho_${aborto.numero}`);
-                                if (machoField) machoField.value = aborto.macho || '';
-                                const diasField = document.getElementById(`abortoDias_${aborto.numero}`);
-                                if (diasField) diasField.value = aborto.diasGestacao || '';
-                                const obsField = document.getElementById(`abortoObs_${aborto.numero}`);
-                                if (obsField) obsField.value = aborto.observacoes || '';
-                            });
-                        }, 100);
-                    }
-                }, 100);
-            }, 100);
-        }
-        
-        // ========== CARREGAR DOENÇAS DA FÊMEA ==========
-        if (animal.doencas && animal.doencas.length > 0) {
-            setTimeout(() => {
-                if (typeof atualizarListaDoencas === 'function') {
-                    atualizarListaDoencas();
-                }
-                setTimeout(() => {
-                    animal.doencas.forEach(doenca => {
-                        const doencaId = doenca.nome.replace(/[^a-zA-Z0-9]/g, '_');
-                        const checkbox = document.querySelector(`.doenca-checkbox[value="${doenca.nome.replace(/"/g, '&quot;')}"]`);
-                        if (checkbox) {
-                            checkbox.checked = true;
-                            if (typeof toggleDoencaDetalhes === 'function') {
-                                toggleDoencaDetalhes(checkbox, doencaId);
-                            }
-                            const dataDiag = document.getElementById(`dataDoenca_${doencaId}`);
-                            if (dataDiag) dataDiag.value = doenca.dataDiagnostico || '';
-                            
-                            const tratouSelect = document.getElementById(`tratouDoenca_${doencaId}`);
-                            if (tratouSelect) {
-                                tratouSelect.value = doenca.tratou ? 'sim' : 'nao';
-                                if (doenca.tratou && typeof toggleTratamentoCampos === 'function') {
-                                    toggleTratamentoCampos(tratouSelect, doencaId);
-                                    const dataTrat = document.getElementById(`dataTratamento_${doencaId}`);
-                                    if (dataTrat) dataTrat.value = doenca.dataTratamento || '';
-                                    const tipoTrat = document.getElementById(`tipoTratamento_${doencaId}`);
-                                    if (tipoTrat) tipoTrat.value = doenca.tipoTratamento || '';
-                                    const obsTrat = document.getElementById(`obsTratamento_${doencaId}`);
-                                    if (obsTrat) obsTrat.value = doenca.observacoesTratamento || '';
-                                }
-                            }
-                        }
-                    });
-                }, 200);
-            }, 200);
-        }
-    }
-    
-    // ========== SE FOR MACHO ==========
-    if (animal.sexo === 'Macho') {
-        // Dados básicos do macho
-        const tipoElem = document.getElementById('formTipoMacho');
-        if (tipoElem) tipoElem.value = animal.tipoReprodutor || '';
-        
-        const exameElem = document.getElementById('formExameAndrologico');
-        if (exameElem) exameElem.value = animal.exameAndrologicoDia ? 'sim' : 'nao';
-        
-        const eccMachoElem = document.getElementById('formECCMacho');
-        if (eccMachoElem) eccMachoElem.value = animal.eccMacho || '';
-        
-        const maeMachoElem = document.getElementById('formMaeMacho');
-        if (maeMachoElem) maeMachoElem.value = animal.maeMacho || '';
-        
-        const paiMachoElem = document.getElementById('formPaiMacho');
-        if (paiMachoElem) paiMachoElem.value = animal.paiMacho || '';
-        
-        const labElem = document.getElementById('formLaboratorio');
-        if (labElem) labElem.value = animal.laboratorio || '';
-        
-        // Mostrar/esconder campo de laboratório
-        const campoLab = document.getElementById('campoLaboratorio');
-        if (campoLab) {
-            campoLab.style.display = animal.tipoReprodutor === 'laboratorio' ? 'block' : 'none';
-        }
-        
-        // ========== CARREGAR PERGUNTA "JÁ GEROU DESCENDENTES?" ==========
-        const temDescendentes = (animal.qtdDescendentes && animal.qtdDescendentes > 0) || 
-                                (animal.descendentes && animal.descendentes.length > 0);
-        const temDescendentesSelect = document.getElementById('formTemDescendentes');
-        if (temDescendentesSelect) {
-            temDescendentesSelect.value = temDescendentes ? 'sim' : 'nao';
-            if (typeof toggleCamposDescendentes === 'function') {
-                toggleCamposDescendentes();
-            }
-        }
-        
-        // ========== CARREGAR DESCENDENTES ==========
-        const qtdDesc = (animal.descendentes && animal.descendentes.length) || animal.qtdDescendentes || 0;
-        const qtdDescElem = document.getElementById('formQtdDescendentes');
-        if (qtdDescElem) qtdDescElem.value = qtdDesc;
-        
-        if (qtdDesc > 0 && typeof gerarCamposDescendentes === 'function') {
-            setTimeout(() => {
-                gerarCamposDescendentes();
-                setTimeout(() => {
-                    if (animal.descendentes) {
-                        animal.descendentes.forEach(d => {
-                            const nomeField = document.getElementById(`descendenteNome_${d.numero}`);
-                            if (nomeField) nomeField.value = d.nome || '';
-                            const sexoField = document.getElementById(`descendenteSexo_${d.numero}`);
-                            if (sexoField) sexoField.value = d.sexo || '';
-                            const maeField = document.getElementById(`descendenteMae_${d.numero}`);
-                            if (maeField) maeField.value = d.mae || '';
-                            const dataField = document.getElementById(`descendenteData_${d.numero}`);
-                            if (dataField) dataField.value = d.dataNascimento || '';
-                            const pesoField = document.getElementById(`descendentePeso_${d.numero}`);
-                            if (pesoField) pesoField.value = d.pesoNascer || '';
-                            const obsField = document.getElementById(`descendenteObs_${d.numero}`);
-                            if (obsField) obsField.value = d.observacoes || '';
-                        });
-                    }
-                }, 100);
-            }, 100);
-        }
-        
-        // ========== CARREGAR DOENÇAS DO MACHO ==========
-        if (animal.doencas && animal.doencas.length > 0) {
-            setTimeout(() => {
-                if (typeof atualizarListaDoencasMacho === 'function') {
-                    atualizarListaDoencasMacho();
-                }
-                setTimeout(() => {
-                    animal.doencas.forEach(doenca => {
-                        const doencaId = 'macho_' + doenca.nome.replace(/[^a-zA-Z0-9]/g, '_');
-                        const checkbox = document.querySelector(`.doenca-checkbox-macho[value="${doenca.nome.replace(/"/g, '&quot;')}"]`);
-                        if (checkbox) {
-                            checkbox.checked = true;
-                            if (typeof toggleDoencaDetalhesMacho === 'function') {
-                                toggleDoencaDetalhesMacho(checkbox, doencaId);
-                            }
-                            const dataDiag = document.getElementById(`dataDoencaMacho_${doencaId}`);
-                            if (dataDiag) dataDiag.value = doenca.dataDiagnostico || '';
-                            
-                            const tratouSelect = document.getElementById(`tratouDoencaMacho_${doencaId}`);
-                            if (tratouSelect) {
-                                tratouSelect.value = doenca.tratou ? 'sim' : 'nao';
-                                if (doenca.tratou && typeof toggleTratamentoCamposMacho === 'function') {
-                                    toggleTratamentoCamposMacho(tratouSelect, doencaId);
-                                    const dataTrat = document.getElementById(`dataTratamentoMacho_${doencaId}`);
-                                    if (dataTrat) dataTrat.value = doenca.dataTratamento || '';
-                                    const tipoTrat = document.getElementById(`tipoTratamentoMacho_${doencaId}`);
-                                    if (tipoTrat) tipoTrat.value = doenca.tipoTratamento || '';
-                                    const obsTrat = document.getElementById(`obsTratamentoMacho_${doencaId}`);
-                                    if (obsTrat) obsTrat.value = doenca.observacoesTratamento || '';
-                                }
-                            }
-                        }
-                    });
-                }, 200);
-            }, 200);
-        }
-    }
-    
-    // Guardar ID para saber que é edição
-    window.animalEmEdicao = animal.id;
-    
-    // Abrir modal
-    if (modalForm) modalForm.style.display = "flex";
-};
-// Função para mostrar/esconder campos de crias da fêmea
-function toggleCamposCrias() {
-    const temCrias = document.getElementById('formTemCrias').value;
-    const camposQuantidade = document.getElementById('camposQuantidadeCrias');
-    
-    if (temCrias === 'sim') {
-        camposQuantidade.style.display = 'block';
-        // Se for edição e já tiver crias, mantém os valores
-        const qtdExistente = document.getElementById('formQtdNascimentos').value;
-        if (qtdExistente && parseInt(qtdExistente) > 0) {
-            gerarCamposNascimentos();
-        }
-    } else {
-        camposQuantidade.style.display = 'none';
-        // Limpar campos
-        document.getElementById('formQtdNascimentos').value = 0;
-        document.getElementById('listaNascimentosContainer').innerHTML = '';
-    }
-}
-
-// Função para mostrar/esconder campos de descendentes do macho
-function toggleCamposDescendentes() {
-    const temDescendentes = document.getElementById('formTemDescendentes').value;
-    const camposQuantidade = document.getElementById('camposQuantidadeDescendentes');
-    
-    if (temDescendentes === 'sim') {
-        camposQuantidade.style.display = 'block';
-        // Se for edição e já tiver descendentes, mantém os valores
-        const qtdExistente = document.getElementById('formQtdDescendentes').value;
-        if (qtdExistente && parseInt(qtdExistente) > 0) {
-            gerarCamposDescendentes();
-        }
-    } else {
-        camposQuantidade.style.display = 'none';
-        // Limpar campos
-        document.getElementById('formQtdDescendentes').value = 0;
-        document.getElementById('listaDescendentesContainer').innerHTML = '';
-    }
-}
-// ============================================
-// MODAL DE MENSAGEM PERSONALIZADO
-// ============================================
-
-function mostrarMensagem(mensagem, tipo = 'info', titulo = '') {
-    let modal = document.getElementById('modalMensagem');
-    
-    // Criar modal se não existir
-    if (!modal) {
-        modal = document.createElement('div');
-        modal.id = 'modalMensagem';
-        modal.className = 'modal-confirmacao';
-        modal.style.display = 'none';
-        modal.innerHTML = `
-            <div class="modal-confirmacao-content">
-                <div class="modal-confirmacao-header" id="modalMensagemHeader">
-                    <i class="fa-solid fa-circle-info" style="font-size: 24px;" id="modalMensagemIcone"></i>
-                    <h3 id="modalMensagemTitulo">Atenção</h3>
-                </div>
-                <div class="modal-confirmacao-body">
-                    <p id="modalMensagemTexto">Mensagem aqui</p>
-                </div>
-                <div class="modal-confirmacao-footer" id="modalMensagemFooter">
-                    <button class="btn-confirmar-ok" id="btnOkMensagem">
-                        <i class="fa-solid fa-check"></i> OK
-                    </button>
-                </div>
-            </div>
-        `;
-        document.body.appendChild(modal);
-    }
-    
-    const icone = document.getElementById('modalMensagemIcone');
-    const tituloEl = document.getElementById('modalMensagemTitulo');
-    const textoEl = document.getElementById('modalMensagemTexto');
-    const header = document.getElementById('modalMensagemHeader');
-    
-    if (tipo === 'sucesso') {
-        icone.className = 'fa-solid fa-check-circle';
-        icone.style.color = '#0d8a4f';
-        tituloEl.textContent = titulo || 'Sucesso!';
-        header.className = 'modal-confirmacao-header sucesso';
-    } else if (tipo === 'erro') {
-        icone.className = 'fa-solid fa-circle-exclamation';
-        icone.style.color = '#dc3545';
-        tituloEl.textContent = titulo || 'Erro!';
-        header.className = 'modal-confirmacao-header erro';
-    } else if (tipo === 'aviso') {
-        icone.className = 'fa-solid fa-triangle-exclamation';
-        icone.style.color = '#ff9800';
-        tituloEl.textContent = titulo || 'Atenção';
-        header.className = 'modal-confirmacao-header aviso';
-    } else {
-        icone.className = 'fa-solid fa-circle-info';
-        icone.style.color = '#0d8a4f';
-        tituloEl.textContent = titulo || 'Informação';
-        header.className = 'modal-confirmacao-header';
-    }
-    
-    textoEl.textContent = mensagem;
-    modal.style.display = 'flex';
-    
-    const btnOk = document.getElementById('btnOkMensagem');
-    const closeModal = () => {
-        modal.style.display = 'none';
-        btnOk.removeEventListener('click', closeModal);
-    };
-    btnOk.addEventListener('click', closeModal);
-    
-    modal.addEventListener('click', function(e) {
-        if (e.target === modal) {
-            modal.style.display = 'none';
+        const especie = document.getElementById('formEspecie').value;
+        if (especie) {
+            if (this.value === 'Fêmea') atualizarListaDoencas();
+            else if (this.value === 'Macho') atualizarListaDoencasMacho();
         }
     });
-}
 
-// ============================================
-// MODAL DE CONFIRMAÇÃO PERSONALIZADO
-// ============================================
+    document.getElementById('formCategoriaFemea').addEventListener('change', toggleCamposNascimentosPorCategoria);
+    document.getElementById('formQtdNascimentos').addEventListener('input', gerarCamposNascimentos);
+    document.getElementById('formHistoricoAborto').addEventListener('change', toggleCamposAborto);
+    document.getElementById('formQtdAbortos').addEventListener('input', gerarCamposAborto);
+    document.getElementById('formQtdDescendentes').addEventListener('input', gerarCamposDescendentes);
+    document.getElementById('formPaiMacho')?.addEventListener('input', buscarCriasPorPai);
 
-let confirmarCallback = null;
-let cancelarCallback = null;
+    // Filtros
+    let especieSelecionada = 'todas';
+    const dropdownBtn = document.getElementById('dropdownBtn');
+    const dropdownMenu = document.getElementById('dropdownMenu');
+    const selectedEspecieText = document.getElementById('selectedEspecie');
 
-function mostrarConfirmacao(mensagem, onConfirm, onCancel) {
-    let modal = document.getElementById('modalConfirmacao');
-    
-    if (!modal) {
-        modal = document.createElement('div');
-        modal.id = 'modalConfirmacao';
-        modal.className = 'modal-confirmacao';
-        modal.style.display = 'none';
-        modal.innerHTML = `
-            <div class="modal-confirmacao-content">
-                <div class="modal-confirmacao-header">
-                    <i class="fa-solid fa-triangle-exclamation" style="color: #dc3545; font-size: 24px;"></i>
-                    <h3>Confirmar Exclusão</h3>
-                </div>
-                <div class="modal-confirmacao-body">
-                    <p id="confirmacaoMensagem">Tem certeza que deseja excluir este animal?</p>
-                    <p style="color: #64748b; font-size: 14px; margin-top: 8px;">Esta ação não pode ser desfeita!</p>
-                </div>
-                <div class="modal-confirmacao-footer">
-                    <button class="btn-confirmar-cancelar" id="btnCancelarExclusao">
-                        <i class="fa-solid fa-times"></i> Cancelar
-                    </button>
-                    <button class="btn-confirmar-excluir" id="btnConfirmarExclusao">
-                        <i class="fa-solid fa-trash"></i> Sim, Excluir
-                    </button>
-                </div>
-            </div>
-        `;
-        document.body.appendChild(modal);
+    if (dropdownBtn && dropdownMenu) {
+        dropdownBtn.addEventListener('click', e => {
+            e.stopPropagation();
+            dropdownMenu.style.display = dropdownMenu.style.display === 'block' ? 'none' : 'block';
+        });
+        document.addEventListener('click', () => { dropdownMenu.style.display = 'none'; });
+        document.querySelectorAll('.dropdown-item').forEach(item => {
+            item.addEventListener('click', function() {
+                document.querySelectorAll('.dropdown-item').forEach(i => i.classList.remove('selected'));
+                this.classList.add('selected');
+                selectedEspecieText.textContent = this.textContent;
+                especieSelecionada = this.getAttribute('data-value');
+                executarFiltroGeral();
+            });
+        }); 
     }
-    
-    const mensagemEl = document.getElementById('confirmacaoMensagem');
-    mensagemEl.textContent = mensagem;
-    modal.style.display = 'flex';
-    
-    confirmarCallback = onConfirm;
-    cancelarCallback = onCancel;
-    
-    const btnConfirmar = document.getElementById('btnConfirmarExclusao');
-    const btnCancelar = document.getElementById('btnCancelarExclusao');
-    
-    const newBtnConfirmar = btnConfirmar.cloneNode(true);
-    const newBtnCancelar = btnCancelar.cloneNode(true);
-    btnConfirmar.parentNode.replaceChild(newBtnConfirmar, btnConfirmar);
-    btnCancelar.parentNode.replaceChild(newBtnCancelar, btnCancelar);
-    
-    newBtnConfirmar.addEventListener('click', () => {
-        modal.style.display = 'none';
-        if (confirmarCallback) confirmarCallback();
-        confirmarCallback = null;
-        cancelarCallback = null;
-    });
-    
-    newBtnCancelar.addEventListener('click', () => {
-        modal.style.display = 'none';
-        if (cancelarCallback) cancelarCallback();
-        confirmarCallback = null;
-        cancelarCallback = null;
-    });
-    
-    modal.addEventListener('click', function(e) {
-        if (e.target === modal) {
-            modal.style.display = 'none';
-            if (cancelarCallback) cancelarCallback();
-            confirmarCallback = null;
-            cancelarCallback = null;
-        }
-    });
-}
+
+    document.getElementById('busca').addEventListener('input', executarFiltroGeral);
+
+    function executarFiltroGeral() {
+        const termo = document.getElementById('busca').value.toLowerCase();
+        const filtrados = animais.filter(a => {
+            const textoValido = (a.codigo||'').toLowerCase().includes(termo) ||
+                ((a.nome||'').toLowerCase().includes(termo)) ||
+                ((a.lote||'').toLowerCase().includes(termo)) ||
+                ((a.pelagem||'').toLowerCase().includes(termo)) ||
+                ((a.finalidade||'').toLowerCase().includes(termo)) ||
+                ((a.raca||'').toLowerCase().includes(termo));
+            const especieValida = especieSelecionada === 'todas' || a.especie === especieSelecionada;
+            return textoValido && especieValida;
+        });
+        renderizarTabelaFiltrada(filtrados);
+    }
+});
