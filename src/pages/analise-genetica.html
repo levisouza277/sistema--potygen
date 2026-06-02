@@ -4,24 +4,153 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Potygen - Análise Genética Avançada</title>
-    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2=family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     
     <link rel="stylesheet" href="../style/style-dashboard.css">
     <link rel="stylesheet" href="../style/style-analise.css">
     
-    <!-- Estilos padronizados da navbar -->
     <link rel="stylesheet" href="../style/navbar-style.css">
 
     <script src="https://unpkg.com/brain.js"></script>
+    
+    <style>
+        /* ==========================================================================
+           PADRONIZAÇÃO DOS NOVOS CAMPOS DE BUSCA (ESTILO POTYGEN)
+           ========================================================================== */
+        
+        /* Ajuste do container para seguir o padrão de espaçamento do formulário */
+        .card-analise .input-group-busca {
+            display: flex;
+            flex-direction: column;
+            margin-bottom: 20px;
+            width: 100%;
+        }
+
+        .card-analise .input-group-busca label {
+            font-size: 0.875rem;
+            font-weight: 600;
+            color: #333;
+            margin-bottom: 8px;
+        }
+
+        /* Padronização dos Inputs de texto com os Selects da página */
+        .card-analise .input-busca-potygen {
+            width: 100%;
+            padding: 12px 16px;
+            font-family: 'Plus Jakarta Sans', sans-serif;
+            font-size: 0.95rem;
+            font-weight: 500;
+            color: #333;
+            background-color: #fff;
+            border: 1px solid #dcdcdc;
+            border-radius: 8px;
+            transition: all 0.3s ease;
+            outline: none;
+            box-sizing: border-box;
+        }
+
+        .card-analise .input-busca-potygen:focus {
+            border-color: #0d8a4f;
+            box-shadow: 0 0 0 3px rgba(13, 138, 79, 0.15);
+        }
+
+        /* Container relativo para acoplamento do dropdown */
+        .busca-animal-container {
+            position: relative;
+            width: 100%;
+        }
+
+        /* Dropdown de resultados estilizado */
+        .lista-animais-dropdown {
+            position: absolute;
+            top: calc(100% + 4px);
+            left: 0;
+            right: 0;
+            background-color: white;
+            border: 1px solid #e0e0e0;
+            max-height: 250px;
+            overflow-y: auto;
+            z-index: 1000;
+            display: none;
+            box-shadow: 0 8px 24px rgba(0,0,0,0.08);
+            border-radius: 8px;
+        }
+        
+        .lista-animais-dropdown.show {
+            display: block;
+        }
+        
+        .lista-animais-dropdown .animal-item {
+            padding: 12px 16px;
+            cursor: pointer;
+            border-bottom: 1px solid #f5f5f5;
+            transition: background 0.2s ease;
+            font-family: 'Plus Jakarta Sans', sans-serif;
+        }
+        
+        .lista-animais-dropdown .animal-item:last-child {
+            border-bottom: none;
+        }
+
+        .lista-animais-dropdown .animal-item:hover {
+            background-color: #f0fdf4; /* Verde sutil correspondente ao tema */
+        }
+        
+        .animal-item strong {
+            color: #0d8a4f;
+            font-weight: 600;
+        }
+        
+        .animal-item small {
+            display: block;
+            color: #666;
+            font-size: 0.75rem;
+            margin-top: 2px;
+        }
+        
+        .help-text {
+            font-size: 0.75rem;
+            color: #888;
+            margin-top: 6px;
+            font-weight: 500;
+        }
+        
+        /* Painel de Feedback dos animais selecionados */
+        .feedback-container-potygen {
+            background-color: #f8f9fa;
+            border: 1px dashed #ced4da;
+            border-radius: 8px;
+            padding: 12px 16px;
+            margin-top: -10px;
+            margin-bottom: 20px;
+            transition: all 0.3s ease;
+        }
+
+        .feedback-container-potygen.ativo {
+            background-color: #f4fbf7;
+            border: 1px solid #a3e635;
+        }
+
+        .feedback-label {
+            display: block;
+            font-size: 0.7rem;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            color: #6c757d;
+            margin-bottom: 4px;
+        }
+
+        .feedback-texto {
+            font-size: 0.875rem;
+            color: #495057;
+        }
+    </style>
 </head>
 <body>
 
 <div class="app-container">
-    <!-- ============================================ -->
-    <!-- NAVBAR PADRONIZADA -->
-    <!-- ============================================ -->
-    
     <button class="nav-menu-toggle" id="navToggleBtn" aria-label="Alternar menu lateral">
         <i class="fa-solid fa-bars"></i>
     </button>
@@ -73,10 +202,6 @@
         </div>
     </aside>
     
-    <!-- ============================================ -->
-    <!-- CONTEÚDO PRINCIPAL -->
-    <!-- ============================================ -->
-    
     <main class="main-content" id="mainContent">
         <header class="top-bar">
             <div class="breadcrumb-area">
@@ -90,7 +215,6 @@
         </header>
 
         <div class="content-wrapper">
-            
             <div class="analysis-grid">
                 
                 <div class="card-analise">
@@ -120,6 +244,45 @@
                             </div>
                         </div>
 
+                        <div class="input-group-busca">
+                            <label for="buscaFemea">Buscar Matriz (Brinco ou Nome)</label>
+                            <div class="busca-animal-container">
+                                <input type="text" id="buscaFemea" 
+                                       class="input-busca-potygen" 
+                                       placeholder="Digite o brinco ou nome da fêmea..."
+                                       autocomplete="off"
+                                       oninput="filtrarListaFemea(this.value)"
+                                       onfocus="mostrarTodasFemeas()">
+                                <div id="listaFemeasResultados" class="lista-animais-dropdown"></div>
+                            </div>
+                            <input type="hidden" id="femeaSelecionadaId" value="">
+                            <div class="help-text"><i class="fa-solid fa-circle-info"></i> Digite para filtrar • Clique no animal para selecionar</div>
+                        </div>
+
+                        <div class="feedback-container-potygen" id="containerFeedbackFemea">
+                            <small class="feedback-label">Dados da Fêmea Confirmada</small>
+                            <span id="textoFeedbackFemea" class="feedback-texto">Nenhuma matriz selecionada.</span>
+                        </div>
+
+                        <div class="input-group-busca">
+                            <label for="buscaMacho">Buscar Reprodutor (Brinco ou Nome)</label>
+                            <div class="busca-animal-container">
+                                <input type="text" id="buscaMacho" 
+                                       class="input-busca-potygen" 
+                                       placeholder="Digite o brinco ou nome do macho..."
+                                       autocomplete="off"
+                                       oninput="filtrarListaMacho(this.value)"
+                                       onfocus="mostrarTodosMachos()">
+                                <div id="listaMachosResultados" class="lista-animais-dropdown"></div>
+                            </div>
+                            <input type="hidden" id="machoSelecionadoId" value="">
+                            <div class="help-text"><i class="fa-solid fa-circle-info"></i> Digite para filtrar • Clique no animal para selecionar</div>
+                        </div>
+
+                        <div class="feedback-container-potygen" id="containerFeedbackMacho">
+                            <small class="feedback-label">Dados do Reprodutor Confirmado</small>
+                            <span id="textoFeedbackMacho" class="feedback-texto">Nenhum reprodutor selecionado.</span>
+                        </div>
                         <div class="input-group">
                             <label for="txtFinalidade">Finalidade Zootécnica</label>
                             <select id="txtFinalidade"></select>
@@ -182,32 +345,32 @@
                         </div>
                     </div>
                 </div>
-        <!-- NOVA SEÇÃO: Eficácia pela Finalidade -->
-       <div class="eficacia-container">
-            <div class="eficacia-header">
-                <i class="fa-solid fa-chart-line"></i>
-                <span id="lblTituloEficacia">Taxa de Eficácia para a Finalidade Selecionada</span>
-            </div>
-            
-            <div class="score-flex-container" style="margin-top: 15px;">
-                <div class="score-gauge">
-                    <span id="lblEficacia" class="score-number">0%</span>
+                
+                <div class="eficacia-container">
+                    <div class="eficacia-header">
+                        <i class="fa-solid fa-chart-line"></i>
+                        <span id="lblTituloEficacia">Taxa de Eficácia para a Finalidade Selecionada</span>
+                    </div>
+                    
+                    <div class="score-flex-container" style="margin-top: 15px;">
+                        <div class="score-gauge">
+                            <span id="lblEficacia" class="score-number">0%</span>
+                        </div>
+                        <div class="progress-bar-wrapper">
+                            <div class="barra-fundo">
+                                <div id="lblBarraEficacia" class="barra-preenchimento" style="width: 0%;"></div>
+                            </div>
+                        </div>
+                    </div>
                 </div>
-                <div class="progress-bar-wrapper">
-                    <div class="barra-fundo">
-                        <div id="lblBarraEficacia" class="barra-preenchimento" style="width: 0%;"></div>
+
+                <div class="recomendacao-box" style="margin-top: 20px;">
+                    <div class="rec-icon"><i class="fa-solid fa-cow"></i></div>
+                    <div id="lblMelhorAnimal" class="recomendacao-texto">
+                        Selecione os dados e execute a predição para ver o melhor animal recomendado.
                     </div>
                 </div>
             </div>
-        </div>
-
-        <div class="recomendacao-box" style="margin-top: 20px;">
-            <div class="rec-icon"><i class="fa-solid fa-cow"></i></div>
-            <div id="lblMelhorAnimal" class="recomendacao-texto">
-                Selecione os dados e execute a predição para ver o melhor animal recomendado.
-            </div>
-        </div>
-
         </div>
     </main>
 </div>
@@ -216,10 +379,192 @@
 <script src="../backend/database.js"></script>
 <script src="../backend/auth.js"></script>
 <script src="../backend/script-analise.js"></script>
-
-<!-- Navbar Script Global -->
 <script src="../backend/navbar-script.js"></script>
 <script src="../backend/logout.js"></script>
+
+<script>
+    let todosAnimaisFemeas = [];
+    let todosAnimaisMachos = [];
+
+    async function carregarAnimais() {
+        try {
+            if (typeof buscarTodosAnimais === 'function') {
+                const animais = await buscarTodosAnimais();
+                todosAnimaisFemeas = animais.filter(animal => animal.sexo === 'F' || animal.sexo === 'Fêmea');
+                todosAnimaisMachos = animais.filter(animal => animal.sexo === 'M' || animal.sexo === 'Macho');
+            } else {
+                console.warn("Função buscarTodosAnimais não encontrada. Usando dados mock.");
+                todosAnimaisFemeas = [
+                    { id: 1, brinco: "F001", nome: "Mimosa", raca: "Nelore", sexo: "F" },
+                    { id: 2, brinco: "F002", nome: "Estrela", raca: "Angus", sexo: "F" },
+                    { id: 3, brinco: "F003", nome: "Lua", raca: "Holandês", sexo: "F" }
+                ];
+                todosAnimaisMachos = [
+                    { id: 10, brinco: "M001", nome: "Touro Forte", raca: "Nelore", sexo: "M" },
+                    { id: 11, brinco: "M002", nome: "Black Angus", raca: "Angus", sexo: "M" },
+                    { id: 12, brinco: "M003", nome: "Rex", raca: "Simental", sexo: "M" }
+                ];
+            }
+        } catch (error) {
+            console.error("Erro ao carregar animais:", error);
+        }
+    }
+
+    function mostrarTodasFemeas() {
+        const listaDiv = document.getElementById('listaFemeasResultados');
+        if (todosAnimaisFemeas.length === 0) {
+            listaDiv.innerHTML = '<div class="animal-item"><small>Nenhuma fêmea cadastrada</small></div>';
+        } else {
+            renderizarListaFemeas(todosAnimaisFemeas);
+        }
+        listaDiv.classList.add('show');
+    }
+
+    function mostrarTodosMachos() {
+        const listaDiv = document.getElementById('listaMachosResultados');
+        if (todosAnimaisMachos.length === 0) {
+            listaDiv.innerHTML = '<div class="animal-item"><small>Nenhum macho cadastrado</small></div>';
+        } else {
+            renderizarListaMachos(todosAnimaisMachos);
+        }
+        listaDiv.classList.add('show');
+    }
+
+    function filtrarListaFemea(termo) {
+        const listaDiv = document.getElementById('listaFemeasResultados');
+        if (!termo.trim()) {
+            renderizarListaFemeas(todosAnimaisFemeas);
+        } else {
+            const filtrados = todosAnimaisFemeas.filter(animal =>
+                animal.brinco.toLowerCase().includes(termo.toLowerCase()) ||
+                (animal.nome && animal.nome.toLowerCase().includes(termo.toLowerCase()))
+            );
+            renderizarListaFemeas(filtrados);
+        }
+        listaDiv.classList.add('show');
+    }
+
+    function filtrarListaMacho(termo) {
+        const listaDiv = document.getElementById('listaMachosResultados');
+        if (!termo.trim()) {
+            renderizarListaMachos(todosAnimaisMachos);
+        } else {
+            const filtrados = todosAnimaisMachos.filter(animal =>
+                animal.brinco.toLowerCase().includes(termo.toLowerCase()) ||
+                (animal.nome && animal.nome.toLowerCase().includes(termo.toLowerCase()))
+            );
+            renderizarListaMachos(filtrados);
+        }
+        listaDiv.classList.add('show');
+    }
+
+    function renderizarListaFemeas(animais) {
+        const container = document.getElementById('listaFemeasResultados');
+        if (!animais.length) {
+            container.innerHTML = '<div class="animal-item"><small>Nenhuma fêmea encontrada</small></div>';
+            return;
+        }
+        container.innerHTML = animais.map(animal => `
+            <div class="animal-item" onclick="selecionarFemea(${animal.id}, '${animal.brinco}', '${animal.nome || ''}', '${animal.raca || ''}')">
+                <strong>${animal.brinco}</strong> - ${animal.nome || 'Sem nome'}
+                <small>Raça: ${animal.raca || 'N/I'} | ID: ${animal.id}</small>
+            </div>
+        `).join('');
+    }
+
+    function renderizarListaMachos(animais) {
+        const container = document.getElementById('listaMachosResultados');
+        if (!animais.length) {
+            container.innerHTML = '<div class="animal-item"><small>Nenhum macho encontrado</small></div>';
+            return;
+        }
+        container.innerHTML = animais.map(animal => `
+            <div class="animal-item" onclick="selecionarMacho(${animal.id}, '${animal.brinco}', '${animal.nome || ''}', '${animal.raca || ''}')">
+                <strong>${animal.brinco}</strong> - ${animal.nome || 'Sem nome'}
+                <small>Raça: ${animal.raca || 'N/I'} | ID: ${animal.id}</small>
+            </div>
+        `).join('');
+    }
+
+    function selecionarFemea(id, brinco, nome, raca) {
+        document.getElementById('femeaSelecionadaId').value = id;
+        document.getElementById('buscaFemea').value = `${brinco} - ${nome || ''}`.trim();
+        
+        const feedbackContainer = document.getElementById('containerFeedbackFemea');
+        const feedbackSpan = document.getElementById('textoFeedbackFemea');
+        
+        feedbackContainer.classList.add('ativo');
+        feedbackSpan.innerHTML = `<strong>${brinco}</strong> - ${nome || 'Sem nome'} (Raça: ${raca || 'N/I'} | ID: ${id})`;
+        
+        document.getElementById('listaFemeasResultados').classList.remove('show');
+        
+        if (raca && document.getElementById('txtRaca')) {
+            const selectRaca = document.getElementById('txtRaca');
+            for (let i = 0; i < selectRaca.options.length; i++) {
+                if (selectRaca.options[i].text === raca) {
+                    selectRaca.selectedIndex = i;
+                    break;
+                }
+            }
+        }
+    }
+
+    function selecionarMacho(id, brinco, nome, raca) {
+        document.getElementById('machoSelecionadoId').value = id;
+        document.getElementById('buscaMacho').value = `${brinco} - ${nome || ''}`.trim();
+        
+        const feedbackContainer = document.getElementById('containerFeedbackMacho');
+        const feedbackSpan = document.getElementById('textoFeedbackMacho');
+        
+        feedbackContainer.classList.add('ativo');
+        feedbackSpan.innerHTML = `<strong>${brinco}</strong> - ${nome || 'Sem nome'} (Raça: ${raca || 'N/I'} | ID: ${id})`;
+        
+        document.getElementById('listaMachosResultados').classList.remove('show');
+        
+        if (raca && document.getElementById('txtRacaReprodutor')) {
+            const selectRacaRep = document.getElementById('txtRacaReprodutor');
+            for (let i = 0; i < selectRacaRep.options.length; i++) {
+                if (selectRacaRep.options[i].text === raca) {
+                    selectRacaRep.selectedIndex = i;
+                    break;
+                }
+            }
+        }
+    }
+
+    document.addEventListener('click', function(event) {
+        if (!event.target.closest('.busca-animal-container')) {
+            document.querySelectorAll('.lista-animais-dropdown').forEach(drop => {
+                drop.classList.remove('show');
+            });
+        }
+    });
+
+    document.addEventListener('DOMContentLoaded', function() {
+        carregarAnimais();
+        if (typeof atualizarFormulario !== 'function') {
+            window.atualizarFormulario = function() {
+                console.log("Função atualizarFormulario chamada");
+            };
+        }
+        if (typeof executarPredicaoIA !== 'function') {
+            window.executarPredicaoIA = function() {
+                const femeaId = document.getElementById('femeaSelecionadaId').value;
+                const machoId = document.getElementById('machoSelecionadoId').value;
+                if (!femeaId || !machoId) {
+                    alert("Por favor, selecione uma matriz e um reprodutor.");
+                    return;
+                }
+                document.getElementById('painelResultado').style.display = 'block';
+                document.getElementById('lblScore').innerText = '78%';
+                document.getElementById('lblBarra').style.width = '78%';
+                document.getElementById('lblEficacia').innerText = '85%';
+                document.getElementById('lblBarraEficacia').style.width = '85%';
+                document.getElementById('lblMelhorAnimal').innerHTML = 'Recomendado: Cruzamento de alto potencial.';
+            };
+        }
+    });
+</script>
 
 </body>
 </html>
