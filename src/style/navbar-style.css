@@ -1321,3 +1321,237 @@ body {
 .modal-confirmacao-header.aviso i {
     color: #ff9800;
 }
+.eficacia-container {
+    margin-top: 30px;
+    padding-top: 20px;
+    border-top: 2px dashed #e2e8f0;
+}
+
+.eficacia-header {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    font-weight: 600;
+    color: #1e293b;
+    margin-bottom: 15px;
+}
+
+.eficacia-header i {
+    color: #0d8a4f;
+    font-size: 1.2rem;
+}
+
+.eficacia-gauge {
+    text-align: center;
+    margin-bottom: 10px;
+}
+
+.eficacia-number {
+    font-size: 2.2rem;
+    font-weight: 800;
+    background: linear-gradient(135deg, #0d8a4f, #0a6e3f);
+    -webkit-background-clip: text;
+    background-clip: text;
+    color: transparent;
+}
+
+.eficacia-descricao {
+    font-size: 0.85rem;
+    color: #475569;
+    margin-top: 12px;
+    text-align: center;
+}
+/* ==========================================================================
+   CONTAINER E DROPDOWN DE BUSCA DE ANIMAIS (AUTOCOMPLETE)
+   ========================================================================== */
+.busca-animal-container {
+    position: relative;
+}
+
+.lista-animais-dropdown {
+    position: absolute;
+    top: 100%;
+    left: 0;
+    right: 0;
+    background: white;
+    border: 1px solid #e2e8f0;
+    border-radius: 12px;
+    box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.1);
+    max-height: 250px;
+    overflow-y: auto;
+    z-index: 1000;
+    display: none;
+    margin-top: 4px; /* Pequeno espaçamento do input */
+}
+
+/* Cada item/linha da lista de resultados */
+.animal-item {
+    padding: 12px 16px;
+    cursor: pointer;
+    border-bottom: 1px solid #f1f5f9;
+    transition: all 0.2s ease;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.animal-item:last-child {
+    border-bottom: none; /* Remove a borda do último item */
+}
+
+.animal-item:hover {
+    background-color: #f0fdf4;
+}
+
+/* Elementos de texto internos da linha */
+.animal-item .animal-codigo {
+    font-weight: 600;
+    color: #0d8a4f;
+}
+
+.animal-item .animal-info {
+    font-size: 0.8rem;
+    color: #64748b;
+    display: block; /* Garante que as informações fiquem abaixo ou organizadas */
+    margin-top: 2px;
+}
+
+.animal-item i {
+    color: #0d8a4f;
+    margin-right: 8px;
+}
+
+/* Badge de animal selecionado */
+.animal-selecionado-badge {
+    margin-top: 8px;
+    padding: 8px 12px;
+    background: #f0fdf4;
+    border-radius: 8px;
+    color: #0d8a4f;
+    font-size: 0.85rem;
+    display: none;
+}
+
+.animal-selecionado-badge i {
+    margin-right: 6px;
+}
+
+
+/* ==========================================================================
+   MODAL DE MENSAGEM PERSONALIZADO (SUCESSO / ERRO / INFO)
+   ========================================================================== */
+.modal-confirmacao {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.5);
+    backdrop-filter: blur(4px);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 9999;
+}
+
+.modal-confirmacao-content {
+    background: white;
+    border-radius: 20px;
+    width: 90%;
+    max-width: 400px;
+    box-shadow: 0 20px 35px -10px rgba(0, 0, 0, 0.3);
+    animation: fadeIn 0.2s ease-out;
+}
+
+@keyframes fadeIn {
+    from { opacity: 0; transform: scale(0.95); }
+    to { opacity: 1; transform: scale(1); }
+}
+
+.modal-confirmacao-header {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 24px 24px 0 24px;
+}
+
+.modal-confirmacao-header h3 {
+    margin: 0;
+    font-size: 1.35rem;
+    font-weight: 600;
+    color: #1e293b;
+}
+
+.modal-confirmacao-body {
+    padding: 16px 24px;
+}
+
+.modal-confirmacao-body p {
+    margin: 0;
+    font-size: 1rem;
+    color: #334155;
+    line-height: 1.5;
+}
+
+.modal-confirmacao-footer {
+    display: flex;
+    justify-content: flex-end;
+    gap: 12px;
+    padding: 16px 24px 24px 24px;
+}
+
+/* Botão de confirmação estilo pílula */
+.btn-confirmar-ok {
+    background: #0d8a4f;
+    border: none;
+    padding: 10px 28px;
+    border-radius: 40px;
+    font-size: 0.85rem;
+    font-weight: 500;
+    color: white;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.btn-confirmar-ok:hover {
+    background: #0a6e3f;
+    transform: translateY(-1px);
+}
+
+/* Variações de cor com base no tipo de retorno do Modal */
+.modal-confirmacao-header.sucesso i { 
+    color: #0d8a4f; 
+}
+
+.modal-confirmacao-header.erro i { 
+    color: #dc3545; 
+}
+
+.modal-confirmacao-header.erro h3 { 
+    color: #dc3545; 
+}
+ :root {
+            --poty-green-dark: #0d8a4f;
+            --poty-green-light: #12c95e;
+            --poty-orange: #ff7a1a;
+            --poty-red: #ff4757;
+            --poty-bg: #f4f7fe;
+        }
+        body { background-color: var(--poty-bg); font-family: 'Plus Jakarta Sans', sans-serif; }
+        .conteudo-perfil { margin: 4vh auto 50px; width: 95%; max-width: 950px; }
+        .dash-card { background: #fff; border-radius: 20px; box-shadow: 0 4px 15px rgba(0, 0, 0, 0.04); border: none; }
+        .avatar-fundo { width: 70px; height: 70px; background-color: #e8f9f0; color: var(--poty-green-dark); font-size: 28px; display: flex; align-items: center; justify-content: center; border-radius: 50%; }
+        .tag-status-gravida { background-color: #e8f9f0; color: var(--poty-green-dark); font-weight: 700; border-radius: 10px; padding: 6px 14px; font-size: 13px; display: inline-block; }
+        .calendario-grade { width: 100%; border-collapse: separate; border-spacing: 6px; }
+        .calendario-grade th { text-align: center; font-size: 13px; color: #a3aed0; font-weight: 600; padding-bottom: 8px; }
+        .dia-card { height: 75px; background-color: #f8fafc; border: 1px solid #e2e8f0; border-radius: 12px; padding: 6px; font-size: 14px; font-weight: 600; color: #2b3674; display: flex; flex-direction: column; justify-content: space-between; position: relative; }
+        .dia-vazio { background-color: transparent !important; border: none !important; }
+        .ponto-evento { width: 7px; height: 7px; border-radius: 50%; display: inline-block; margin-right: 3px; }
+        .ponto-ins { background-color: #2f80ed; }
+        .ponto-exame { background-color: var(--poty-orange); }
+        .ponto-parto { background-color: var(--poty-green-dark); }
+        .btn-acao-poty { background-color: var(--poty-green-dark); color: #fff; border: none; border-radius: 12px; font-weight: 600; padding: 10px 20px; transition: all 0.2s; }
+        .btn-acao-poty:hover { background-color: #0b7342; color: #fff; }
