@@ -147,10 +147,22 @@ async function carregarAnimais() {
  * Trata doenças e abortos nas tabelas relacionais.
  */
 async function salvarAnimalDB(animalData) {
+    const { data: { session }, error: sessionError } = await supabaseClient.auth.getSession();
+    
+    if (sessionError || !session) {
+        console.error('Erro de autenticação:', sessionError);
+        mostrarMensagem('Sessão expirada. Faça login novamente.', 'erro');
+        setTimeout(() => {
+            window.location.href = '../pages/index.html';
+        }, 2000);
+        return;
+    }
+    const usuarioId = session.user.id;
     const isEditing = window.animalEmEdicao;
 
     // Payload principal para a tabela animais
     const payload = {
+        usuario_id: usuarioId,
         codigo: animalData.codigo,
         nome: animalData.nome || null,
         especie: animalData.especie,
@@ -193,6 +205,7 @@ async function salvarAnimalDB(animalData) {
                 .from('animais')
                 .update(payload)
                 .eq('id', isEditing)
+                .eq('usuario_id', usuarioId)
                 .select()
                 .single();
             if (error) throw error;
@@ -252,7 +265,11 @@ async function salvarAnimalDB(animalData) {
 
     } catch (err) {
         console.error('Erro ao salvar animal:', err);
-        mostrarMensagem('Erro ao salvar: ' + (err.message || 'Verifique os dados e tente novamente.'), 'erro');
+        if (err.message.includes('row-level security')) {
+            mostrarMensagem('Erro de permissão. Faça logout e login novamente.', 'erro');
+        } else {
+            mostrarMensagem('Erro ao salvar: ' + (err.message || 'Verifique os dados e tente novamente.'), 'erro');
+        }
     } finally {
         mostrarLoading(false);
     }
