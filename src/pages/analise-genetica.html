@@ -182,14 +182,31 @@
                         </div>
                     </div>
                 </div>
-
-                <div class="recomendacao-box">
-                    <div class="rec-icon"><i class="fa-solid fa-comment-medical"></i></div>
-                    <div id="lblRecomendacao" class="recomendacao-texto">
-                        Processando parecer da IA...
+        <!-- NOVA SEÇÃO: Eficácia pela Finalidade -->
+       <div class="eficacia-container">
+            <div class="eficacia-header">
+                <i class="fa-solid fa-chart-line"></i>
+                <span id="lblTituloEficacia">Taxa de Eficácia para a Finalidade Selecionada</span>
+            </div>
+            
+            <div class="score-flex-container" style="margin-top: 15px;">
+                <div class="score-gauge">
+                    <span id="lblEficacia" class="score-number">0%</span>
+                </div>
+                <div class="progress-bar-wrapper">
+                    <div class="barra-fundo">
+                        <div id="lblBarraEficacia" class="barra-preenchimento" style="width: 0%;"></div>
                     </div>
                 </div>
             </div>
+        </div>
+
+        <div class="recomendacao-box" style="margin-top: 20px;">
+            <div class="rec-icon"><i class="fa-solid fa-cow"></i></div>
+            <div id="lblMelhorAnimal" class="recomendacao-texto">
+                Selecione os dados e execute a predição para ver o melhor animal recomendado.
+            </div>
+        </div>
 
         </div>
     </main>
