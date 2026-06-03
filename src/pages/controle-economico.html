@@ -1,0 +1,320 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Controle Econômico — Potygen</title>
+  <link rel="stylesheet" href="navbar-styles.css"/>
+  <link rel="stylesheet" href="..\style\controle-economico.css"/>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css"/>
+
+  <link rel="stylesheet" href="../style/navbar-style.css">
+</head>
+<body>
+
+<!-- ═══════════════════════════════════════
+     NAVBAR — Cole o conteúdo do navbar.html
+═════════════════════════════════════════ -->
+<button class="nav-menu-toggle" id="navToggleBtn" aria-label="Alternar menu lateral">
+        <i class="fa-solid fa-bars"></i>
+    </button>
+    
+    <div class="nav-overlay" id="navOverlay"></div>
+    
+    <aside class="potygen-sidebar" id="potygen-sidebar">
+        <div class="nav-logo-wrap">
+            <img src="../assets/logo.png" alt="Potygen" class="nav-logo" 
+                 onerror="this.onerror=null;this.src='https://placehold.co/140x48/ffffff/0d8a4f?text=Potygen';">
+        </div>
+        
+        <nav class="potygen-nav">
+            <a href="dashboard.html" class="nav-item active">
+                <i class="fa-solid fa-house"></i>
+                <span>Dashboard</span>
+            </a>
+            <a href="registrar_inseminacao.html" class="nav-item">
+                <i class="fa-solid fa-syringe"></i>
+                <span>Inseminação</span>
+            </a>
+            <a href="gestao-animais.html" class="nav-item">
+                <i class="fa-solid fa-cow"></i>
+                <span>Gestão de Animais</span>
+            </a>
+            <a href="analise-genetica.html" class="nav-item">
+                <i class="fa-solid fa-dna"></i>
+                <span>Análise Genética</span>
+            </a>
+            <a href="agenda-reprodutiva.html" class="nav-item">
+                <i class="fa-solid fa-calendar-days"></i>
+                <span>Agenda Reprodutiva</span>
+            </a>
+            <a href="relatorio.html" class="nav-item">
+                <i class="fa-solid fa-chart-pie"></i>
+                <span>Relatórios</span>
+            </a>
+            <a href="configuracoes.html" class="nav-item">
+                <i class="fa-solid fa-gear"></i>
+                <span>Configurações</span>
+            </a>
+        </nav>
+        
+        <div class="nav-footer">
+            <button type="button" id="logoutBtn" class="nav-item logout-btn">
+                <i class="fa-solid fa-right-from-bracket"></i>
+                <span>Sair da Conta</span>
+            </button>
+        </div>
+    </aside>
+<!-- ═══════════════════════════════════════
+     CONTEÚDO PRINCIPAL
+═════════════════════════════════════════ -->
+<div class="app-container">
+  <main class="main-content" id="mainContent">
+
+    <!-- Cabeçalho da página -->
+    <div class="page-header">
+      <div>
+        <h1 class="page-title">Controle Econômico</h1>
+        <p class="page-sub">Gerencie receitas, despesas, produção e gere relatórios financeiros</p>
+      </div>
+    </div>
+
+    <!-- Abas principais -->
+    <div class="main-tabs">
+      <button class="main-tab active" id="tabFinanceiro" onclick="trocarMainTab('financeiro')">
+        <i class="fa-solid fa-dollar-sign"></i> Transações Financeiras
+      </button>
+      <button class="main-tab" id="tabProducao" onclick="trocarMainTab('producao')" disabled title="Em breve">
+        <i class="fa-solid fa-chart-simple"></i> Controle de Produção
+      </button>
+    </div>
+
+    <!-- ── PAINEL FINANCEIRO ── -->
+    <div id="painelFinanceiro">
+
+      <!-- Toolbar: busca + botões -->
+      <div class="toolbar">
+        <div class="search-box">
+          <i class="fa-solid fa-magnifying-glass"></i>
+          <input type="text" id="inputBusca" placeholder="Buscar transações..." oninput="filtrarTabela()"/>
+        </div>
+        <div class="toolbar-actions">
+          <button class="btn-pdf" onclick="abrirModal('modalPDF')">
+            <i class="fa-solid fa-file-pdf"></i> Relatório PDF
+          </button>
+          <button class="btn-nova" onclick="abrirNovaTransacao()">
+            <i class="fa-solid fa-plus"></i> Nova Transação
+          </button>
+        </div>
+      </div>
+
+      <!-- Filtros de período -->
+      <div class="filtros-periodo">
+        <i class="fa-solid fa-filter" style="color:#94a3b8;"></i>
+        <span class="filtro-label">Período:</span>
+        <button class="filtro-btn active" data-periodo="todos"     onclick="setPeriodo(this,'todos')">Todos</button>
+        <button class="filtro-btn"        data-periodo="mes"       onclick="setPeriodo(this,'mes')">Mês</button>
+        <button class="filtro-btn"        data-periodo="semestre"  onclick="setPeriodo(this,'semestre')">Semestre</button>
+        <button class="filtro-btn"        data-periodo="ano"       onclick="setPeriodo(this,'ano')">Ano</button>
+      </div>
+
+      <!-- Cards de resumo -->
+      <div class="resumo-grid">
+        <div class="resumo-card">
+          <div class="resumo-left">
+            <span class="resumo-label">Total Receitas</span>
+            <strong class="resumo-valor green" id="totalReceitas">R$ 0,00</strong>
+            <span class="resumo-qtd" id="qtdReceitas">0 transações</span>
+          </div>
+          <div class="resumo-icon green"><i class="fa-solid fa-arrow-trend-up"></i></div>
+        </div>
+        <div class="resumo-card">
+          <div class="resumo-left">
+            <span class="resumo-label">Total Despesas</span>
+            <strong class="resumo-valor red" id="totalDespesas">R$ 0,00</strong>
+            <span class="resumo-qtd" id="qtdDespesas">0 transações</span>
+          </div>
+          <div class="resumo-icon red"><i class="fa-solid fa-arrow-trend-down"></i></div>
+        </div>
+        <div class="resumo-card">
+          <div class="resumo-left">
+            <span class="resumo-label">Saldo</span>
+            <strong class="resumo-valor green" id="totalSaldo">R$ 0,00</strong>
+            <span class="resumo-qtd">No período filtrado</span>
+          </div>
+          <div class="resumo-icon green" id="iconeSaldo"><i class="fa-solid fa-dollar-sign"></i></div>
+        </div>
+      </div>
+
+      <!-- Tabela de transações -->
+      <div class="secao-titulo-wrap">
+        <h2 class="secao-titulo">Transações <span id="badgeTotal" class="badge-total">0</span></h2>
+      </div>
+
+      <div class="table-wrap">
+        <table class="transacoes-table">
+          <thead>
+            <tr>
+              <th>TIPO</th>
+              <th>DESCRIÇÃO</th>
+              <th>CATEGORIA</th>
+              <th>DATA</th>
+              <th>QTD</th>
+              <th>VALOR TOTAL</th>
+              <th>AÇÕES</th>
+            </tr>
+          </thead>
+          <tbody id="tbodyTransacoes">
+            <tr><td colspan="7" class="empty-row">
+              <i class="fa-solid fa-inbox" style="font-size:28px;color:#e2e8f0;display:block;margin-bottom:8px;"></i>
+              Nenhuma transação encontrada.
+            </td></tr>
+          </tbody>
+        </table>
+      </div>
+
+    </div><!-- /painelFinanceiro -->
+
+  </main>
+</div>
+
+<!-- ═══════════════════════════════════════
+     MODAL — Nova / Editar Transação
+═════════════════════════════════════════ -->
+<div class="modal-overlay" id="modalTransacao">
+  <div class="modal-box">
+    <div class="modal-header">
+      <h2 id="modalTitulo">Nova Transação</h2>
+      <button class="modal-close" onclick="fecharModal('modalTransacao')">&times;</button>
+    </div>
+    <div class="modal-body">
+
+      <!-- Seletor Receita / Despesa -->
+      <p class="field-label">Tipo de Transação</p>
+      <div class="tipo-selector">
+        <button class="tipo-btn active" id="btnReceita" onclick="setTipo('receita')">
+          <i class="fa-solid fa-arrow-trend-up"></i> Receita
+        </button>
+        <button class="tipo-btn" id="btnDespesa" onclick="setTipo('despesa')">
+          <i class="fa-solid fa-arrow-trend-down"></i> Despesa
+        </button>
+      </div>
+      <input type="hidden" id="tipoTransacao" value="receita"/>
+      <input type="hidden" id="editandoId" value=""/>
+
+      <div class="form-row">
+        <div class="field-group">
+          <label class="field-label">Categoria</label>
+          <select id="categoria">
+            <option value="">Selecione uma categoria</option>
+          </select>
+        </div>
+        <div class="field-group">
+          <label class="field-label">Data</label>
+          <input type="date" id="dataTransacao"/>
+        </div>
+      </div>
+
+      <div class="form-row">
+        <div class="field-group">
+          <label class="field-label">Hora</label>
+          <input type="time" id="horaTransacao"/>
+        </div>
+      </div>
+
+      <div class="field-group full">
+        <label class="field-label">Descrição</label>
+        <input type="text" id="descricao" placeholder="Ex: Venda de novilho, Compra de ração..."/>
+      </div>
+
+      <div class="form-row">
+        <div class="field-group">
+          <label class="field-label">Quantidade</label>
+          <input type="number" id="quantidade" value="1" min="1" step="1" oninput="calcularTotal()"/>
+        </div>
+        <div class="field-group">
+          <label class="field-label">Preço Unitário (R$)</label>
+          <input type="number" id="precoUnitario" placeholder="0,00" min="0" step="0.01" oninput="calcularTotal()"/>
+        </div>
+        <div class="field-group">
+          <label class="field-label">Valor Total</label>
+          <input type="text" id="valorTotal" placeholder="R$ 0,00" readonly class="input-readonly"/>
+        </div>
+      </div>
+
+      <div class="field-group full">
+        <label class="field-label">Observações (opcional)</label>
+        <textarea id="observacoes" placeholder="Informações adicionais..." rows="3"></textarea>
+      </div>
+
+    </div>
+    <div class="modal-footer">
+      <button class="btn-cancelar" onclick="fecharModal('modalTransacao')">Cancelar</button>
+      <button class="btn-salvar" onclick="salvarTransacao()">
+        <i class="fa-solid fa-floppy-disk"></i> Salvar Transação
+      </button>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════
+     MODAL — Relatório PDF
+═════════════════════════════════════════ -->
+<div class="modal-overlay" id="modalPDF">
+  <div class="modal-box modal-box-sm">
+    <div class="modal-header">
+      <h2>Gerar Relatório PDF</h2>
+      <button class="modal-close" onclick="fecharModal('modalPDF')">&times;</button>
+    </div>
+    <div class="modal-body">
+      <p class="field-label" style="margin-bottom:14px;">Selecione o período do relatório</p>
+
+      <div class="opcoes-pdf">
+        <label class="opcao-pdf active" id="opcaoMensal">
+          <input type="radio" name="periodoRelatorio" value="mensal" checked onchange="selecionarOpcaoPDF(this)"/>
+          <i class="fa-regular fa-calendar"></i>
+          <div>
+            <strong>Relatório Mensal</strong>
+            <span>Últimos 30 dias</span>
+          </div>
+        </label>
+        <label class="opcao-pdf" id="opcaoSemestral">
+          <input type="radio" name="periodoRelatorio" value="semestral" onchange="selecionarOpcaoPDF(this)"/>
+          <i class="fa-regular fa-calendar"></i>
+          <div>
+            <strong>Relatório Semestral</strong>
+            <span>Últimos 6 meses</span>
+          </div>
+        </label>
+        <label class="opcao-pdf" id="opcaoAnual">
+          <input type="radio" name="periodoRelatorio" value="anual" onchange="selecionarOpcaoPDF(this)"/>
+          <i class="fa-regular fa-calendar"></i>
+          <div>
+            <strong>Relatório Anual</strong>
+            <span>Últimos 12 meses</span>
+          </div>
+        </label>
+      </div>
+
+      <div class="pdf-info">
+        <i class="fa-solid fa-circle-info"></i>
+        O relatório será gerado em PDF com cabeçalho da fazenda e todas as transações do período.
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn-cancelar" onclick="fecharModal('modalPDF')">Cancelar</button>
+      <button class="btn-salvar" onclick="gerarPDF()">
+        <i class="fa-solid fa-download"></i> Baixar PDF
+      </button>
+    </div>
+  </div>
+</div>
+
+<!-- jsPDF para geração de PDF no navegador (gratuito) -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<script src="..\backend\controle-economico.js"></script>
+<script src="..\backend\navbar-script.js"></script>
+</body>
+</html>
