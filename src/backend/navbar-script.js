@@ -147,6 +147,78 @@
                 }
             });
         }
+
+        function addChatbotButton() {
+            if (document.getElementById('potygenChatbotButton')) return;
+
+            const chatbotButton = document.createElement('button');
+            chatbotButton.id = 'potygenChatbotButton';
+            chatbotButton.type = 'button';
+            chatbotButton.className = 'potygen-chatbot-button';
+            chatbotButton.title = 'Abrir chatbot PotyGen';
+            chatbotButton.setAttribute('aria-label', 'Abrir chatbot PotyGen');
+            chatbotButton.innerHTML = '<i class="fa-solid fa-leaf"></i>';
+            chatbotButton.addEventListener('click', function() {
+                openChatbotPopup();
+            });
+
+            document.body.appendChild(chatbotButton);
+            createChatbotPopup();
+        }
+
+        function createChatbotPopup() {
+            if (document.getElementById('potygenChatbotOverlay')) return;
+
+            const overlay = document.createElement('div');
+            overlay.id = 'potygenChatbotOverlay';
+            overlay.className = 'potygen-chatbot-overlay';
+
+            const modal = document.createElement('div');
+            modal.className = 'potygen-chatbot-modal';
+            modal.setAttribute('role', 'dialog');
+            modal.setAttribute('aria-modal', 'true');
+            modal.setAttribute('aria-label', 'Chatbot PotyGen');
+
+            const closeButton = document.createElement('button');
+            closeButton.type = 'button';
+            closeButton.className = 'potygen-chatbot-close';
+            closeButton.title = 'Fechar chatbot';
+            closeButton.setAttribute('aria-label', 'Fechar chatbot');
+            closeButton.innerHTML = '<i class="fa-solid fa-xmark"></i>';
+            closeButton.addEventListener('click', closeChatbotPopup);
+
+            const iframe = document.createElement('iframe');
+            iframe.className = 'potygen-chatbot-iframe';
+            iframe.src = 'chatbot.html';
+            iframe.title = 'Chatbot PotyGen';
+            iframe.loading = 'lazy';
+
+            modal.appendChild(closeButton);
+            modal.appendChild(iframe);
+            overlay.appendChild(modal);
+
+            overlay.addEventListener('click', function(event) {
+                if (event.target === overlay) {
+                    closeChatbotPopup();
+                }
+            });
+
+            document.body.appendChild(overlay);
+        }
+
+        function openChatbotPopup() {
+            const overlay = document.getElementById('potygenChatbotOverlay');
+            if (!overlay) return;
+            overlay.classList.add('visible');
+            document.body.style.overflow = 'hidden';
+        }
+
+        function closeChatbotPopup() {
+            const overlay = document.getElementById('potygenChatbotOverlay');
+            if (!overlay) return;
+            overlay.classList.remove('visible');
+            document.body.style.overflow = '';
+        }
         
         // =====================================================================
         // REDIMENSIONAMENTO
@@ -191,6 +263,7 @@
         setInitialState();
         setActiveNavItem();
         setupNavItemListeners();
+        addChatbotButton();
         
         window.potygenNavbar = {
             open: openSidebar,

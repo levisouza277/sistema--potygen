@@ -212,15 +212,57 @@ body {
    ========================================================================== */
 .nav-footer {
     margin-top: auto;
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
 }
+
+/* Reset de aparência de botão para todos os nav-item do footer */
 .nav-footer .nav-item {
-    color: var(--logout-red);
+    background: none;
+    border: none;
     border-left: 4px solid transparent;
+    outline: none;
+    width: 100%;
+    text-align: left;
+    font-family: inherit;
+    font-size: 14px;
+    font-weight: 600;
+    cursor: pointer;
+    -webkit-appearance: none;
+    appearance: none;
 }
-.nav-footer .nav-item:hover {
+
+/* Botões verdes (Cadastrar Fazenda e Trocar Fazenda) */
+.nav-footer .nav-item.nav-item-green {
+    color: #22c55e;
+}
+.nav-footer .nav-item.nav-item-green i {
+    color: #22c55e;
+}
+.nav-footer .nav-item.nav-item-green:hover {
+    background: rgba(34, 197, 94, 0.1);
+    color: #16a34a;
+    padding-left: 20px;
+}
+.nav-footer .nav-item.nav-item-green:hover i {
+    color: #16a34a;
+}
+
+/* Botão de logout (vermelho) */
+.nav-footer .nav-item.logout-btn {
+    color: var(--logout-red);
+}
+.nav-footer .nav-item.logout-btn i {
+    color: var(--logout-red);
+}
+.nav-footer .nav-item.logout-btn:hover {
     background: #fff5f5;
     color: #ff1744;
     padding-left: 20px;
+}
+.nav-footer .nav-item.logout-btn:hover i {
+    color: #ff1744;
 }
 
 /* ==========================================================================
@@ -1101,457 +1143,117 @@ body {
     cursor: pointer;
 }
 
-    /* Estilos para os botões de ação em texto */
-    .action-buttons {
-        display: flex;
-        gap: 12px;
-        justify-content: flex-end;
-        align-items: center;
-    }
-    .action-btn {
-        background: none;
-        border: none;
-        cursor: pointer;
-        font-size: 0.85rem;
-        font-weight: 500;
-        padding: 6px 12px;
-        border-radius: 6px;
-        transition: all 0.2s ease;
-        font-family: 'Plus Jakarta Sans', sans-serif;
-    }
-    .action-view {
-        color: #0d8a4f;
-        background: #e8f5ef;
-    }
-    .action-view:hover {
-        background: #d0ebdf;
-        transform: translateY(-1px);
-    }
-    .action-edit {
-        color: #ff9800;
-        background: #fff3e0;
-    }
-    .action-edit:hover {
-        background: #ffe0b2;
-        transform: translateY(-1px);
-    }
-    .action-delete {
-        color: #dc3545;
-        background: #fee;
-    }
-    .action-delete:hover {
-        background: #fcc;
-        transform: translateY(-1px);
-    }
-/* Responsividade para telas menores */
-@media (max-width: 1200px) {
-    .animais-table th:nth-child(6),
-    .animais-table td:nth-child(6),
-    .animais-table th:nth-child(7),
-    .animais-table td:nth-child(7),
-    .animais-table th:nth-child(8),
-    .animais-table td:nth-child(8) {
-        display: none;
-    }
-}
-
-@media (max-width: 900px) {
-    .animais-table th:nth-child(4),
-    .animais-table td:nth-child(4),
-    .animais-table th:nth-child(5),
-    .animais-table td:nth-child(5) {
-        display: none;
-    }
-    
-    .animais-table th:nth-child(1),
-    .animais-table td:nth-child(1) {
-        min-width: 120px;
-    }
-}
-
-@media (max-width: 600px) {
-    .table-container {
-        overflow-x: auto;
-    }
-    
-    .animais-table {
-        min-width: 500px;
-    }
-}
-/* Modal de Confirmação Personalizado */
-.modal-confirmacao {
-    position: fixed;
-    top: 0;
-    left: 0;
-    width: 100%;
-    height: 100%;
-    background: rgba(0, 0, 0, 0.5);
-    backdrop-filter: blur(4px);
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    z-index: 9999;
-}
-
-.modal-confirmacao-content {
-    background: white;
-    border-radius: 20px;
-    width: 90%;
-    max-width: 400px;
-    box-shadow: 0 20px 35px -10px rgba(0, 0, 0, 0.3);
-    animation: modalConfirmacaoFadeIn 0.2s ease-out;
-}
-
-@keyframes modalConfirmacaoFadeIn {
-    from {
-        opacity: 0;
-        transform: scale(0.95);
-    }
-    to {
-        opacity: 1;
-        transform: scale(1);
-    }
-}
-
-.modal-confirmacao-header {
-    display: flex;
-    align-items: center;
-    gap: 12px;
-    padding: 20px 24px 0 24px;
-}
-
-.modal-confirmacao-header h3 {
-    margin: 0;
-    font-size: 1.35rem;
-    font-weight: 600;
-    color: #1e293b;
-}
-
-.modal-confirmacao-body {
-    padding: 16px 24px;
-}
-
-.modal-confirmacao-body p {
-    margin: 0;
-    font-size: 1rem;
-    color: #334155;
-}
-
-.modal-confirmacao-footer {
-    display: flex;
-    justify-content: flex-end;
-    gap: 12px;
-    padding: 16px 24px 24px 24px;
-}
-
-/* Botão Cancelar */
-.btn-confirmar-cancelar {
-    background: #f1f5f9;
-    border: none;
-    padding: 10px 20px;
-    border-radius: 40px;
-    font-size: 0.85rem;
-    font-weight: 500;
-    color: #475569;
-    cursor: pointer;
-    transition: all 0.2s ease;
-    display: inline-flex;
-    align-items: center;
-    gap: 8px;
-}
-
-.btn-confirmar-cancelar:hover {
-    background: #e2e8f0;
-    transform: translateY(-1px);
-}
-
-/* Botão Excluir */
-.btn-confirmar-excluir {
-    background: #dc3545;
-    border: none;
-    padding: 10px 20px;
-    border-radius: 40px;
-    font-size: 0.85rem;
-    font-weight: 500;
-    color: white;
-    cursor: pointer;
-    transition: all 0.2s ease;
-    display: inline-flex;
-    align-items: center;
-    gap: 8px;
-}
-
-.btn-confirmar-excluir:hover {
-    background: #c82333;
-    transform: translateY(-1px);
-    box-shadow: 0 4px 12px rgba(220, 53, 69, 0.3);
-}
-
-/* Botão OK (para mensagens) */
-.btn-confirmar-ok {
-    background: #0d8a4f;
-    border: none;
-    padding: 10px 28px;
-    border-radius: 40px;
-    font-size: 0.85rem;
-    font-weight: 500;
-    color: white;
-    cursor: pointer;
-    transition: all 0.2s ease;
-    display: inline-flex;
-    align-items: center;
-    gap: 8px;
-}
-
-.btn-confirmar-ok:hover {
-    background: #0a6e3f;
-    transform: translateY(-1px);
-    box-shadow: 0 4px 12px rgba(13, 138, 79, 0.3);
-}
-
-/* Cores dos cabeçalhos */
-.modal-confirmacao-header.erro i {
-    color: #dc3545;
-}
-
-.modal-confirmacao-header.sucesso i {
-    color: #0d8a4f;
-}
-
-.modal-confirmacao-header.aviso i {
-    color: #ff9800;
-}
-.eficacia-container {
-    margin-top: 30px;
-    padding-top: 20px;
-    border-top: 2px dashed #e2e8f0;
-}
-
-.eficacia-header {
-    display: flex;
-    align-items: center;
-    gap: 10px;
-    font-weight: 600;
-    color: #1e293b;
-    margin-bottom: 15px;
-}
-
-.eficacia-header i {
-    color: #0d8a4f;
-    font-size: 1.2rem;
-}
-
-.eficacia-gauge {
-    text-align: center;
-    margin-bottom: 10px;
-}
-
-.eficacia-number {
-    font-size: 2.2rem;
-    font-weight: 800;
-    background: linear-gradient(135deg, #0d8a4f, #0a6e3f);
-    -webkit-background-clip: text;
-    background-clip: text;
-    color: transparent;
-}
-
-.eficacia-descricao {
-    font-size: 0.85rem;
-    color: #475569;
-    margin-top: 12px;
-    text-align: center;
-}
 /* ==========================================================================
-   CONTAINER E DROPDOWN DE BUSCA DE ANIMAIS (AUTOCOMPLETE)
+   BOTÃO DE CHATBOT FLUTUANTE
    ========================================================================== */
-.busca-animal-container {
+.potygen-chatbot-button {
+    position: fixed;
+    right: 22px;
+    bottom: 22px;
+    width: 62px;
+    height: 62px;
+    border-radius: 50%;
+    background: var(--primary-green);
+    display: grid;
+    place-items: center;
+    box-shadow: 0 18px 30px rgba(13, 138, 79, 0.22);
+    z-index: 1200;
+    text-decoration: none;
+    transition: transform 0.2s ease, box-shadow 0.2s ease, background 0.2s ease;
+    border: 2px solid rgba(255, 255, 255, 0.24);
+    color: #ffffff;
+}
+
+.potygen-chatbot-button i,
+.potygen-chatbot-button img {
+    width: 30px;
+    height: 30px;
+    display: block;
+    color: #ffffff;
+    font-size: 30px;
+    line-height: 1;
+}
+
+.potygen-chatbot-button:hover {
+    transform: translateY(-2px);
+    background: #0b6f3a;
+    box-shadow: 0 22px 36px rgba(13, 138, 79, 0.3);
+}
+
+.potygen-chatbot-overlay {
+    position: fixed;
+    inset: 0;
+    background: rgba(15, 23, 42, 0.56);
+    display: grid;
+    place-items: center;
+    z-index: 1300;
+    opacity: 0;
+    visibility: hidden;
+    transition: opacity 0.2s ease;
+    backdrop-filter: blur(4px);
+}
+
+.potygen-chatbot-overlay.visible {
+    opacity: 1;
+    visibility: visible;
+}
+
+.potygen-chatbot-modal {
+    width: min(420px, 92vw);
+    max-width: 420px;
+    height: min(620px, 85vh);
+    max-height: 620px;
+    background: #ffffff;
+    border-radius: 28px;
+    overflow: hidden;
+    box-shadow: 0 28px 80px rgba(0, 0, 0, 0.24);
     position: relative;
-}
-
-.lista-animais-dropdown {
-    position: absolute;
-    top: 100%;
-    left: 0;
-    right: 0;
-    background: white;
-    border: 1px solid #e2e8f0;
-    border-radius: 12px;
-    box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.1);
-    max-height: 250px;
-    overflow-y: auto;
-    z-index: 1000;
-    display: none;
-    margin-top: 4px; /* Pequeno espaçamento do input */
-}
-
-/* Cada item/linha da lista de resultados */
-.animal-item {
-    padding: 12px 16px;
-    cursor: pointer;
-    border-bottom: 1px solid #f1f5f9;
-    transition: all 0.2s ease;
     display: flex;
-    justify-content: space-between;
-    align-items: center;
+    flex-direction: column;
+    border: 1px solid rgba(13, 138, 79, 0.12);
 }
 
-.animal-item:last-child {
-    border-bottom: none; /* Remove a borda do último item */
-}
-
-.animal-item:hover {
-    background-color: #f0fdf4;
-}
-
-/* Elementos de texto internos da linha */
-.animal-item .animal-codigo {
-    font-weight: 600;
+.potygen-chatbot-close {
+    position: absolute;
+    top: 18px;
+    right: 18px;
+    width: 42px;
+    height: 42px;
+    border: none;
+    border-radius: 50%;
+    background: rgba(255, 255, 255, 0.95);
     color: #0d8a4f;
+    display: grid;
+    place-items: center;
+    cursor: pointer;
+    box-shadow: 0 10px 24px rgba(0, 0, 0, 0.14);
+    transition: transform 0.2s ease, background 0.2s ease;
 }
 
-.animal-item .animal-info {
-    font-size: 0.8rem;
-    color: #64748b;
-    display: block; /* Garante que as informações fiquem abaixo ou organizadas */
-    margin-top: 2px;
+.potygen-chatbot-close:hover {
+    transform: scale(1.05);
+    background: #0d8a4f;
+    color: #ffffff;
 }
 
-.animal-item i {
-    color: #0d8a4f;
-    margin-right: 8px;
-}
-
-/* Badge de animal selecionado */
-.animal-selecionado-badge {
-    margin-top: 8px;
-    padding: 8px 12px;
-    background: #f0fdf4;
-    border-radius: 8px;
-    color: #0d8a4f;
-    font-size: 0.85rem;
-    display: none;
-}
-
-.animal-selecionado-badge i {
-    margin-right: 6px;
-}
-
-
-/* ==========================================================================
-   MODAL DE MENSAGEM PERSONALIZADO (SUCESSO / ERRO / INFO)
-   ========================================================================== */
-.modal-confirmacao {
-    position: fixed;
-    top: 0;
-    left: 0;
+.potygen-chatbot-iframe {
     width: 100%;
     height: 100%;
-    background: rgba(0, 0, 0, 0.5);
-    backdrop-filter: blur(4px);
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    z-index: 9999;
-}
-
-.modal-confirmacao-content {
-    background: white;
-    border-radius: 20px;
-    width: 90%;
-    max-width: 400px;
-    box-shadow: 0 20px 35px -10px rgba(0, 0, 0, 0.3);
-    animation: fadeIn 0.2s ease-out;
-}
-
-@keyframes fadeIn {
-    from { opacity: 0; transform: scale(0.95); }
-    to { opacity: 1; transform: scale(1); }
-}
-
-.modal-confirmacao-header {
-    display: flex;
-    align-items: center;
-    gap: 12px;
-    padding: 24px 24px 0 24px;
-}
-
-.modal-confirmacao-header h3 {
-    margin: 0;
-    font-size: 1.35rem;
-    font-weight: 600;
-    color: #1e293b;
-}
-
-.modal-confirmacao-body {
-    padding: 16px 24px;
-}
-
-.modal-confirmacao-body p {
-    margin: 0;
-    font-size: 1rem;
-    color: #334155;
-    line-height: 1.5;
-}
-
-.modal-confirmacao-footer {
-    display: flex;
-    justify-content: flex-end;
-    gap: 12px;
-    padding: 16px 24px 24px 24px;
-}
-
-/* Botão de confirmação estilo pílula */
-.btn-confirmar-ok {
-    background: #0d8a4f;
     border: none;
-    padding: 10px 28px;
-    border-radius: 40px;
-    font-size: 0.85rem;
-    font-weight: 500;
-    color: white;
-    cursor: pointer;
-    transition: all 0.2s ease;
-    display: inline-flex;
-    align-items: center;
-    gap: 8px;
+    background: white;
 }
 
-.btn-confirmar-ok:hover {
-    background: #0a6e3f;
-    transform: translateY(-1px);
-}
+@media (max-width: 520px) {
+    .potygen-chatbot-button {
+        right: 16px;
+        bottom: 16px;
+        width: 56px;
+        height: 56px;
+    }
 
-/* Variações de cor com base no tipo de retorno do Modal */
-.modal-confirmacao-header.sucesso i { 
-    color: #0d8a4f; 
+    .potygen-chatbot-modal {
+        width: min(96vw, 100%);
+        height: 90vh;
+        border-radius: 20px;
+    }
 }
-
-.modal-confirmacao-header.erro i { 
-    color: #dc3545; 
-}
-
-.modal-confirmacao-header.erro h3 { 
-    color: #dc3545; 
-}
- :root {
-            --poty-green-dark: #0d8a4f;
-            --poty-green-light: #12c95e;
-            --poty-orange: #ff7a1a;
-            --poty-red: #ff4757;
-            --poty-bg: #f4f7fe;
-        }
-        body { background-color: var(--poty-bg); font-family: 'Plus Jakarta Sans', sans-serif; }
-        .conteudo-perfil { margin: 4vh auto 50px; width: 95%; max-width: 950px; }
-        .dash-card { background: #fff; border-radius: 20px; box-shadow: 0 4px 15px rgba(0, 0, 0, 0.04); border: none; }
-        .avatar-fundo { width: 70px; height: 70px; background-color: #e8f9f0; color: var(--poty-green-dark); font-size: 28px; display: flex; align-items: center; justify-content: center; border-radius: 50%; }
-        .tag-status-gravida { background-color: #e8f9f0; color: var(--poty-green-dark); font-weight: 700; border-radius: 10px; padding: 6px 14px; font-size: 13px; display: inline-block; }
-        .calendario-grade { width: 100%; border-collapse: separate; border-spacing: 6px; }
-        .calendario-grade th { text-align: center; font-size: 13px; color: #a3aed0; font-weight: 600; padding-bottom: 8px; }
-        .dia-card { height: 75px; background-color: #f8fafc; border: 1px solid #e2e8f0; border-radius: 12px; padding: 6px; font-size: 14px; font-weight: 600; color: #2b3674; display: flex; flex-direction: column; justify-content: space-between; position: relative; }
-        .dia-vazio { background-color: transparent !important; border: none !important; }
-        .ponto-evento { width: 7px; height: 7px; border-radius: 50%; display: inline-block; margin-right: 3px; }
-        .ponto-ins { background-color: #2f80ed; }
-        .ponto-exame { background-color: var(--poty-orange); }
-        .ponto-parto { background-color: var(--poty-green-dark); }
-        .btn-acao-poty { background-color: var(--poty-green-dark); color: #fff; border: none; border-radius: 12px; font-weight: 600; padding: 10px 20px; transition: all 0.2s; }
-        .btn-acao-poty:hover { background-color: #0b7342; color: #fff; }

@@ -3,300 +3,484 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Potygen - Dashboard Oficial</title>
+    <title>Potygen - Dashboard</title>
     <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <link rel="stylesheet" href="../style/style-dashboard.css">
-    
-    <!-- Estilos padronizados da navbar -->
     <link rel="stylesheet" href="../style/navbar-style.css">
 </head>
 <body>
 
 <div class="app-container">
-    <!-- ============================================ -->
-    <!-- NAVBAR PADRONIZADA -->
-    <!-- ============================================ -->
-    
+    <!-- NAVBAR -->
     <button class="nav-menu-toggle" id="navToggleBtn" aria-label="Alternar menu lateral">
         <i class="fa-solid fa-bars"></i>
     </button>
-    
     <div class="nav-overlay" id="navOverlay"></div>
-    
+
     <aside class="potygen-sidebar" id="potygen-sidebar">
         <div class="nav-logo-wrap">
-            <img src="../assets/logo.png" alt="Potygen" class="nav-logo" 
+            <img src="../assets/logo.png" alt="Potygen" class="nav-logo"
                  onerror="this.onerror=null;this.src='https://placehold.co/140x48/ffffff/0d8a4f?text=Potygen';">
         </div>
-        
+
         <nav class="potygen-nav">
             <a href="dashboard.html" class="nav-item active">
-                <i class="fa-solid fa-house"></i>
-                <span>Dashboard</span>
+                <i class="fa-solid fa-house"></i><span>Dashboard</span>
             </a>
             <a href="registrar_inseminacao.html" class="nav-item">
-                <i class="fa-solid fa-syringe"></i>
-                <span>Inseminação</span>
+                <i class="fa-solid fa-syringe"></i><span>Inseminação</span>
             </a>
             <a href="gestao-animais.html" class="nav-item">
-                <i class="fa-solid fa-cow"></i>
-                <span>Gestão de Animais</span>
+                <i class="fa-solid fa-cow"></i><span>Gestão de Animais</span>
             </a>
             <a href="analise-genetica.html" class="nav-item">
-                <i class="fa-solid fa-dna"></i>
-                <span>Análise Genética</span>
+                <i class="fa-solid fa-dna"></i><span>Análise Genética</span>
             </a>
             <a href="agenda-reprodutiva.html" class="nav-item">
-                <i class="fa-solid fa-calendar-days"></i>
-                <span>Agenda Reprodutiva</span>
+                <i class="fa-solid fa-calendar-days"></i><span>Agenda Reprodutiva</span>
             </a>
             <a href="relatorio.html" class="nav-item">
-                <i class="fa-solid fa-chart-pie"></i>
-                <span>Relatórios</span>
+                <i class="fa-solid fa-chart-pie"></i><span>Relatórios</span>
             </a>
             <a href="configuracoes.html" class="nav-item">
-                <i class="fa-solid fa-gear"></i>
-                <span>Configurações</span>
+                <i class="fa-solid fa-gear"></i><span>Configurações</span>
             </a>
         </nav>
-        
+
         <div class="nav-footer">
+            <button type="button" class="nav-item nav-item-green" onclick="abrirModalCadastrarFazenda()">
+                <i class="fa-solid fa-plus"></i><span>Cadastrar Fazenda</span>
+            </button>
+            <button type="button" class="nav-item nav-item-green" id="btnTrocarFazendaSidebar" onclick="abrirModalTrocarFazenda()">
+                <i class="fa-solid fa-tractor"></i>
+                <span style="flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;" id="sidebarFazendaNome">Carregando...</span>
+            </button>
             <button type="button" id="logoutBtn" class="nav-item logout-btn">
-                <i class="fa-solid fa-right-from-bracket"></i>
-                <span>Sair da Conta</span>
+                <i class="fa-solid fa-right-from-bracket"></i><span>Sair da Conta</span>
             </button>
         </div>
     </aside>
-    
-    <!-- ============================================ -->
+
     <!-- CONTEÚDO PRINCIPAL -->
-    <!-- ============================================ -->
-    
     <main class="main-content" id="mainContent">
-        <header class="top-bar">
-            <div class="search-container">
-                <i class="fa-solid fa-magnifying-glass"></i>
-                <input type="text" placeholder="Buscar animal, lote ou técnico...">
-            </div>
-            
-            <div class="top-bar-right">
-            </div>
-        </header>
+        <header class="top-bar"></header>
 
         <div class="dashboard-body">
             <div class="welcome-section">
                 <div class="welcome-text">
-                    <h1>Dashboard</h1>
-                    <p>Visão geral do rebanho e monitoramento genético</p>
+                    <h1>Informações Gerais da Fazenda</h1>
+                    <div style="display:flex; align-items:center; gap:10px; flex-wrap:wrap;">
+                        <p style="margin:0;">Visão geral do rebanho e monitoramento genético</p>
+                        <span class="fazenda-header-badge" id="fazendaHeaderBadge" onclick="abrirModalTrocarFazenda()">
+                            <i class="fa-solid fa-tractor"></i>
+                            <span id="fazendaBadgeNome">—</span>
+                            <i class="fa-solid fa-chevron-down" style="font-size:9px;opacity:0.6;"></i>
+                        </span>
+                    </div>
                 </div>
                 <div class="welcome-actions">
                     <div class="user-profile-with-bell">
                         <div class="user-profile-box">
                             <div class="user-text">
-                                <span class="user-name">Admin Potygen</span>
-                                <span class="user-farm">Fazenda Modelo</span>
+                                <span class="user-name" id="userNameDisplay">—</span>
+                                <span class="user-farm" id="userFarmDisplay">—</span>
                             </div>
                             <div class="user-avatar"></div>
                         </div>
-                        <div class="notification-bell">
+                        <button id="notificationBell" type="button" class="notification-bell" aria-label="Notificações">
                             <i class="fa-solid fa-bell"></i>
                             <span class="bell-dot"></span>
-                        </div>
-                    </div>
-
-                    <div class="action-buttons">
-                        <button class="btn-action-sec">
-                            <i class="fa-solid fa-download"></i> Exportar Dados
                         </button>
-                        <button class="btn-action-pri" onclick="abrirModal('modalNovoAnimal')">
-                            <i class="fa-solid fa-plus"></i> Novo Animal
+                    </div>
+                    <div class="filter-action-row">
+                        <button id="openDashboardFilters" class="btn-action-sec">
+                            <i class="fa-solid fa-filter"></i> Filtro
                         </button>
                     </div>
                 </div>
             </div>
 
-            <!-- CARDS DE ESTATÍSTICA -->
+            <!-- MODAL FILTROS -->
+            <div class="dashboard-filters-modal modal-backdrop" id="dashboardFiltersModal">
+                <div class="modal-content filter-modal">
+                    <header class="modal-header modal-header-small">
+                        <div>
+                            <h2>Filtros de Gráfico</h2>
+                            <p>Escolha fazenda, segmento, período e tipos de gráfico.</p>
+                        </div>
+                        <button class="btn-close" id="closeDashboardFilters">&times;</button>
+                    </header>
+                    <section class="filter-modal-body">
+                        <div class="filter-modal-grid">
+                            <!-- FILTRO FAZENDA -->
+                            <div class="filter-field filter-field-fazenda">
+                                <label for="filterFazenda">Fazenda</label>
+                                <select id="filterFazenda">
+                                    <option value="atual">Fazenda atual</option>
+                                    <option value="todas">Todas as fazendas</option>
+                                </select>
+                            </div>
+                            <div class="filter-field">
+                                <label for="dashboardFilter">Segmento</label>
+                                <select id="dashboardFilter">
+                                    <option value="Todos">Todos os animais</option>
+                                    <option value="Bovinos">Bovinos</option>
+                                    <option value="Ovinos">Ovinos</option>
+                                    <option value="Caprinos">Caprinos</option>
+                                </select>
+                            </div>
+                            <div class="filter-field">
+                                <label for="dashboardPeriod">Período</label>
+                                <select id="dashboardPeriod">
+                                    <option value="6">Últimos 6 meses</option>
+                                    <option value="3">Últimos 3 meses</option>
+                                    <option value="12">Últimos 12 meses</option>
+                                </select>
+                            </div>
+                        </div>
+                        <div class="chart-type-panel modal-chart-panel">
+                            <label>Tipos de gráfico</label>
+                            <div class="chart-checkboxes modal-chart-checkboxes">
+                                <label><input type="checkbox" value="line" checked> Linha</label>
+                                <label><input type="checkbox" value="bar" checked> Barra</label>
+                                <label><input type="checkbox" value="doughnut" checked> Rosca</label>
+                                <label><input type="checkbox" value="pie" checked> Pizza</label>
+                                <label><input type="checkbox" value="radar"> Radar</label>
+                                <label><input type="checkbox" value="polarArea"> Polar</label>
+                                <label><input type="checkbox" value="bubble"> Bubble</label>
+                                <label><input type="checkbox" value="scatter"> Scatter</label>
+                            </div>
+                        </div>
+                    </section>
+                    <div class="modal-footer-actions filter-footer-actions">
+                        <button class="btn-cancel" id="cancelDashboardFilters">Fechar</button>
+                        <button class="btn-submit-pri" id="applyDashboardFilters">Aplicar</button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- CARDS STATS -->
             <div class="stats-grid">
                 <div class="stat-card">
                     <div class="stat-card-header">
-                        <div class="icon-wrap green-bg">
-                            <i class="fa-solid fa-cow"></i>
-                        </div>
-                        <span class="trend positive">
-                            <i class="fa-solid fa-arrow-up"></i> 12%
-                        </span>
+                        <div class="icon-wrap green-bg"><i class="fa-solid fa-cow"></i></div>
+                        <span class="trend positive" id="trendAnimais"><i class="fa-solid fa-arrow-up"></i> —</span>
                     </div>
                     <p class="stat-title">Total de Animais</p>
-                    <h3 class="stat-number">920</h3>
+                    <h3 class="stat-number loading" id="statTotalAnimais">—</h3>
                 </div>
-
                 <div class="stat-card">
                     <div class="stat-card-header">
-                        <div class="icon-wrap blue-bg">
-                            <i class="fa-solid fa-heart-pulse"></i>
-                        </div>
-                        <span class="trend positive">
-                            <i class="fa-solid fa-arrow-up"></i> 8%
-                        </span>
+                        <div class="icon-wrap blue-bg"><i class="fa-solid fa-heart-pulse"></i></div>
+                        <span class="trend positive" id="trendPrenhez"><i class="fa-solid fa-arrow-up"></i> —</span>
                     </div>
                     <p class="stat-title">Taxa de Prenhez</p>
-                    <h3 class="stat-number">85%</h3>
+                    <h3 class="stat-number loading" id="statTaxaPrenhez">—</h3>
                 </div>
-
                 <div class="stat-card">
                     <div class="stat-card-header">
-                        <div class="icon-wrap purple-bg">
-                            <i class="fa-solid fa-dna"></i>
-                        </div>
-                        <span class="trend negative">
-                            <i class="fa-solid fa-arrow-down"></i> 3%
-                        </span>
+                        <div class="icon-wrap purple-bg"><i class="fa-solid fa-syringe"></i></div>
+                        <span class="trend-neutral">Este mês</span>
                     </div>
-                    <p class="stat-title">Inseminações Ativas</p>
-                    <h3 class="stat-number">55</h3>
+                    <p class="stat-title">Inseminações</p>
+                    <h3 class="stat-number loading" id="statInseminacoes">—</h3>
                 </div>
-
                 <div class="stat-card">
                     <div class="stat-card-header">
-                        <div class="icon-wrap orange-bg">
-                            <i class="fa-solid fa-triangle-exclamation"></i>
-                        </div>
-                        <span class="trend-neutral">Estável</span>
+                        <div class="icon-wrap orange-bg"><i class="fa-solid fa-triangle-exclamation"></i></div>
+                        <span class="trend-neutral" id="statAlertasLabel" style="color:#ef4444;">Atenção</span>
                     </div>
-                    <p class="stat-title">Alertas Médicos</p>
-                    <h3 class="stat-number">12</h3>
+                    <p class="stat-title">Alertas Pendentes</p>
+                    <h3 class="stat-number loading" id="statAlertas">—</h3>
                 </div>
             </div>
 
             <!-- GRÁFICOS -->
             <div class="charts-row">
-                <div class="chart-card-box line-chart-container">
-                    <h3>Inseminações Realizadas (6 meses)</h3>
-                    <div style="position: relative; height: 250px;">
-                        <canvas id="lineChart"></canvas>
-                    </div>
+                <div class="chart-card-box chart-card line-chart-container" data-chart="line">
+                    <h3>Inseminações Realizadas</h3>
+                    <div class="chart-wrapper"><canvas id="lineChart"></canvas></div>
                 </div>
-                <div class="chart-card-box pie-chart-container">
+                <div class="chart-card-box chart-card bar-chart-container" data-chart="bar">
+                    <h3>Distribuição por Espécie</h3>
+                    <div class="chart-wrapper"><canvas id="barChart"></canvas></div>
+                </div>
+                <div class="chart-card-box chart-card doughnut-chart-container" data-chart="doughnut">
                     <h3>Distribuição de Espécies</h3>
-                    <div style="position: relative; height: 250px;">
-                        <canvas id="pieChart"></canvas>
-                    </div>
+                    <div class="chart-wrapper"><canvas id="doughnutChart"></canvas></div>
+                </div>
+                <div class="chart-card-box chart-card radar-chart-container hidden" data-chart="radar">
+                    <h3>Saúde do Rebanho</h3>
+                    <div class="chart-wrapper"><canvas id="radarChart"></canvas></div>
+                </div>
+                <div class="chart-card-box chart-card polar-chart-container hidden" data-chart="polarArea">
+                    <h3>Engajamento de Manejo</h3>
+                    <div class="chart-wrapper"><canvas id="polarChart"></canvas></div>
+                </div>
+                <div class="chart-card-box chart-card pie-chart-container" data-chart="pie">
+                    <h3>Visão de Espécies</h3>
+                    <div class="chart-wrapper"><canvas id="pieChart"></canvas></div>
+                </div>
+                <div class="chart-card-box chart-card bubble-chart-container hidden" data-chart="bubble">
+                    <h3>Tendência de Produção</h3>
+                    <div class="chart-wrapper"><canvas id="bubbleChart"></canvas></div>
+                </div>
+                <div class="chart-card-box chart-card scatter-chart-container hidden" data-chart="scatter">
+                    <h3>Produtividade x Inseminações</h3>
+                    <div class="chart-wrapper"><canvas id="scatterChart"></canvas></div>
                 </div>
             </div>
         </div>
     </main>
 </div>
 
+<!-- ============================================================ -->
+<!-- MODAL: TROCAR FAZENDA                                        -->
+<!-- ============================================================ -->
+<div class="modal-backdrop" id="modalTrocarFazenda" style="display:none;">
+    <div class="modal-content">
+        <header class="modal-header">
+            <div>
+                <h2>Suas Fazendas</h2>
+                <p>Selecione uma fazenda para gerenciar</p>
+            </div>
+            <button class="btn-close" onclick="fecharModal('modalTrocarFazenda')">&times;</button>
+        </header>
+        <section class="modal-body">
+            <div class="fazendas-lista" id="fazendasLista">
+                <div class="fazendas-lista-vazia">
+                    <i class="fa-solid fa-tractor" style="font-size:28px;margin-bottom:8px;opacity:0.3;display:block;"></i>
+                    Carregando fazendas...
+                </div>
+            </div>
+            <button class="btn-nova-fazenda-lista" onclick="abrirModalCadastrarFazenda()">
+                <i class="fa-solid fa-plus"></i> Cadastrar nova fazenda
+            </button>
+        </section>
+        <div class="modal-footer-actions">
+            <button class="btn-cancel" onclick="fecharModal('modalTrocarFazenda')">Fechar</button>
+        </div>
+    </div>
+</div>
+
+<!-- ============================================================ -->
+<!-- MODAL: CADASTRAR FAZENDA                                     -->
+<!-- ============================================================ -->
+<div class="modal-backdrop" id="modalCadastrarFazenda" style="display:none;">
+    <div class="modal-content">
+        <header class="modal-header">
+            <div>
+                <h2><i class="fa-solid fa-tractor" style="color:#0d8a4f;margin-right:8px;"></i>Cadastrar Nova Fazenda</h2>
+                <p>Preencha os dados da propriedade</p>
+            </div>
+            <button class="btn-close" onclick="fecharModalCadastro()">&times;</button>
+        </header>
+
+        <section class="modal-body">
+            <!-- IDENTIFICAÇÃO -->
+            <p class="form-section-label">Identificação</p>
+            <div class="input-row-fazenda">
+                <div class="input-group-f">
+                    <label>Nome da Fazenda <span class="req">*</span></label>
+                    <input type="text" id="fzNome" placeholder="Ex: Fazenda São João" maxlength="150">
+                </div>
+            </div>
+            <div class="input-row-fazenda cols-2" style="margin-top:12px;">
+                <div class="input-group-f">
+                    <label>Nome do Proprietário</label>
+                    <input type="text" id="fzProprietario" readonly placeholder="—">
+                </div>
+                <div class="input-group-f">
+                    <label>CNPJ / CPF</label>
+                    <input type="text" id="fzCpf" readonly placeholder="—">
+                </div>
+            </div>
+
+            <!-- CARACTERÍSTICAS -->
+            <p class="form-section-label" style="margin-top:20px;">Características</p>
+            <div class="input-row-fazenda cols-3">
+                <div class="input-group-f">
+                    <label>Tipo de Criação <span class="req">*</span></label>
+                    <div class="input-with-icon">
+                        <i class="fa-solid fa-leaf"></i>
+                        <select id="fzTipoCriacao">
+                            <option value="">Selecione...</option>
+                            <option value="Bovinos">Bovinos</option>
+                            <option value="Ovinos">Ovinos</option>
+                            <option value="Caprinos">Caprinos</option>
+                            <option value="Misto">Misto</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="input-group-f">
+                    <label>Área (hectares)</label>
+                    <div class="input-with-icon">
+                        <i class="fa-solid fa-ruler-combined"></i>
+                        <input type="number" id="fzArea" placeholder="0" min="0" step="0.01">
+                    </div>
+                </div>
+                <div class="input-group-f">
+                    <label>Telefone</label>
+                    <div class="input-with-icon">
+                        <i class="fa-solid fa-phone"></i>
+                        <input type="text" id="fzTelefone" placeholder="(00) 00000-0000" maxlength="20">
+                    </div>
+                </div>
+            </div>
+
+            <!-- LOCALIZAÇÃO -->
+            <p class="form-section-label" style="margin-top:20px;">
+                <i class="fa-solid fa-location-dot" style="margin-right:4px;"></i>Localização
+            </p>
+            <div class="input-row-fazenda cols-2">
+                <div class="input-group-f">
+                    <label>CEP</label>
+                    <input type="text" id="fzCep" placeholder="00000-000" maxlength="10">
+                </div>
+                <div class="input-group-f">
+                    <label>Endereço / Localidade</label>
+                    <input type="text" id="fzEndereco" placeholder="Zona rural, estrada, km..." maxlength="200">
+                </div>
+            </div>
+            <div class="input-row-fazenda cols-2" style="margin-top:12px;">
+                <div class="input-group-f">
+                    <label>Cidade</label>
+                    <input type="text" id="fzCidade" placeholder="Crateús" maxlength="100">
+                </div>
+                <div class="input-group-f">
+                    <label>Estado</label>
+                    <select id="fzEstado">
+                        <option value="">Selecione...</option>
+                        <option value="AC">AC</option><option value="AL">AL</option>
+                        <option value="AP">AP</option><option value="AM">AM</option>
+                        <option value="BA">BA</option><option value="CE">CE</option>
+                        <option value="DF">DF</option><option value="ES">ES</option>
+                        <option value="GO">GO</option><option value="MA">MA</option>
+                        <option value="MT">MT</option><option value="MS">MS</option>
+                        <option value="MG">MG</option><option value="PA">PA</option>
+                        <option value="PB">PB</option><option value="PR">PR</option>
+                        <option value="PE">PE</option><option value="PI">PI</option>
+                        <option value="RJ">RJ</option><option value="RN">RN</option>
+                        <option value="RS">RS</option><option value="RO">RO</option>
+                        <option value="RR">RR</option><option value="SC">SC</option>
+                        <option value="SP">SP</option><option value="SE">SE</option>
+                        <option value="TO">TO</option>
+                    </select>
+                </div>
+            </div>
+
+            <!-- DESCRIÇÃO -->
+            <div class="input-group-f" style="margin-top:16px;">
+                <label>Descrição / Observações</label>
+                <textarea id="fzDescricao" placeholder="Informações adicionais sobre a fazenda..." rows="3"></textarea>
+            </div>
+        </section>
+
+        <div class="modal-footer-actions">
+            <button class="btn-cancel" onclick="fecharModalCadastro()">Cancelar</button>
+            <button class="btn-submit-pri" id="btnSalvarFazenda" onclick="salvarFazenda()">
+                <i class="fa-solid fa-tractor"></i> Cadastrar Fazenda
+            </button>
+        </div>
+    </div>
+</div>
+
 <!-- MODAL NOVO ANIMAL -->
-<div class="modal-backdrop" id="modalNovoAnimal">
+<div class="modal-backdrop" id="modalNovoAnimal" style="display:none;">
     <div class="modal-content modal-large">
         <header class="modal-header">
             <h2>Cadastrar Novo Animal</h2>
             <button class="btn-close" onclick="fecharModal('modalNovoAnimal')">&times;</button>
         </header>
-
         <section class="modal-body">
-            <div class="form-section" style="border: none; padding-top: 0;">
+            <div class="form-section" style="border:none;padding-top:0;">
                 <h3>Identificação</h3>
                 <div class="input-row">
                     <div class="input-group">
                         <label>Brinco / ID</label>
-                        <input type="text" placeholder="Ex: 1020A">
+                        <input type="text" id="animalCodigo" placeholder="Ex: 1020A">
                     </div>
                     <div class="input-group">
                         <label>Nome do Animal</label>
-                        <input type="text" placeholder="Ex: Estrela">
+                        <input type="text" id="animalNome" placeholder="Ex: Estrela">
                     </div>
                 </div>
             </div>
-
             <div class="form-section">
                 <h3>Características</h3>
                 <div class="input-row">
                     <div class="input-group">
                         <label>Espécie</label>
-                        <select>
-                            <option>Bovino</option>
-                            <option>Ovino</option>
-                            <option>Caprino</option>
+                        <select id="animalEspecie">
+                            <option value="Bovino">Bovino</option>
+                            <option value="Ovino">Ovino</option>
+                            <option value="Caprino">Caprino</option>
                         </select>
                     </div>
                     <div class="input-group">
                         <label>Raça</label>
-                        <input type="text" placeholder="Ex: Nelore">
+                        <input type="text" id="animalRaca" placeholder="Ex: Nelore">
                     </div>
                 </div>
-
                 <div class="input-row three-cols">
                     <div class="input-group">
                         <label>Data de Nasc.</label>
-                        <input type="date">
+                        <input type="date" id="animalNascimento">
                     </div>
                     <div class="input-group">
                         <label>Sexo</label>
-                        <select>
-                            <option>Fêmea</option>
-                            <option>Macho</option>
+                        <select id="animalSexo">
+                            <option value="Fêmea">Fêmea</option>
+                            <option value="Macho">Macho</option>
                         </select>
                     </div>
                     <div class="input-group">
                         <label>Peso (kg)</label>
-                        <input type="number" placeholder="0.00">
+                        <input type="number" id="animalPeso" placeholder="0.00">
                     </div>
                 </div>
             </div>
-
             <div class="form-section">
                 <h3>Localização e Fins</h3>
                 <div class="input-row">
                     <div class="input-group">
                         <label>Finalidade</label>
-                        <select>
+                        <select id="animalFinalidade">
                             <option value="">Selecione...</option>
-                            <option>Reprodução</option>
-                            <option>Corte</option>
-                            <option>Leite</option>
+                            <option value="Reprodução">Reprodução</option>
+                            <option value="Corte">Corte</option>
+                            <option value="Leite">Leite</option>
                         </select>
                     </div>
                     <div class="input-group">
                         <label>Lote</label>
-                        <input type="text" placeholder="Ex: Lote A, Pasto 1">
+                        <input type="text" id="animalLote" placeholder="Ex: Lote A, Pasto 1">
                     </div>
                 </div>
-                <div class="input-group" style="margin-top: 15px;">
+                <div class="input-group" style="margin-top:15px;">
                     <label>Observações</label>
-                    <textarea placeholder="Informações adicionais sobre o animal..." rows="3"></textarea>
+                    <textarea id="animalObs" placeholder="Informações adicionais..." rows="3"></textarea>
                 </div>
             </div>
         </section>
-
         <div class="modal-footer-actions">
             <button class="btn-cancel" onclick="fecharModal('modalNovoAnimal')">Cancelar</button>
-            <button class="btn-submit-pri" onclick="fecharModal('modalNovoAnimal')">Cadastrar Animal</button>
+            <button class="btn-submit-pri" onclick="salvarAnimal()">Cadastrar Animal</button>
         </div>
     </div>
 </div>
+
+<!-- TOAST -->
+<div id="potyToast"></div>
 
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script src="../backend/database.js"></script>
 <script src="../backend/auth.js"></script>
+<script src="../backend/fazenda.js"></script>
 <script src="../backend/script-dashboard.js"></script>
-
-<!-- Navbar Script Global -->
 <script src="../backend/navbar-script.js"></script>
 <script src="../backend/logout.js"></script>
-
-<script>
-    // Funções do modal
-    function abrirModal(id) {
-        document.getElementById(id).style.display = 'flex';
-    }
-    function fecharModal(id) {
-        document.getElementById(id).style.display = 'none';
-    }
-</script>
-
 </body>
 </html>

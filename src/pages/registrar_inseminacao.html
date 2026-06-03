@@ -11,6 +11,13 @@
     <link rel="stylesheet" href="../style/style_registrar.css">
     
     <link rel="stylesheet" href="../style/navbar-style.css">
+    <style>
+        .busca-animal-container { position: relative; }
+        .lista-animais-dropdown { display: none; position: absolute; top: 100%; left: 0; right: 0; background: #fff; border: 1px solid #dee2e6; border-top: none; border-radius: 0 0 10px 10px; max-height: 260px; overflow-y: auto; z-index: 1050; box-shadow: 0 6px 20px rgba(0,0,0,0.12); }
+        .lista-animais-dropdown .animal-item:last-child { border-bottom: none !important; }
+        .lista-animais-dropdown::-webkit-scrollbar { width: 6px; }
+        .lista-animais-dropdown::-webkit-scrollbar-thumb { background: #ced4da; border-radius: 3px; }
+    </style>
 </head>
 <body>
 
@@ -163,7 +170,7 @@
     <label for="tecnico_responsavel" class="form-label">Nome do Profissional (Inseminador)</label>
     <input type="text" class="form-control" id="tecnico_responsavel" placeholder="Ex: Dr. Carlos Rocha" required>
 </div>
-
+                            </div><!-- fecha inner div -->
                             <div class="text-end pt-3">
                                 <button type="submit" class="btn btn-submit-pri px-5 py-3 w-100">Salvar Registro</button>
                             </div>
@@ -179,8 +186,8 @@
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script src="../backend/database.js"></script>
 <script src="../backend/auth.js"></script>
+<script src="../backend/registrar_inseminacao.js"></script>
 <script src="../backend/navbar-script.js"></script>
 <script src="../backend/logout.js"></script>
-<script src="../backend/registrar_inseminacao.js"></script>
 </body>
 </html>
