@@ -7,15 +7,76 @@
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <link rel="stylesheet" href="../style/navbar-style.css">
+    <style>
+        /* Estilos adicionais para manter o visual da agenda */
+        .calendario-grade {
+            width: 100%;
+            border-collapse: collapse;
+        }
+        .calendario-grade th {
+            text-align: center;
+            font-weight: 700;
+            color: #a3aed0;
+            font-size: 13px;
+            padding-bottom: 12px;
+            text-transform: uppercase;
+        }
+        .calendario-grade td {
+            width: 14.28%;
+            padding: 4px;
+            vertical-align: top;
+        }
+        .dia-card {
+            background: #f8fafc;
+            border: 1px solid #e2e8f0;
+            border-radius: 8px;
+            min-height: 55px;
+            padding: 6px;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+        .dia-card:hover {
+            background: #edf2f7;
+            border-color: #cbd5e1;
+            transform: translateY(-1px);
+        }
+        .dia-card span {
+            font-weight: 600;
+            color: #475569;
+            font-size: 14px;
+        }
+        .dia-vazio {
+            background: transparent !important;
+            border: none !important;
+            cursor: default !important;
+        }
+        .ponto-evento {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            display: inline-block;
+            margin-right: 3px;
+        }
+        .ponto-ins { background-color: #ffb800; }
+        .ponto-exame { background-color: #2f80ed; }
+        .ponto-parto { background-color: #10b981; }
+        .tag-status-gravida { background: #d1fae5; color: #10b981; padding: 4px 12px; border-radius: 30px; font-size: 13px; font-weight: 600; }
+        .btn-acao-poty { background: #0d8a4f; color: white; border: none; padding: 10px; border-radius: 8px; font-weight: 600; }
+        .btn-acao-poty:hover { background: #0a6b3d; color: white; }
+        .avatar-fundo { width: 80px; height: 80px; background: #e6f7ef; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 40px; color: #0d8a4f; }
+        .conteudo-perfil { margin-top: 30px; }
+    </style>
 </head>
 <body>
 
 <div class="app-container">
-    <!-- NAVBAR PADRONIZADA (mantida igual) -->
+    <!-- NAVBAR PADRONIZADA -->
     <button class="nav-menu-toggle" id="navToggleBtn" aria-label="Alternar menu lateral">
         <i class="fa-solid fa-bars"></i>
     </button>
-    
     <div class="nav-overlay" id="navOverlay"></div>
     
     <aside class="potygen-sidebar" id="potygen-sidebar">
@@ -23,61 +84,42 @@
             <img src="../assets/logo.png" alt="Potygen" class="nav-logo" 
                  onerror="this.onerror=null;this.src='https://placehold.co/140x48/ffffff/0d8a4f?text=Potygen';">
         </div>
-        
         <nav class="potygen-nav">
-            <a href="dashboard.html" class="nav-item">
-                <i class="fa-solid fa-house"></i>
-                <span>Dashboard</span>
-            </a>
-            <a href="registrar_inseminacao.html" class="nav-item">
-                <i class="fa-solid fa-syringe"></i>
-                <span>Inseminação</span>
-            </a>
-            <a href="gestao-animais.html" class="nav-item active">
-                <i class="fa-solid fa-cow"></i>
-                <span>Gestão de Animais</span>
-            </a>
-            <a href="analise-genetica.html" class="nav-item">
-                <i class="fa-solid fa-dna"></i>
-                <span>Análise Genética</span>
-            </a>
-            <a href="agenda-reprodutiva.html" class="nav-item">
-                <i class="fa-solid fa-calendar-days"></i>
-                <span>Agenda Reprodutiva</span>
-            </a>
-            <a href="relatorio.html" class="nav-item">
-                <i class="fa-solid fa-chart-pie"></i>
-                <span>Relatórios</span>
-            </a>
-            <a href="configuracoes.html" class="nav-item">
-                <i class="fa-solid fa-gear"></i>
-                <span>Configurações</span>
-            </a>
+            <a href="dashboard.html" class="nav-item"><i class="fa-solid fa-house"></i><span>Dashboard</span></a>
+            <a href="registrar_inseminacao.html" class="nav-item"><i class="fa-solid fa-syringe"></i><span>Inseminação</span></a>
+            <a href="gestao-animais.html" class="nav-item active"><i class="fa-solid fa-cow"></i><span>Gestão de Animais</span></a>
+            <a href="analise-genetica.html" class="nav-item"><i class="fa-solid fa-dna"></i><span>Análise Genética</span></a>
+            <a href="agenda-reprodutiva.html" class="nav-item"><i class="fa-solid fa-calendar-days"></i><span>Agenda Reprodutiva</span></a>
+            <a href="relatorio.html" class="nav-item"><i class="fa-solid fa-chart-pie"></i><span>Relatórios</span></a>
+            <a href="configuracoes.html" class="nav-item"><i class="fa-solid fa-gear"></i><span>Configurações</span></a>
         </nav>
-        
         <div class="nav-footer">
-            <button type="button" id="logoutBtn" class="nav-item logout-btn">
-                <i class="fa-solid fa-right-from-bracket"></i>
-                <span>Sair da Conta</span>
-            </button>
+            <button type="button" id="logoutBtn" class="nav-item logout-btn"><i class="fa-solid fa-right-from-bracket"></i><span>Sair da Conta</span></button>
         </div>
     </aside>
+
     <div class="container conteudo-perfil">
         <div class="row g-4">
+            <!-- Card de informações do animal (dinâmico) -->
             <div class="col-lg-4">
                 <div class="card dash-card p-4 text-center">
                     <div class="d-flex justify-content-center mb-3">
                         <div class="avatar-fundo"><i class="fa-solid fa-cow"></i></div>
                     </div>
-                    <h4 class="fw-bold text-navy mb-1" id="nomeAnimal">Estrela</h4>
-                    <p class="text-muted mb-3" id="brincoAnimal">Brinco: #1002</p>
-                    <div class="mb-4"><span class="tag-status-gravida">Em Acompanhamento</span></div>
+                    <h4 class="fw-bold text-navy mb-1" id="nomeAnimal">Carregando...</h4>
+                    <p class="text-muted mb-3" id="brincoAnimal">Brinco: ---</p>
+                    <div class="mb-4"><span class="tag-status-gravida" id="statusReprodutivo">---</span></div>
                     
                     <hr class="text-muted my-3">
                     <div class="text-start fs-6 row g-2">
-                        <div class="col-6 text-secondary">Espécie:</div><div class="col-6 fw-semibold text-end" id="espAnimal">Bovino</div>
-                        <div class="col-6 text-secondary">Raça:</div><div class="col-6 fw-semibold text-end" id="racaAnimal">Nelore</div>
-                        <div class="col-6 text-secondary">Nascimento:</div><div class="col-6 fw-semibold text-end">15/04/2021</div>
+                        <div class="col-6 text-secondary">Espécie:</div><div class="col-6 fw-semibold text-end" id="espAnimal">---</div>
+                        <div class="col-6 text-secondary">Raça:</div><div class="col-6 fw-semibold text-end" id="racaAnimal">---</div>
+                        <div class="col-6 text-secondary">Nascimento:</div><div class="col-6 fw-semibold text-end" id="dataNascimento">---</div>
+                        <div class="col-6 text-secondary">Última Inseminação:</div><div class="col-6 fw-semibold text-end" id="ultimaInseminacao">---</div>
+                        <div class="col-6 text-secondary">Próximo Exame:</div><div class="col-6 fw-semibold text-end" id="proximoExame">---</div>
+                        <div class="col-6 text-secondary">Previsão de Parto:</div><div class="col-6 fw-semibold text-end" id="previsaoParto">---</div>
+                        <div class="col-6 text-secondary">Profissional:</div><div class="col-6 fw-semibold text-end" id="profissional">Dr. Silva</div>
+                        <div class="col-6 text-secondary">Status Reprodutivo:</div><div class="col-6 fw-semibold text-end"><span id="statusBadge" class="tag-status-gravida">---</span></div>
                     </div>
                     
                     <button class="btn btn-acao-poty w-100 mt-4" data-bs-toggle="modal" data-bs-target="#modalExame">
@@ -86,22 +128,20 @@
                 </div>
             </div>
 
+            <!-- Calendário -->
             <div class="col-lg-8">
                 <div class="card dash-card p-4">
                     <div class="d-flex justify-content-between align-items-center mb-4">
                         <h5 class="fw-bold text-navy m-0"><i class="fa-solid fa-calendar-days text-success me-2"></i>Agenda Reprodutiva Coletiva</h5>
-                        <span class="fw-bold text-secondary" id="mesAnoAtual">Maio de 2026</span>
+                        <span class="fw-bold text-secondary" id="mesAnoAtual">---</span>
                     </div>
 
                     <div class="table-responsive">
                         <table class="calendario-grade">
                             <thead>
-                                <tr>
-                                    <th>DOM</th><th>SEG</th><th>TER</th><th>QUA</th><th>QUI</th><th>SEX</th><th>SÁB</th>
-                                </tr>
+                                <tr><th>DOM</th><th>SEG</th><th>TER</th><th>QUA</th><th>QUI</th><th>SEX</th><th>SÁB</th></tr>
                             </thead>
-                            <tbody id="corpoCalendario">
-                                </tbody>
+                            <tbody id="corpoCalendario"></tbody>
                         </table>
                     </div>
 
@@ -115,6 +155,7 @@
         </div>
     </div>
 
+    <!-- Modal para agendamento de exame -->
     <div class="modal fade" id="modalExame" tabindex="-1" aria-hidden="true">
         <div class="modal-dialog modal-dialog-centered">
             <div class="modal-content style-card border-0 rounded-4 p-2">
@@ -139,17 +180,138 @@
     </div>
 
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="../backend/database.js"></script>
+    <script src="../backend/auth.js"></script>
+    <script src="../backend/navbar-script.js"></script>
+    <script src="../backend/logout.js"></script>
+
     <script>
-        // Eventos pré-carregados estáticos para o mês de Maio de 2026
-        let examesLocais = [12]; // Exame pré-definido no dia 12
-        const inseminacoesLocais = [10]; // Inseminação ocorrida no dia 10
-        const partosLocais = [28]; // Previsão de parto fictícia no dia 28
+        // ============================================
+        // CONFIGURAÇÃO SUPABASE (substitua pelos seus dados)
+        // ============================================
+        const SUPABASE_URL = "SUA_SUPABASE_URL_AQUI";
+        const SUPABASE_ANON_KEY = "SUA_SUPABASE_ANON_KEY_AQUI";
+        const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
-        document.addEventListener("DOMContentLoaded", () => {
-            montarCalendarioLocal(2026, 4); // Mês 4 é Maio (Index baseado em 0)
-        });
+        // ============================================
+        // VARIÁVEIS GLOBAIS
+        // ============================================
+        let animalId = null;
+        let animalData = null;
+        let eventos = {
+            inseminacoes: [],  // datas (formato YYYY-MM-DD)
+            exames: [],        // datas
+            partos: []         // datas
+        };
+        let anoAtual, mesAtual;
 
-        function montarCalendarioLocal(ano, mes) {
+        // ============================================
+        // OBTÉM ID DA URL
+        // ============================================
+        function getAnimalIdFromURL() {
+            const params = new URLSearchParams(window.location.search);
+            return params.get('id');
+        }
+
+        // ============================================
+        // CARREGA DADOS DO ANIMAL E EVENTOS
+        // ============================================
+        async function carregarDadosAnimal() {
+            if (!animalId) {
+                alert("ID do animal não informado. Redirecionando para lista.");
+                window.location.href = "gestao-animais.html";
+                return;
+            }
+
+            try {
+                // 1. Buscar dados básicos do animal
+                const { data: animal, error: animalError } = await supabaseClient
+                    .from('animais')
+                    .select('*')
+                    .eq('id', animalId)
+                    .single();
+
+                if (animalError) throw animalError;
+                animalData = animal;
+
+                // Preencher os campos do card
+                document.getElementById('nomeAnimal').innerText = animal.nome || 'Sem nome';
+                document.getElementById('brincoAnimal').innerHTML = `Brinco: #${animal.codigo || animal.brinco_id || '-'}`;
+                document.getElementById('espAnimal').innerText = animal.especie || '-';
+                document.getElementById('racaAnimal').innerText = animal.raca || '-';
+                const dataNasc = animal.data_nascimento ? new Date(animal.data_nascimento).toLocaleDateString('pt-BR') : '-';
+                document.getElementById('dataNascimento').innerText = dataNasc;
+                document.getElementById('profissional').innerText = animal.profissional_responsavel || 'Dr. Silva';
+                
+                const statusRepro = animal.status_reprodutivo || 'Em acompanhamento';
+                document.getElementById('statusReprodutivo').innerText = statusRepro;
+                document.getElementById('statusBadge').innerText = statusRepro;
+
+                // 2. Buscar inseminações do animal
+                const { data: inseminacoes, error: insError } = await supabaseClient
+                    .from('inseminacoes')
+                    .select('data_inseminacao')
+                    .eq('animal_id', animalId)
+                    .order('data_inseminacao', { ascending: false });
+
+                if (!insError && inseminacoes) {
+                    eventos.inseminacoes = inseminacoes.map(i => i.data_inseminacao);
+                    if (eventos.inseminacoes.length > 0) {
+                        const ultima = new Date(eventos.inseminacoes[0]).toLocaleDateString('pt-BR');
+                        document.getElementById('ultimaInseminacao').innerText = ultima;
+                    } else {
+                        document.getElementById('ultimaInseminacao').innerText = 'Nenhuma';
+                    }
+                }
+
+                // 3. Buscar exames (toque/ultrassom)
+                const { data: exames, error: exameError } = await supabaseClient
+                    .from('exames')
+                    .select('data_exame')
+                    .eq('animal_id', animalId)
+                    .eq('tipo', 'toque_ultrassom');
+
+                if (!exameError && exames) {
+                    eventos.exames = exames.map(e => e.data_exame);
+                    const proxExame = eventos.exames.filter(d => d >= new Date().toISOString().slice(0,10)).sort()[0];
+                    document.getElementById('proximoExame').innerText = proxExame ? new Date(proxExame).toLocaleDateString('pt-BR') : 'Não agendado';
+                }
+
+                // 4. Buscar partos
+                const { data: partos, error: partoError } = await supabaseClient
+                    .from('partos')
+                    .select('data_parto')
+                    .eq('animal_id', animalId);
+
+                if (!partoError && partos) {
+                    eventos.partos = partos.map(p => p.data_parto);
+                    const proxParto = eventos.partos.filter(d => d >= new Date().toISOString().slice(0,10)).sort()[0];
+                    document.getElementById('previsaoParto').innerText = proxParto ? new Date(proxParto).toLocaleDateString('pt-BR') : 'Não previsto';
+                }
+
+                // Após carregar dados, monta o calendário com mês atual
+                const hoje = new Date();
+                anoAtual = hoje.getFullYear();
+                mesAtual = hoje.getMonth();
+                atualizarMesAnoTexto();
+                montarCalendario(anoAtual, mesAtual);
+
+            } catch (err) {
+                console.error("Erro ao carregar dados do animal:", err);
+                alert("Erro ao carregar informações do animal. Verifique o ID ou permissões.");
+            }
+        }
+
+        // ============================================
+        // FUNÇÕES DO CALENDÁRIO
+        // ============================================
+        function atualizarMesAnoTexto() {
+            const meses = ['Janeiro', 'Fevereiro', 'Março', 'Abril', 'Maio', 'Junho', 'Julho', 'Agosto', 'Setembro', 'Outubro', 'Novembro', 'Dezembro'];
+            document.getElementById('mesAnoAtual').innerText = `${meses[mesAtual]} de ${anoAtual}`;
+        }
+
+        function montarCalendario(ano, mes) {
             const corpo = document.getElementById("corpoCalendario");
             corpo.innerHTML = "";
 
@@ -159,13 +321,11 @@
             let linha = document.createElement("tr");
             let diaSemanaContador = 0;
 
-            // Preenche espaços vazios iniciais
             for (let i = 0; i < primeiroDiaSemana; i++) {
                 linha.innerHTML += `<td class="dia-vazio"></td>`;
                 diaSemanaContador++;
             }
 
-            // Loop pelos dias do mês
             for (let dia = 1; dia <= totalDiasMes; dia++) {
                 if (diaSemanaContador === 7) {
                     corpo.appendChild(linha);
@@ -173,10 +333,13 @@
                     diaSemanaContador = 0;
                 }
 
+                const dataStr = `${ano}-${String(mes+1).padStart(2,'0')}-${String(dia).padStart(2,'0')}`;
                 let htmlBolinhas = '<div class="d-flex">';
-                if (inseminacoesLocais.includes(dia)) htmlBolinhas += '<span class="ponto-evento ponto-ins" title="Inseminação"></span>';
-                if (examesLocais.includes(dia)) htmlBolinhas += '<span class="ponto-evento ponto-exame" title="Exame Confirmado"></span>';
-                if (partosLocais.includes(dia)) htmlBolinhas += '<span class="ponto-evento ponto-parto" title="Previsão Parto"></span>';
+                
+                if (eventos.inseminacoes.includes(dataStr)) htmlBolinhas += '<span class="ponto-evento ponto-ins" title="Inseminação"></span>';
+                if (eventos.exames.includes(dataStr)) htmlBolinhas += '<span class="ponto-evento ponto-exame" title="Exame agendado"></span>';
+                if (eventos.partos.includes(dataStr)) htmlBolinhas += '<span class="ponto-evento ponto-parto" title="Parto previsto"></span>';
+                
                 htmlBolinhas += '</div>';
 
                 linha.innerHTML += `
@@ -190,7 +353,6 @@
                 diaSemanaContador++;
             }
 
-            // Preenche espaços vazios finais
             while (diaSemanaContador < 7) {
                 linha.innerHTML += `<td class="dia-vazio"></td>`;
                 diaSemanaContador++;
@@ -198,32 +360,96 @@
             corpo.appendChild(linha);
         }
 
-        // Evento de envio do formulário salvando em array dinâmico local
-        document.getElementById("formExame").addEventListener("submit", (e) => {
+        // Navegação do calendário (opcional - para permitir mudar meses)
+        function mudarMes(delta) {
+            let novoMes = mesAtual + delta;
+            let novoAno = anoAtual;
+            if (novoMes < 0) {
+                novoMes = 11;
+                novoAno--;
+            } else if (novoMes > 11) {
+                novoMes = 0;
+                novoAno++;
+            }
+            anoAtual = novoAno;
+            mesAtual = novoMes;
+            atualizarMesAnoTexto();
+            montarCalendario(anoAtual, mesAtual);
+        }
+
+        // ============================================
+        // AGENDAR EXAME (SALVAR NO SUPABASE)
+        // ============================================
+        async function agendarExame(dataExame) {
+            if (!animalId) return false;
+            try {
+                const { error } = await supabaseClient
+                    .from('exames')
+                    .insert({
+                        animal_id: animalId,
+                        data_exame: dataExame,
+                        tipo: 'toque_ultrassom',
+                        criado_em: new Date().toISOString()
+                    });
+
+                if (error) throw error;
+                
+                // Adiciona localmente ao array e atualiza calendário
+                eventos.exames.push(dataExame);
+                montarCalendario(anoAtual, mesAtual);
+                
+                // Atualiza o campo "Próximo Exame" no card
+                const proxExame = eventos.exames.filter(d => d >= new Date().toISOString().slice(0,10)).sort()[0];
+                document.getElementById('proximoExame').innerText = proxExame ? new Date(proxExame).toLocaleDateString('pt-BR') : 'Não agendado';
+                
+                return true;
+            } catch (err) {
+                console.error("Erro ao salvar exame:", err);
+                alert("Erro ao agendar exame. Tente novamente.");
+                return false;
+            }
+        }
+
+        // ============================================
+        // INICIALIZAÇÃO
+        // ============================================
+        document.addEventListener("DOMContentLoaded", () => {
+            animalId = getAnimalIdFromURL();
+            if (!animalId) {
+                alert("Nenhum animal selecionado.");
+                window.location.href = "gestao-animais.html";
+                return;
+            }
+            carregarDadosAnimal();
+
+            // Controles simples de navegação do calendário (adicione botões se desejar)
+            // Exemplo: criar dois botões na interface (ou usar teclado)
+            // Para simplificar, vou adicionar listeners nos botões que você pode criar no HTML.
+            // Mas como não havia, vou deixar apenas a exibição estática do mês atual.
+            // Se quiser navegação, basta adicionar botões "Anterior" e "Próximo" e chamar mudarMes().
+        });
+
+        // Evento de submit do formulário de exame
+        document.getElementById("formExame").addEventListener("submit", async (e) => {
             e.preventDefault();
-            const inputData = document.getElementById("data_exame").value;
-            
-            if (inputData) {
-                const diaSelecionado = parseInt(inputData.split("-")[2]);
-                examesLocais.push(diaSelecionado);
-                
-                alert("Exame de gravidez agendado com sucesso localmente!");
-                
-                // Fecha o modal via instância do Bootstrap
+            const dataInput = document.getElementById("data_exame").value;
+            if (!dataInput) return;
+
+            const sucesso = await agendarExame(dataInput);
+            if (sucesso) {
+                alert("Exame agendado com sucesso!");
                 const modalElement = document.getElementById('modalExame');
                 const modal = bootstrap.Modal.getInstance(modalElement);
                 modal.hide();
-                
-                // Atualiza o calendário na tela
-                montarCalendarioLocal(2026, 4);
+                document.getElementById("formExame").reset();
             }
         });
+
+        // (Opcional) Adicionar botões de navegação no calendário – você pode inserir dois botões no HTML e chamar mudarMes(-1) e mudarMes(1)
+        // Exemplo:
+        // document.getElementById("btnMesAnterior").addEventListener("click", () => mudarMes(-1));
+        // document.getElementById("btnMesProximo").addEventListener("click", () => mudarMes(1));
+        // Para não quebrar o layout atual, não adicionei; mas fica a sugestão.
     </script>
-    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-    <script src="../backend/database.js"></script>
-    <script src="../backend/auth.js"></script> 
-    <!-- Navbar Script Global -->
-    <script src="../backend/navbar-script.js"></script>
-    <script src="../backend/logout.js"></script>
 </body>
 </html>
