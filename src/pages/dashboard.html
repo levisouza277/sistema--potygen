@@ -14,60 +14,7 @@
 <body>
 
 <div class="app-container">
-    <!-- ============================================ -->
-    <!-- NAVBAR PADRONIZADA -->
-    <!-- ============================================ -->
-    
-    <button class="nav-menu-toggle" id="navToggleBtn" aria-label="Alternar menu lateral">
-        <i class="fa-solid fa-bars"></i>
-    </button>
-    
-    <div class="nav-overlay" id="navOverlay"></div>
-    
-    <aside class="potygen-sidebar" id="potygen-sidebar">
-        <div class="nav-logo-wrap">
-            <img src="../assets/logo.png" alt="Potygen" class="nav-logo" 
-                 onerror="this.onerror=null;this.src='https://placehold.co/140x48/ffffff/0d8a4f?text=Potygen';">
-        </div>
-        
-        <nav class="potygen-nav">
-            <a href="dashboard.html" class="nav-item active">
-                <i class="fa-solid fa-house"></i>
-                <span>Dashboard</span>
-            </a>
-            <a href="registrar_inseminacao.html" class="nav-item">
-                <i class="fa-solid fa-syringe"></i>
-                <span>Inseminação</span>
-            </a>
-            <a href="gestao-animais.html" class="nav-item">
-                <i class="fa-solid fa-cow"></i>
-                <span>Gestão de Animais</span>
-            </a>
-            <a href="analise-genetica.html" class="nav-item">
-                <i class="fa-solid fa-dna"></i>
-                <span>Análise Genética</span>
-            </a>
-            <a href="agenda-reprodutiva.html" class="nav-item">
-                <i class="fa-solid fa-calendar-days"></i>
-                <span>Agenda Reprodutiva</span>
-            </a>
-            <a href="relatorio.html" class="nav-item">
-                <i class="fa-solid fa-chart-pie"></i>
-                <span>Relatórios</span>
-            </a>
-            <a href="configuracoes.html" class="nav-item">
-                <i class="fa-solid fa-gear"></i>
-                <span>Configurações</span>
-            </a>
-        </nav>
-        
-        <div class="nav-footer">
-            <button type="button" id="logoutBtn" class="nav-item logout-btn">
-                <i class="fa-solid fa-right-from-bracket"></i>
-                <span>Sair da Conta</span>
-            </button>
-        </div>
-    </aside>
+    <!-- NAVBAR CARREGADA DINAMICAMENTE -->
     
     <!-- ============================================ -->
     <!-- CONTEÚDO PRINCIPAL -->
@@ -75,13 +22,6 @@
     
     <main class="main-content" id="mainContent">
         <header class="top-bar">
-            <div class="search-container">
-                <i class="fa-solid fa-magnifying-glass"></i>
-                <input type="text" placeholder="Buscar animal, lote ou técnico...">
-            </div>
-            
-            <div class="top-bar-right">
-            </div>
         </header>
 
         <div class="dashboard-body">
@@ -99,19 +39,66 @@
                             </div>
                             <div class="user-avatar"></div>
                         </div>
-                        <div class="notification-bell">
+                        <button id="notificationBell" type="button" class="notification-bell" aria-label="Notificações">
                             <i class="fa-solid fa-bell"></i>
                             <span class="bell-dot"></span>
-                        </div>
+                        </button>
                     </div>
+                    <div class="filter-action-row">
+                        <button id="openDashboardFilters" class="btn-action-sec">
+                            <i class="fa-solid fa-filter"></i>
+                            Filtro
+                        </button>
+                    </div>
+                </div>
+            </div>
 
-                    <div class="action-buttons">
-                        <button class="btn-action-sec">
-                            <i class="fa-solid fa-download"></i> Exportar Dados
-                        </button>
-                        <button class="btn-action-pri" onclick="abrirModal('modalNovoAnimal')">
-                            <i class="fa-solid fa-plus"></i> Novo Animal
-                        </button>
+            <div class="dashboard-filters-modal modal-backdrop" id="dashboardFiltersModal">
+                <div class="modal-content filter-modal">
+                    <header class="modal-header modal-header-small">
+                        <div>
+                            <h2>Filtros de Gráfico</h2>
+                            <p>Escolha o segmento, período e os tipos de gráfico.</p>
+                        </div>
+                        <button class="btn-close" id="closeDashboardFilters">&times;</button>
+                    </header>
+                    <section class="filter-modal-body">
+                        <div class="filter-modal-grid">
+                            <div class="filter-field">
+                                <label for="dashboardFilter">Segmento</label>
+                                <select id="dashboardFilter">
+                                    <option value="Todos">Todos os animais</option>
+                                    <option value="Bovinos">Bovinos</option>
+                                    <option value="Ovinos">Ovinos</option>
+                                    <option value="Caprinos">Caprinos</option>
+                                </select>
+                            </div>
+                            <div class="filter-field">
+                                <label for="dashboardPeriod">Período</label>
+                                <select id="dashboardPeriod">
+                                    <option value="6meses">Últimos 6 meses</option>
+                                    <option value="3meses">Últimos 3 meses</option>
+                                    <option value="12meses">Últimos 12 meses</option>
+                                </select>
+                            </div>
+                        </div>
+                        <div class="chart-type-panel modal-chart-panel">
+                            <label>Tipos de gráfico</label>
+                            <div class="chart-checkboxes modal-chart-checkboxes">
+                                <label><input type="checkbox" value="line" checked> Linha</label>
+                                <label><input type="checkbox" value="bar" checked> Barra</label>
+                                <label><input type="checkbox" value="doughnut" checked> Rosca</label>
+                                <label><input type="checkbox" value="pie" checked> Pizza</label>
+                                <label><input type="checkbox" value="radar" checked> Radar</label>
+                                <label><input type="checkbox" value="polarArea" checked> Polar</label>
+                                <label><input type="checkbox" value="bubble" checked> Bubble</label>
+                                <label><input type="checkbox" value="scatter" checked> Scatter</label>
+                            </div>
+                        </div>
+                    </section>
+                    <div class="modal-footer-actions filter-footer-actions">
+                        <button class="btn-cancel" id="cancelDashboardFilters">Fechar</button>
+                        <button class="btn-submit-pri" id="applyDashboardFilters">Aplicar</button>
                     </div>
                 </div>
             </div>
@@ -171,16 +158,52 @@
 
             <!-- GRÁFICOS -->
             <div class="charts-row">
-                <div class="chart-card-box line-chart-container">
-                    <h3>Inseminações Realizadas (6 meses)</h3>
-                    <div style="position: relative; height: 250px;">
+                <div class="chart-card-box chart-card line-chart-container" data-chart="line">
+                    <h3>Inseminações Realizadas</h3>
+                    <div class="chart-wrapper">
                         <canvas id="lineChart"></canvas>
                     </div>
                 </div>
-                <div class="chart-card-box pie-chart-container">
+                <div class="chart-card-box chart-card bar-chart-container" data-chart="bar">
+                    <h3>Produção por Lote</h3>
+                    <div class="chart-wrapper">
+                        <canvas id="barChart"></canvas>
+                    </div>
+                </div>
+                <div class="chart-card-box chart-card doughnut-chart-container" data-chart="doughnut">
                     <h3>Distribuição de Espécies</h3>
-                    <div style="position: relative; height: 250px;">
+                    <div class="chart-wrapper">
+                        <canvas id="doughnutChart"></canvas>
+                    </div>
+                </div>
+                <div class="chart-card-box chart-card radar-chart-container" data-chart="radar">
+                    <h3>Saúde do Rebanho</h3>
+                    <div class="chart-wrapper">
+                        <canvas id="radarChart"></canvas>
+                    </div>
+                </div>
+                <div class="chart-card-box chart-card polar-chart-container" data-chart="polarArea">
+                    <h3>Engajamento de Manejo</h3>
+                    <div class="chart-wrapper">
+                        <canvas id="polarChart"></canvas>
+                    </div>
+                </div>
+                <div class="chart-card-box chart-card pie-chart-container" data-chart="pie">
+                    <h3>Visão de Espécies</h3>
+                    <div class="chart-wrapper">
                         <canvas id="pieChart"></canvas>
+                    </div>
+                </div>
+                <div class="chart-card-box chart-card bubble-chart-container" data-chart="bubble">
+                    <h3>Tendência de Produção</h3>
+                    <div class="chart-wrapper">
+                        <canvas id="bubbleChart"></canvas>
+                    </div>
+                </div>
+                <div class="chart-card-box chart-card scatter-chart-container" data-chart="scatter">
+                    <h3>Produtividade x Inseminações</h3>
+                    <div class="chart-wrapper">
+                        <canvas id="scatterChart"></canvas>
                     </div>
                 </div>
             </div>
@@ -284,6 +307,8 @@
 <script src="../backend/auth.js"></script>
 <script src="../backend/script-dashboard.js"></script>
 
+<!-- Navbar Loading -->
+<script src="../backend/navbar-loader.js"></script>
 <!-- Navbar Script Global -->
 <script src="../backend/navbar-script.js"></script>
 <script src="../backend/logout.js"></script>
