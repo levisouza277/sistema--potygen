@@ -109,30 +109,13 @@ if (esqueciSenha) {
         'click',
         async (e) => {
 
-            e.preventDefault();
-
-            const email =
-                document
-                .getElementById('email')
-                .value
-                .trim();
-
-            if (!email) {
-
-                alert(
-                    'Digite seu e-mail primeiro.'
-                );
-
-                return;
-            }
-
             const { error } =
                 await supabaseClient.auth
                 .resetPasswordForEmail(
                     email,
                     {
                         redirectTo:
-                        'http://127.0.0.1:5500/src/pages/redefinir-senha.html'
+                        'http://127.0.0.1:5500/src/pages/esqueceusenha.html'
                     }
                 );
 
