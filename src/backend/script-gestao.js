@@ -527,16 +527,16 @@ function salvarAnimal() {
         }
 
     } else if (animal.sexo === 'Macho') {
-        animal.tipoReprodutor = document.getElementById('formTipoMacho').value;
-        animal.exameAndrologicoDia = document.getElementById('formExameAndrologico').value === 'sim';
-        animal.eccMacho = document.getElementById('formECCMacho').value || null;
-        animal.maeMacho = document.getElementById('formMaeMacho').value.trim() || null;
-        animal.paiMacho = document.getElementById('formPaiMacho').value.trim() || null;
-        animal.laboratorio = document.getElementById('formLaboratorio').value.trim() || null;
+        animal.tipoReprodutor = document.getElementById('formTipoMacho')?.value || null;
+        animal.exameAndrologicoDia = document.getElementById('formExameAndrologico')?.value === 'sim';
+        animal.eccMacho = document.getElementById('formECCMacho')?.value || null;
+        animal.maeMacho = document.getElementById('formMaeMacho')?.value.trim() || null;
+        animal.paiMacho = document.getElementById('formPaiMacho')?.value.trim() || null;
+        animal.laboratorio = document.getElementById('formLaboratorio')?.value.trim() || null;
 
         const temDescendentes = document.getElementById('formTemDescendentes')?.value;
         if (temDescendentes === 'sim') {
-            const qtdDescendentes = parseInt(document.getElementById('formQtdDescendentes').value) || 0;
+            const qtdDescendentes = parseInt(document.getElementById('formQtdDescendentes')?.value) || 0;
             animal.qtdDescendentes = qtdDescendentes;
             const descendentes = [];
             for (let i = 1; i <= qtdDescendentes; i++) {
@@ -559,7 +559,7 @@ function salvarAnimal() {
             animal.descendentes = [];
         }
 
-        animal.doencas = coletarDoencasMacho();
+        animal.doencas = coletarDoencasMacho?.() || [];
     }
 
     // Envia para o Supabase
