@@ -1,13 +1,16 @@
 // =========================================================
 // controle-economico.js — Potygen Pro
 // =========================================================
-// Este arquivo depende de:
-//   - database.js    (supabaseClient)
-//   - auth.js        (verificarLogin)
+// Integrado ao sistema de fazendas:
+//   - Cada fazenda do mesmo usuário tem seu próprio controle econômico.
+//   - Transações e produção são SEMPRE filtradas pela fazenda ativa.
+//   - Relatórios PDF / CSV exibem cabeçalho com nome, CPF e localização.
+//   - Produção permite vincular um animal (opcional). O PDF de produção
+//     ganha uma seção "Produção por Animal" quando há vínculos.
 //
-// O nome da fazenda e o CPF do produtor agora são carregados
-// dinamicamente das tabelas `fazendas` e `usuarios`,
-// sempre filtrados pelo usuário autenticado (RLS + filtro explícito).
+// Depende de:
+//   - database.js  (supabaseClient)
+//   - auth.js      (verificarLogin)
 // =========================================================
 
 const CATEGORIAS = {
@@ -23,16 +26,35 @@ let finTipoFiltro    = 'todos';
 let filtroDataInicio = null;
 let filtroDataFim    = null;
 let termoBusca       = '';
-let uidAtual         = null; // preenchido no init
+let uidAtual         = null;
+let fazendaAtivaId   = null;          // ← fazenda atualmente selecionada
+let animaisFazenda   = [];            // ← animais da fazenda ativa (p/ select de produção)
 
 // Dados da fazenda/produtor (carregados do banco)
-let fazendaInfo = { nome: 'Fazenda', cidade: '', cpf: '' };
+let fazendaInfo = { id:null, nome:'Fazenda', cidade:'', estado:'', endereco:'', cpf:'' };
+
+// =========================================================
+// HELPERS DE FAZENDA ATIVA
+// =========================================================
+function lerFazendaAtivaIdLocal() {
+  // Tenta várias chaves usadas pelo sistema
+  const keys = ['fazendaAtivaId','fazenda_ativa_id','fazendaAtiva','fazendaId','fazenda_id','currentFazendaId'];
+  for (const k of keys) {
+    const v = localStorage.getItem(k) || sessionStorage.getItem(k);
+    if (v && v !== 'null' && v !== 'undefined') return v;
+  }
+  return null;
+}
+
+function salvarFazendaAtivaIdLocal(id) {
+  if (!id) return;
+  localStorage.setItem('fazendaAtivaId', id);
+}
 
 // =========================================================
 // INIT
 // =========================================================
 document.addEventListener('DOMContentLoaded', async () => {
-  // Pega o usuário logado via supabaseClient (auth nativo)
   const { data: { session } } = await supabaseClient.auth.getSession();
   if (!session) {
     window.location.replace('../pages/index.html');
@@ -40,10 +62,36 @@ document.addEventListener('DOMContentLoaded', async () => {
   }
   uidAtual = session.user.id;
 
-  // Carrega nome da fazenda + CPF do produtor (somente do próprio usuário)
+  // Integra com o sistema global de fazendas (sidebar + modais de troca/cadastro)
+  if (window.PotygenFazendaUI && typeof window.PotygenFazendaUI.inicializar === 'function') {
+    try {
+      await window.PotygenFazendaUI.inicializar({
+        onFazendaTrocada: async (faz) => {
+          if (!faz) return;
+          fazendaAtivaId = faz.id;
+          salvarFazendaAtivaIdLocal(faz.id);
+          await carregarDadosFazenda();
+          await carregarAnimaisFazenda();
+          exibirBadgeFazenda();
+          await carregarTransacoes();
+          try { await carregarProducao(); } catch(_) {}
+        }
+      });
+      const idPF = window.PotygenFazenda?.getFazendaId?.();
+      if (idPF) { fazendaAtivaId = idPF; salvarFazendaAtivaIdLocal(idPF); }
+    } catch (e) { console.warn('FazendaUI init falhou:', e); }
+  }
+
+  // Resolve a fazenda ativa (fallback)
+  if (!fazendaAtivaId) await resolverFazendaAtiva();
+
+  // Carrega dados da fazenda + CPF do produtor
   await carregarDadosFazenda();
 
-  // Preenche selects de ano (últimos 5 anos) — financeiro e produção
+  // Carrega animais da fazenda (para vincular na produção)
+  await carregarAnimaisFazenda();
+
+  // Selects de ano
   const anoAtual = new Date().getFullYear();
   ['finAno','prodAno'].forEach(id => {
     const sel = document.getElementById(id);
@@ -56,13 +104,11 @@ document.addEventListener('DOMContentLoaded', async () => {
     }
   });
 
-  // Mês e semestre padrão = atual (financeiro e produção)
   const mesAtual = new Date().getMonth() + 1;
   const semAtual = mesAtual <= 6 ? 1 : 2;
   ['finMes','prodMes'].forEach(id => { const el = document.getElementById(id); if (el) el.value = mesAtual; });
   ['finSemestre','prodSemestre'].forEach(id => { const el = document.getElementById(id); if (el) el.value = semAtual; });
 
-  // Listeners dos selects de período (mudança recarrega automaticamente)
   ['finMes','finSemestre','finAno'].forEach(id => {
     const el = document.getElementById(id);
     if (el) el.addEventListener('change', () => aplicarFiltroFin());
@@ -72,48 +118,100 @@ document.addEventListener('DOMContentLoaded', async () => {
     if (el) el.addEventListener('change', () => carregarProducao());
   });
 
-  // Data/hora padrão no modal
   const agora = new Date();
   document.getElementById('dataTransacao').value = agora.toISOString().split('T')[0];
   document.getElementById('horaTransacao').value = agora.toTimeString().slice(0, 5);
 
-  // Fecha modais ao clicar no overlay
   document.querySelectorAll('.modal-overlay').forEach(m => {
     m.addEventListener('click', e => { if (e.target === m) m.classList.remove('aberto'); });
   });
 
+  exibirBadgeFazenda();
   await carregarTransacoes();
 });
 
 // =========================================================
-// DADOS DA FAZENDA / PRODUTOR
+// RESOLVER QUAL É A FAZENDA ATIVA
 // =========================================================
-async function carregarDadosFazenda() {
-  if (!uidAtual) return;
+async function resolverFazendaAtiva() {
+  let id = lerFazendaAtivaIdLocal();
 
-  // Fazenda vinculada ao usuário (RLS garante isolamento)
+  // Busca fazendas do usuário p/ validar / fallback
+  const { data: lista } = await supabaseClient
+    .from('fazendas')
+    .select('id, nome, cidade, estado, endereco')
+    .eq('usuario_id', uidAtual)
+    .order('created_at', { ascending: true });
+
+  const minhasFazendas = lista || [];
+
+  if (id && !minhasFazendas.some(f => f.id === id)) id = null; // id inválido p/ esse usuário
+  if (!id && minhasFazendas.length) id = minhasFazendas[0].id; // fallback: primeira fazenda
+
+  fazendaAtivaId = id;
+  if (id) salvarFazendaAtivaIdLocal(id);
+}
+
+async function carregarDadosFazenda() {
+  if (!uidAtual || !fazendaAtivaId) {
+    fazendaInfo = { id:null, nome:'Fazenda', cidade:'', estado:'', endereco:'', cpf:'' };
+    return;
+  }
+
   const { data: faz } = await supabaseClient
     .from('fazendas')
-    .select('nome, cidade, estado')
+    .select('id, nome, cidade, estado, endereco')
+    .eq('id', fazendaAtivaId)
     .eq('usuario_id', uidAtual)
-    .order('created_at', { ascending: true })
-    .limit(1)
     .maybeSingle();
 
-  // CPF do produtor (tabela usuarios)
   const { data: usr } = await supabaseClient
     .from('usuarios')
     .select('cpf')
     .eq('id', uidAtual)
     .maybeSingle();
 
-  fazendaInfo.nome   = (faz && faz.nome) ? faz.nome : 'Fazenda';
-  fazendaInfo.cidade = faz ? [faz.cidade, faz.estado].filter(Boolean).join(' - ') : '';
-  fazendaInfo.cpf    = (usr && usr.cpf) ? usr.cpf : '';
+  fazendaInfo = {
+    id:        faz?.id || null,
+    nome:      faz?.nome || 'Fazenda',
+    cidade:    faz?.cidade || '',
+    estado:    faz?.estado || '',
+    endereco:  faz?.endereco || '',
+    cpf:       usr?.cpf || '',
+  };
+}
+
+async function carregarAnimaisFazenda() {
+  animaisFazenda = [];
+  if (!uidAtual || !fazendaAtivaId) return;
+  const { data } = await supabaseClient
+    .from('animais')
+    .select('id, codigo, nome, especie')
+    .eq('usuario_id', uidAtual)
+    .eq('fazenda_id', fazendaAtivaId)
+    .order('codigo', { ascending: true });
+  animaisFazenda = data || [];
+}
+
+function exibirBadgeFazenda() {
+  // Mostra o nome da fazenda ativa logo abaixo do título, se possível
+  const sub = document.querySelector('.page-sub');
+  if (sub && fazendaInfo.nome) {
+    sub.innerHTML = `Gerenciando: <strong style="color:#0d8a4f">${escHtml(fazendaInfo.nome)}</strong>` +
+      (fazendaInfo.cidade ? ` — ${escHtml([fazendaInfo.cidade, fazendaInfo.estado].filter(Boolean).join(' - '))}` : '');
+  }
+}
+
+function localizacaoFazendaTexto() {
+  const partes = [];
+  if (fazendaInfo.endereco) partes.push(fazendaInfo.endereco);
+  const cidEst = [fazendaInfo.cidade, fazendaInfo.estado].filter(Boolean).join(' - ');
+  if (cidEst) partes.push(cidEst);
+  return partes.join(' — ');
 }
 
 // =========================================================
-// PERÍODO (helper compartilhado financeiro/produção)
+// PERÍODO (helper compartilhado)
 // =========================================================
 function calcPeriodo(tipo, mes, sem, ano) {
   if (tipo === 'todos') return { inicio: null, fim: null, label: 'Todos os períodos' };
@@ -139,19 +237,19 @@ function toggleSelectsPeriodo(tipo, idMes, idSemestre, idAno) {
 }
 
 // =========================================================
-// CARREGAR DO SUPABASE (usando supabaseClient + RLS)
+// CARREGAR TRANSAÇÕES — SEMPRE FILTRA POR fazenda_id
 // =========================================================
 async function carregarTransacoes() {
   if (!uidAtual) return;
 
-  // O RLS já garante isolamento por auth.uid(),
-  // mas filtramos explicitamente também para dupla segurança
   let query = supabaseClient
     .from('transacoes')
     .select('*')
     .eq('usuario_id', uidAtual)
     .order('data', { ascending: false })
     .order('hora', { ascending: false });
+
+  if (fazendaAtivaId) query = query.eq('fazenda_id', fazendaAtivaId);
 
   if (filtroDataInicio) query = query.gte('data', filtroDataInicio);
   if (filtroDataFim)    query = query.lte('data', filtroDataFim);
@@ -164,8 +262,10 @@ async function carregarTransacoes() {
     return;
   }
 
-  // Filtra novamente no cliente (dupla proteção)
-  todasTransacoes = (data || []).filter(t => t.usuario_id === uidAtual);
+  todasTransacoes = (data || []).filter(t =>
+    t.usuario_id === uidAtual &&
+    (!fazendaAtivaId || t.fazenda_id === fazendaAtivaId)
+  );
   renderizarTudo();
 }
 
@@ -251,7 +351,7 @@ function renderTabela(lista) {
 }
 
 // =========================================================
-// FILTROS DE PERÍODO — FINANCEIRO (mesmo padrão da produção)
+// FILTROS DE PERÍODO — FINANCEIRO
 // =========================================================
 function setFinTipo(tipo) {
   finTipoFiltro = tipo;
@@ -297,6 +397,7 @@ function trocarMainTab(aba) {
 // MODAL NOVA TRANSAÇÃO
 // =========================================================
 function abrirNovaTransacao() {
+  if (!fazendaAtivaId) { alert('Cadastre / selecione uma fazenda antes de registrar transações.'); return; }
   document.getElementById('editandoId').value        = '';
   document.getElementById('modalTitulo').textContent = 'Nova Transação';
   document.getElementById('descricao').value         = '';
@@ -333,7 +434,7 @@ function calcularTotal() {
 }
 
 // =========================================================
-// SALVAR (nova ou edição)
+// SALVAR TRANSAÇÃO
 // =========================================================
 async function salvarTransacao() {
   const { data: { session } } = await supabaseClient.auth.getSession();
@@ -343,6 +444,8 @@ async function salvarTransacao() {
     return;
   }
   uidAtual = session.user.id;
+
+  if (!fazendaAtivaId) { alert('Nenhuma fazenda ativa. Selecione uma fazenda.'); return; }
 
   const tipo      = document.getElementById('tipoTransacao').value;
   const editId    = document.getElementById('editandoId').value;
@@ -354,11 +457,11 @@ async function salvarTransacao() {
   const preco     = Math.max(0, Math.min(99999999, parseFloat(document.getElementById('precoUnitario').value) || 0));
   const obs       = document.getElementById('observacoes').value.trim().substring(0, 500);
 
-  if (!['receita','despesa'].includes(tipo))            { alert('Tipo inválido.'); return; }
+  if (!['receita','despesa'].includes(tipo))               { alert('Tipo inválido.'); return; }
   if (!categoria || !CATEGORIAS[tipo].includes(categoria)) { alert('Selecione uma categoria válida.'); return; }
-  if (!data)                                             { alert('Informe a data.'); return; }
-  if (!descricao)                                        { alert('Preencha a descrição.'); return; }
-  if (!preco)                                            { alert('Informe o preço unitário.'); return; }
+  if (!data)                                               { alert('Informe a data.'); return; }
+  if (!descricao)                                          { alert('Preencha a descrição.'); return; }
+  if (!preco)                                              { alert('Informe o preço unitário.'); return; }
 
   if (editId) {
     const existente = todasTransacoes.find(t => t.id === editId);
@@ -373,6 +476,7 @@ async function salvarTransacao() {
     quantidade: qtd,
     preco_unitario: preco,
     usuario_id: uidAtual,
+    fazenda_id: fazendaAtivaId,
     ...(obs && { observacoes: obs }),
   };
 
@@ -382,7 +486,7 @@ async function salvarTransacao() {
       .from('transacoes')
       .update(payload)
       .eq('id', editId)
-      .eq('usuario_id', uidAtual)); // dupla segurança
+      .eq('usuario_id', uidAtual));
   } else {
     ({ error } = await supabaseClient
       .from('transacoes')
@@ -400,7 +504,7 @@ async function salvarTransacao() {
 }
 
 // =========================================================
-// EDITAR
+// EDITAR / EXCLUIR TRANSAÇÃO
 // =========================================================
 function editarTransacao(id) {
   const tx = todasTransacoes.find(t => t.id === id && t.usuario_id === uidAtual);
@@ -420,9 +524,6 @@ function editarTransacao(id) {
   abrirModal('modalTransacao');
 }
 
-// =========================================================
-// EXCLUIR
-// =========================================================
 async function excluirTransacao(id) {
   const tx = todasTransacoes.find(t => t.id === id && t.usuario_id === uidAtual);
   if (!tx) { alert('Sem permissão.'); return; }
@@ -432,11 +533,9 @@ async function excluirTransacao(id) {
     .from('transacoes')
     .delete()
     .eq('id', id)
-    .eq('usuario_id', uidAtual); // dupla segurança
+    .eq('usuario_id', uidAtual);
 
-  if (error) {
-    alert('Erro ao excluir: ' + error.message); return;
-  }
+  if (error) { alert('Erro ao excluir: ' + error.message); return; }
   await carregarTransacoes();
 }
 
@@ -468,22 +567,32 @@ function periodoCorteRelatorio(periodo) {
 function _cabecalhoPDF(doc, PW, titulo) {
   const VERDE = [13, 138, 79];
   doc.setFillColor(...VERDE);
-  doc.rect(0, 0, PW, 42, 'F');
+  doc.rect(0, 0, PW, 50, 'F');
   doc.setTextColor(255,255,255);
   doc.setFont('helvetica','bold'); doc.setFontSize(16);
-  doc.text('POTYGEN - Sistema de Gestão', 14, 14);
-  doc.setFont('helvetica','normal'); doc.setFontSize(10);
+  doc.text('POTYGEN - Sistema de Gestão', 14, 12);
+
+  // Nome da fazenda — destaque
+  doc.setFont('helvetica','bold'); doc.setFontSize(12);
   doc.text(fazendaInfo.nome || 'Fazenda', 14, 22);
-  const linha2 = [fazendaInfo.cidade, fazendaInfo.cpf ? `CPF: ${fazendaInfo.cpf}` : '']
-    .filter(Boolean).join('  |  ');
-  if (linha2) doc.text(linha2, 14, 29);
+
+  // CPF do produtor
+  doc.setFont('helvetica','normal'); doc.setFontSize(9.5);
+  if (fazendaInfo.cpf) doc.text(`CPF: ${fazendaInfo.cpf}`, 14, 29);
+
+  // Localização (endereço + cidade/estado)
+  const loc = localizacaoFazendaTexto();
+  if (loc) doc.text(`Localização: ${loc}`, 14, 35);
+
   const agora = new Date();
   doc.setFontSize(9);
-  doc.text(`Gerado em: ${agora.toLocaleDateString('pt-BR')} às ${agora.toLocaleTimeString('pt-BR')}`, PW-14, 29, {align:'right'});
+  doc.text(`Gerado em: ${agora.toLocaleDateString('pt-BR')} às ${agora.toLocaleTimeString('pt-BR')}`,
+           PW-14, 35, {align:'right'});
 }
 
 async function gerarPDF() {
   if (!uidAtual) return;
+  if (!fazendaAtivaId) { alert('Nenhuma fazenda ativa.'); return; }
 
   const periodo = document.querySelector('input[name="periodoRelatorio"]:checked').value;
   const { dataCorte, labelPeriodo, hoje } = periodoCorteRelatorio(periodo);
@@ -492,13 +601,14 @@ async function gerarPDF() {
     .from('transacoes')
     .select('*')
     .eq('usuario_id', uidAtual)
+    .eq('fazenda_id', fazendaAtivaId)
     .gte('data', dataCorte.toISOString().split('T')[0])
     .order('data', { ascending: false })
     .order('hora', { ascending: false });
 
   if (error) { alert('Erro ao gerar PDF.'); return; }
 
-  const listaSegura = (lista || []).filter(t => t.usuario_id === uidAtual);
+  const listaSegura = (lista || []).filter(t => t.usuario_id === uidAtual && t.fazenda_id === fazendaAtivaId);
   const receitas    = listaSegura.filter(t => t.tipo === 'receita');
   const despesas    = listaSegura.filter(t => t.tipo === 'despesa');
   const totalR      = receitas.reduce((s,t) => s + +t.valor, 0);
@@ -516,7 +626,7 @@ async function gerarPDF() {
   const BORDA  = [226, 232, 240];
 
   _cabecalhoPDF(doc, PW, 'Relatório Financeiro');
-  y = 52;
+  y = 60;
 
   doc.setTextColor(...ESCURO);
   doc.setFont('helvetica','bold'); doc.setFontSize(13);
@@ -593,7 +703,7 @@ async function gerarPDF() {
     _rodape(doc, PW, MEDIO, p, total);
   }
 
-  doc.save(`relatorio-financeiro-${labelPeriodo.toLowerCase()}-${hoje.toISOString().split('T')[0]}.pdf`);
+  doc.save(`relatorio-financeiro-${slugFazenda()}-${labelPeriodo.toLowerCase()}-${hoje.toISOString().split('T')[0]}.pdf`);
   fecharModal('modalPDF');
 }
 
@@ -603,14 +713,25 @@ function _rodape(doc, PW, cor, p, total) {
   doc.setFont('helvetica','normal'); doc.setFontSize(8);
   doc.setTextColor(...cor);
   if (p && total) doc.text(`Página ${p} de ${total}`, PW/2, 291, {align:'center'});
-  doc.text('Sistema Potygen - Powered by IA', PW/2, 296, {align:'center'});
+  doc.text(`Sistema Potygen - ${fazendaInfo.nome || 'Fazenda'}`, PW/2, 296, {align:'center'});
 }
 
 // =========================================================
 // HELPERS
 // =========================================================
-function abrirModal(id)  { document.getElementById(id).classList.add('aberto'); }
-function fecharModal(id) { document.getElementById(id).classList.remove('aberto'); }
+function abrirModal(id)  {
+  const el = document.getElementById(id);
+  if (!el) return;
+  el.classList.add('aberto');
+  el.style.display = 'flex';
+}
+function fecharModal(id) {
+  const el = document.getElementById(id);
+  if (!el) return;
+  el.classList.remove('aberto');
+  if (el.classList.contains('modal-backdrop')) el.style.display = 'none';
+  else el.style.display = '';
+}
 
 function escHtml(str) {
   return String(str)
@@ -627,7 +748,7 @@ function fmtD(d) {
 }
 
 // =========================================================
-// EXPORTAÇÃO CSV (compartilhado)
+// EXPORTAÇÃO CSV
 // =========================================================
 function csvCell(v) {
   const s = (v == null ? '' : String(v));
@@ -635,7 +756,6 @@ function csvCell(v) {
 }
 function baixarCSV(nomeArquivo, linhas) {
   const csv = linhas.map(r => r.map(csvCell).join(';')).join('\r\n');
-  // BOM para abrir corretamente acentos no Excel
   const blob = new Blob(['\uFEFF' + csv], { type: 'text/csv;charset=utf-8;' });
   const url  = URL.createObjectURL(blob);
   const a    = document.createElement('a');
@@ -651,25 +771,29 @@ function slugFazenda() {
 
 async function exportarCSVTransacoes() {
   const { data: { session } } = await supabaseClient.auth.getSession();
-  if (!session) { alert('Sessão expirada. Faça login novamente.'); window.location.replace('../pages/index.html'); return; }
+  if (!session) { alert('Sessão expirada.'); window.location.replace('../pages/index.html'); return; }
   uidAtual = session.user.id;
+  if (!fazendaAtivaId) { alert('Nenhuma fazenda ativa.'); return; }
 
   const { data, error } = await supabaseClient
     .from('transacoes')
     .select('*')
     .eq('usuario_id', uidAtual)
+    .eq('fazenda_id', fazendaAtivaId)
     .order('data', { ascending: false })
     .order('hora', { ascending: false });
 
   if (error) { alert('Erro ao exportar: ' + error.message); return; }
 
-  const lista = (data || []).filter(t => t.usuario_id === uidAtual);
+  const lista = (data || []).filter(t => t.usuario_id === uidAtual && t.fazenda_id === fazendaAtivaId);
   if (!lista.length) { alert('Não há transações para exportar.'); return; }
 
+  const loc = localizacaoFazendaTexto();
   const cab = ['Tipo','Descrição','Categoria','Data','Hora','Quantidade','Preço Unitário','Valor Total','Observações'];
   const linhas = [
     [`Fazenda: ${fazendaInfo.nome}`],
     [`CPF: ${fazendaInfo.cpf || '—'}`],
+    [`Localização: ${loc || '—'}`],
     [],
     cab,
     ...lista.map(t => [
@@ -690,30 +814,35 @@ async function exportarCSVTransacoes() {
 
 async function exportarCSVProducao() {
   const { data: { session } } = await supabaseClient.auth.getSession();
-  if (!session) { alert('Sessão expirada. Faça login novamente.'); window.location.replace('../pages/index.html'); return; }
+  if (!session) { alert('Sessão expirada.'); window.location.replace('../pages/index.html'); return; }
   uidAtual = session.user.id;
+  if (!fazendaAtivaId) { alert('Nenhuma fazenda ativa.'); return; }
 
   const { data, error } = await supabaseClient
     .from('producao')
-    .select('*')
+    .select('*, animal:animal_id(codigo,nome)')
     .eq('usuario_id', uidAtual)
+    .eq('fazenda_id', fazendaAtivaId)
     .order('data', { ascending: false })
     .order('hora', { ascending: false });
 
   if (error) { alert('Erro ao exportar: ' + error.message); return; }
 
-  const lista = (data || []).filter(p => p.usuario_id === uidAtual);
+  const lista = (data || []).filter(p => p.usuario_id === uidAtual && p.fazenda_id === fazendaAtivaId);
   if (!lista.length) { alert('Não há registros de produção para exportar.'); return; }
 
-  const cab = ['Produto','Espécie','Data','Hora','Quantidade','Unidade','Qualidade','Valor','Origem','Destino','Lote','Temperatura','Observações'];
+  const loc = localizacaoFazendaTexto();
+  const cab = ['Produto','Espécie','Animal','Data','Hora','Quantidade','Unidade','Qualidade','Valor','Origem','Destino','Lote','Temperatura','Observações'];
   const linhas = [
     [`Fazenda: ${fazendaInfo.nome}`],
     [`CPF: ${fazendaInfo.cpf || '—'}`],
+    [`Localização: ${loc || '—'}`],
     [],
     cab,
     ...lista.map(p => [
       PROD_LABELS[p.produto] || p.produto,
       ESP_LABELS[p.especie] || p.especie,
+      p.animal ? `${p.animal.codigo || ''}${p.animal.nome ? ' - '+p.animal.nome : ''}` : '',
       fmtD(p.data),
       (p.hora || '').slice(0,5),
       String(p.quantidade ?? '').replace('.', ','),
@@ -776,10 +905,12 @@ async function carregarProducao() {
 
   let query = supabaseClient
     .from('producao')
-    .select('*')
+    .select('*, animal:animal_id(codigo,nome)')
     .eq('usuario_id', uidAtual)
     .order('data', { ascending: false })
     .order('hora', { ascending: false });
+
+  if (fazendaAtivaId) query = query.eq('fazenda_id', fazendaAtivaId);
 
   if (inicio) query = query.gte('data', inicio);
   if (fim)    query = query.lte('data', fim);
@@ -792,7 +923,10 @@ async function carregarProducao() {
     return;
   }
 
-  producoes = (data || []).filter(p => p.usuario_id === uidAtual);
+  producoes = (data || []).filter(p =>
+    p.usuario_id === uidAtual &&
+    (!fazendaAtivaId || p.fazenda_id === fazendaAtivaId)
+  );
   renderProducao();
 }
 
@@ -809,14 +943,15 @@ function listaProducaoFiltrada() {
     (ESP_LABELS[p.especie] || p.especie || '').toLowerCase().includes(t) ||
     (p.origem  || '').toLowerCase().includes(t) ||
     (p.destino || '').toLowerCase().includes(t) ||
-    (p.lote    || '').toLowerCase().includes(t)
+    (p.lote    || '').toLowerCase().includes(t) ||
+    (p.animal && (p.animal.codigo || '').toLowerCase().includes(t)) ||
+    (p.animal && (p.animal.nome || '').toLowerCase().includes(t))
   );
 }
 
 function renderProducao() {
   const lista = listaProducaoFiltrada();
 
-  // Cards por tipo de produto
   const tipos = ['leite','carne','couro','la'];
   const ids   = { leite:'Leite', carne:'Carne', couro:'Couro', la:'La' };
   tipos.forEach(t => {
@@ -829,7 +964,6 @@ function renderProducao() {
     document.getElementById(`prodCnt${ids[t]}`).textContent = `${sub.length} registro(s)`;
   });
 
-  // Cards por espécie
   ['bovino','ovino','caprino'].forEach(e => {
     const sub = lista.filter(p => p.especie === e);
     const val = sub.reduce((s,p) => s + (+p.valor || 0), 0);
@@ -838,11 +972,10 @@ function renderProducao() {
     document.getElementById(`espCnt${cap}`).textContent = `${sub.length} registro(s) no período`;
   });
 
-  // Tabela
   document.getElementById('prodBadgeTotal').textContent = lista.length;
   const tbody = document.getElementById('tbodyProducao');
   if (!lista.length) {
-    tbody.innerHTML = `<tr><td colspan="9" class="empty-row">
+    tbody.innerHTML = `<tr><td colspan="10" class="empty-row">
       <i class="fa-solid fa-inbox" style="font-size:28px;color:#e2e8f0;display:block;margin-bottom:8px;"></i>
       Nenhum registro de produção no período.
     </td></tr>`;
@@ -853,9 +986,11 @@ function renderProducao() {
     const un = p.unidade || PROD_UNIDADES[p.produto] || '';
     const origem  = p.origem  ? `De: ${escHtml(p.origem)}`   : '';
     const destino = p.destino ? `Para: ${escHtml(p.destino)}`: '';
+    const animal  = p.animal ? `${escHtml(p.animal.codigo || '')}${p.animal.nome ? ' - '+escHtml(p.animal.nome) : ''}` : '—';
     return `<tr>
       <td><span class="prod-mini-badge ${p.produto}">${PROD_LABELS[p.produto] || p.produto}</span></td>
       <td><span class="prod-mini-badge ${p.especie}">${ESP_LABELS[p.especie] || p.especie}</span></td>
+      <td>${animal}</td>
       <td>${fmtD(p.data)}<br><small style="color:#94a3b8"><i class="fa-regular fa-clock"></i> ${(p.hora||'').slice(0,5)}</small></td>
       <td><strong>${formatNum(p.quantidade)} ${un}</strong>${p.temperatura != null ? `<br><small style="color:#94a3b8">${p.temperatura}°C</small>` : ''}</td>
       <td><span class="qualidade-circle">${escHtml(p.qualidade || '-')}</span></td>
@@ -881,6 +1016,7 @@ function formatNum(n) {
 // MODAL NOVA PRODUÇÃO
 // =========================================================
 function abrirNovaProducao() {
+  if (!fazendaAtivaId) { alert('Cadastre / selecione uma fazenda antes de registrar produção.'); return; }
   document.getElementById('editandoProducaoId').value = '';
   document.getElementById('modalProducaoTitulo').textContent = 'Registrar Produção';
   const agora = new Date();
@@ -896,7 +1032,25 @@ function abrirNovaProducao() {
   document.getElementById('prodQualidade').value  = 'A';
   setProdProduto('leite');
   setProdEspecie('bovino');
+  popularSelectAnimais();
   abrirModal('modalProducao');
+}
+
+function popularSelectAnimais() {
+  const sel = document.getElementById('prodAnimal');
+  if (!sel) return;
+  sel.innerHTML = '<option value="">— Nenhum (produção geral) —</option>';
+  // Filtra pela espécie atual se possível
+  const espAtual = document.getElementById('prodEspecie')?.value || '';
+  const lista = espAtual
+    ? animaisFazenda.filter(a => (a.especie || '').toLowerCase() === espAtual)
+    : animaisFazenda;
+  lista.forEach(a => {
+    const o = document.createElement('option');
+    o.value = a.id;
+    o.textContent = `${a.codigo || ''}${a.nome ? ' - '+a.nome : ''}`;
+    sel.appendChild(o);
+  });
 }
 
 function setProdProduto(tipo) {
@@ -912,12 +1066,14 @@ function setProdEspecie(esp) {
   document.querySelectorAll('.prod-especie-selector .prod-pick').forEach(b => {
     b.classList.toggle('active', b.dataset.esp === esp);
   });
+  popularSelectAnimais();
 }
 
 async function salvarProducao() {
   const { data: { session } } = await supabaseClient.auth.getSession();
-  if (!session) { alert('Sessão expirada. Faça login novamente.'); window.location.replace('../pages/index.html'); return; }
+  if (!session) { alert('Sessão expirada.'); window.location.replace('../pages/index.html'); return; }
   uidAtual = session.user.id;
+  if (!fazendaAtivaId) { alert('Nenhuma fazenda ativa.'); return; }
 
   const produto    = document.getElementById('prodProduto').value;
   const especie    = document.getElementById('prodEspecie').value;
@@ -933,6 +1089,8 @@ async function salvarProducao() {
   const tempStr    = document.getElementById('prodTemperatura').value;
   const temperatura = tempStr === '' ? null : parseFloat(tempStr);
   const observacoes = document.getElementById('prodObs').value.trim().substring(0,500);
+  const animalSel   = document.getElementById('prodAnimal');
+  const animalId    = animalSel && animalSel.value ? animalSel.value : null;
 
   if (!produto)             { alert('Selecione o tipo de produção.'); return; }
   if (!especie)             { alert('Selecione a espécie.'); return; }
@@ -941,6 +1099,8 @@ async function salvarProducao() {
 
   const payload = {
     usuario_id: uidAtual,
+    fazenda_id: fazendaAtivaId,
+    animal_id:  animalId,
     produto, especie, data,
     hora: hora || null,
     quantidade, unidade, qualidade, valor,
@@ -967,25 +1127,27 @@ async function excluirProducao(id) {
 }
 
 // =========================================================
-// PDF — PRODUÇÃO
+// PDF — PRODUÇÃO (com seção "Produção por Animal")
 // =========================================================
 async function gerarPDFProducao() {
   if (!uidAtual) return;
+  if (!fazendaAtivaId) { alert('Nenhuma fazenda ativa.'); return; }
 
   const periodo = document.querySelector('input[name="periodoRelatorioProd"]:checked').value;
   const { dataCorte, labelPeriodo, hoje } = periodoCorteRelatorio(periodo);
 
   const { data: lista, error } = await supabaseClient
     .from('producao')
-    .select('*')
+    .select('*, animal:animal_id(codigo,nome)')
     .eq('usuario_id', uidAtual)
+    .eq('fazenda_id', fazendaAtivaId)
     .gte('data', dataCorte.toISOString().split('T')[0])
     .order('data', { ascending: false })
     .order('hora', { ascending: false });
 
   if (error) { alert('Erro ao gerar PDF.'); return; }
 
-  const listaSegura = (lista || []).filter(p => p.usuario_id === uidAtual);
+  const listaSegura = (lista || []).filter(p => p.usuario_id === uidAtual && p.fazenda_id === fazendaAtivaId);
   const valorTotal  = listaSegura.reduce((s,p) => s + (+p.valor || 0), 0);
 
   const { jsPDF } = window.jspdf;
@@ -999,7 +1161,7 @@ async function gerarPDFProducao() {
   const BORDA  = [226, 232, 240];
 
   _cabecalhoPDF(doc, PW, 'Relatório de Produção');
-  y = 52;
+  y = 60;
 
   doc.setTextColor(...ESCURO);
   doc.setFont('helvetica','bold'); doc.setFontSize(13);
@@ -1034,14 +1196,71 @@ async function gerarPDFProducao() {
   doc.text(fmtM(valorTotal), 140, ry);
   y += 60;
 
+  // ===== Produção por Animal (se houver vínculos) =====
+  const porAnimal = listaSegura.filter(p => p.animal_id);
+  if (porAnimal.length) {
+    if (y > 240) { _rodape(doc, PW, MEDIO); doc.addPage(); y = 20; }
+    doc.setTextColor(...ESCURO);
+    doc.setFont('helvetica','bold'); doc.setFontSize(12);
+    doc.text('Produção por Animal', 14, y);
+    y += 8;
+
+    // Agrupa por animal_id
+    const grupos = {};
+    porAnimal.forEach(p => {
+      const key = p.animal_id;
+      if (!grupos[key]) {
+        const rotulo = p.animal
+          ? `${p.animal.codigo || ''}${p.animal.nome ? ' - '+p.animal.nome : ''}`
+          : 'Animal';
+        grupos[key] = { rotulo, registros: [], totalVal: 0, porProduto: {} };
+      }
+      grupos[key].registros.push(p);
+      grupos[key].totalVal += (+p.valor || 0);
+      const pkey = p.produto;
+      if (!grupos[key].porProduto[pkey]) grupos[key].porProduto[pkey] = { qtd: 0, un: p.unidade || PROD_UNIDADES[pkey] || '' };
+      grupos[key].porProduto[pkey].qtd += (+p.quantidade || 0);
+    });
+
+    Object.values(grupos).forEach(g => {
+      const linhasProd = Object.entries(g.porProduto);
+      const altH = 16 + linhasProd.length * 6;
+      if (y + altH > 272) { _rodape(doc, PW, MEDIO); doc.addPage(); y = 20; }
+
+      doc.setFillColor(240,253,246);
+      doc.setDrawColor(187,247,208);
+      doc.roundedRect(14, y, PW-28, altH, 2, 2, 'FD');
+
+      doc.setFont('helvetica','bold'); doc.setFontSize(10);
+      doc.setTextColor(...VERDE);
+      doc.text(`Animal: ${g.rotulo}`, 20, y+8);
+
+      doc.setFont('helvetica','bold'); doc.setFontSize(9);
+      doc.setTextColor(...ESCURO);
+      doc.text(`Total: ${fmtM(g.totalVal)}  |  ${g.registros.length} registro(s)`, PW-18, y+8, {align:'right'});
+
+      doc.setFont('helvetica','normal'); doc.setFontSize(9);
+      doc.setTextColor(...MEDIO);
+      let ly = y + 14;
+      linhasProd.forEach(([prod, info]) => {
+        doc.text(`• ${PROD_LABELS[prod] || prod}: ${formatNum(info.qtd)} ${info.un}`, 22, ly);
+        ly += 6;
+      });
+
+      y += altH + 4;
+    });
+    y += 4;
+  }
+
   // Registros detalhados
+  if (y > 250) { _rodape(doc, PW, MEDIO); doc.addPage(); y = 20; }
   doc.setTextColor(...ESCURO);
   doc.setFont('helvetica','bold'); doc.setFontSize(12);
   doc.text('Registros Detalhados', 14, y);
   y += 8;
 
   listaSegura.forEach((p, i) => {
-    const altH = p.observacoes ? 34 : 28;
+    const altH = p.observacoes ? 38 : 32;
     if (y + altH > 272) {
       _rodape(doc, PW, MEDIO);
       doc.addPage();
@@ -1064,6 +1283,9 @@ async function gerarPDFProducao() {
     doc.text(`Quantidade: ${formatNum(p.quantidade)} ${un}   |   Qualidade: ${p.qualidade || '—'}`, 20, y+19);
     const rota = [p.origem ? `De: ${p.origem}` : '', p.destino ? `Para: ${p.destino}` : ''].filter(Boolean).join('  ');
     doc.text(`${rota || 'Origem/Destino: —'}${p.lote ? `   |   Lote: ${p.lote}` : ''}`, 20, y+24);
+    if (p.animal) {
+      doc.text(`Animal: ${p.animal.codigo || ''}${p.animal.nome ? ' - '+p.animal.nome : ''}`, 20, y+29);
+    }
 
     doc.setFont('helvetica','bold'); doc.setFontSize(9);
     doc.setTextColor(...ESCURO);
@@ -1072,7 +1294,7 @@ async function gerarPDFProducao() {
     if (p.observacoes) {
       doc.setFont('helvetica','italic'); doc.setFontSize(8);
       doc.setTextColor(...MEDIO);
-      doc.text(`Obs: ${p.observacoes}`, 20, y+30);
+      doc.text(`Obs: ${p.observacoes}`, 20, y + (p.animal ? 34 : 30));
     }
 
     y += altH + 4;
@@ -1084,6 +1306,6 @@ async function gerarPDFProducao() {
     _rodape(doc, PW, MEDIO, pg, total);
   }
 
-  doc.save(`relatorio-producao-${labelPeriodo.toLowerCase()}-${hoje.toISOString().split('T')[0]}.pdf`);
+  doc.save(`relatorio-producao-${slugFazenda()}-${labelPeriodo.toLowerCase()}-${hoje.toISOString().split('T')[0]}.pdf`);
   fecharModal('modalPDFProd');
 }
