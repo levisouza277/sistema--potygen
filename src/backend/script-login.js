@@ -109,23 +109,6 @@ if (esqueciSenha) {
         'click',
         async (e) => {
 
-            e.preventDefault();
-
-            const email =
-                document
-                .getElementById('email')
-                .value
-                .trim();
-
-            if (!email) {
-
-                alert(
-                    'Digite seu e-mail primeiro.'
-                );
-
-                return;
-            }
-
             const { error } =
                 await supabaseClient.auth
                 .resetPasswordForEmail(

@@ -12,63 +12,7 @@
 <body>
 
 <div class="app-container">
-    <!-- NAVBAR PADRONIZADA (mantida igual) -->
-    <button class="nav-menu-toggle" id="navToggleBtn" aria-label="Alternar menu lateral">
-        <i class="fa-solid fa-bars"></i>
-    </button>
-    
-    <div class="nav-overlay" id="navOverlay"></div>
-    
-    <aside class="potygen-sidebar" id="potygen-sidebar">
-        <div class="nav-logo-wrap">
-            <img src="../assets/logo.png" alt="Potygen" class="nav-logo" 
-                 onerror="this.onerror=null;this.src='https://placehold.co/140x48/ffffff/0d8a4f?text=Potygen';">
-        </div>
-        
-        <nav class="potygen-nav">
-            <a href="dashboard.html" class="nav-item">
-                <i class="fa-solid fa-house"></i>
-                <span>Dashboard</span>
-            </a>
-            <a href="registrar_inseminacao.html" class="nav-item">
-                <i class="fa-solid fa-syringe"></i>
-                <span>Inseminação</span>
-            </a>
-            <a href="gestao-animais.html" class="nav-item active">
-                <i class="fa-solid fa-cow"></i>
-                <span>Gestão de Animais</span>
-            </a>
-            <a href="analise-genetica.html" class="nav-item">
-                <i class="fa-solid fa-dna"></i>
-                <span>Análise Genética</span>
-            </a>
-            <a href="agenda-reprodutiva.html" class="nav-item">
-                <i class="fa-solid fa-calendar-days"></i>
-                <span>Agenda Reprodutiva</span>
-            </a>
-            <a href="relatorio.html" class="nav-item">
-                <i class="fa-solid fa-chart-pie"></i>
-                <span>Relatórios</span>
-            </a>
-            <a href="configuracoes.html" class="nav-item">
-                <i class="fa-solid fa-gear"></i>
-                <span>Configurações</span>
-            </a>
-        </nav>
-        
-        <div class="nav-footer">
-            <button type="button" class="nav-item nav-item-green" onclick="abrirModalCadastrarFazenda()">
-                <i class="fa-solid fa-plus"></i><span>Cadastrar Fazenda</span>
-            </button>
-            <button type="button" class="nav-item nav-item-green" id="btnTrocarFazendaSidebar" onclick="abrirModalTrocarFazenda()">
-                <i class="fa-solid fa-tractor"></i>
-                <span style="flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;" id="sidebarFazendaNome">Carregando...</span>
-            </button>
-            <button type="button" id="logoutBtn" class="nav-item logout-btn">
-                <i class="fa-solid fa-right-from-bracket"></i><span>Sair da Conta</span>
-            </button>
-        </div>
-    </aside>
+    <!-- NAVBAR CARREGADA DINAMICAMENTE -->
     
     <!-- CONTEÚDO PRINCIPAL -->
     <main class="main-content" id="mainContent">
@@ -124,18 +68,15 @@
         <div class="table-container">
             <table class="animais-table">
                 <thead>
-            <tr>
-                <th>ANIMAL</th>
-                <th>RAÇA / ESPÉCIE</th>
-                <th>IDADE</th>
-                <th>PESO ATUAL</th>
-                <th>SEXO</th>
-                <th>FINALIDADE</th>
-                <th>LOTE</th>
-                <th>PELAGEM</th>
-                <th style="text-align: right;">AÇÕES</th>
-            </tr>
-            </thead>
+                    <tr>
+                        <th>ANIMAL</th>
+                        <th>RAÇA / ESPÉCIE</th>
+                        <th>IDADE</th>
+                        <th>PESO ATUAL</th>
+                        <th>STATUS</th>
+                        <th style="text-align: right;">AÇÕES</th>
+                    </tr>
+                </thead>
                 <tbody id="tabelaAnimais">
                     <!-- Dados serão inseridos via JavaScript -->
                 </tbody>
@@ -296,51 +237,36 @@
             </div>
         </div>
         
-        <!-- QUANTIDADE DE CRIAS -->
-<div class="form-grid">
-    <div class="input-group">
-        <label>🐄 Esta fêmea já teve crias?</label>
-        <select id="formTemCrias" onchange="toggleCamposCrias()">
-            <option value="">Selecione...</option>
-            <option value="sim">Sim, já teve crias</option>
-            <option value="nao">Não, nunca teve crias (Nulípara)</option>
-        </select>
-        <div class="help-text">Selecione "Sim" para registrar as crias</div>
-    </div>
-</div>
-
-<div id="camposQuantidadeCrias" style="display: none;">
-    <div class="form-grid">
-        <div class="input-group">
-            <label>Quantidade de Crias</label>
-            <input type="number" id="formQtdNascimentos" min="0" max="10000" value="0" step="1" oninput="gerarCamposNascimentos()">
-            <div class="help-text">Digite quantas crias este animal já teve</div>
+        <div class="form-grid">
+            <div class="input-group">
+                <label>Histórico de Aborto</label>
+                <select id="formHistoricoAborto">
+                    <option value="nao">Não</option>
+                    <option value="sim">Sim</option>
+                </select>
+            </div>
         </div>
-    </div>
-    <div id="listaNascimentosContainer"></div>
-</div>
-<!-- HISTÓRICO DE ABORTO -->
-<div class="form-grid">
-    <div class="input-group">
-        <label>A fêmea já teve abortos?</label>
-        <select id="formHistoricoAborto" onchange="toggleCamposAborto()">
-            <option value="sim">Sim</option>
-            <option value="nao">Não</option>   
-        </select>
-    </div>
-</div>
-
-<!-- CONTAINER DOS ABORTOS (aparece abaixo do histórico de aborto) -->
-<div id="subCamposAborto" style="display: none;" class="sub-block">
-    <h4><i class="fa-solid fa-exclamation-triangle" style="color: #dc3545;"></i> Registro de Abortos</h4>
-    <div class="form-grid">
-        <div class="input-group">
-            <label>Quantidade de Abortos</label>
-            <input type="number" id="formQtdAbortos" min="0" value="0" step="1" onchange="gerarCamposAborto()">
+        
+        <div class="form-grid">
+            <div class="input-group">
+                <label>Quantidade de Crias</label>
+                <input type="number" id="formQtdNascimentos" min="0" max="10000" value="0" step="1" oninput="gerarCamposNascimentos()">
+                <div class="help-text">Digite quantas crias este animal já teve</div>
+            </div>
         </div>
-    </div>
-    <div id="listaAbortosContainer" style="margin-top: 15px;"></div>
-</div>
+
+        <div id="listaNascimentosContainer"></div>
+
+        <div id="subCamposAborto" style="display: none;" class="sub-block">
+            <h4><i class="fa-solid fa-exclamation-triangle" style="color: #dc3545;"></i> Registro de Abortos</h4>
+            <div class="form-grid">
+                <div class="input-group">
+                    <label>Quantidade de Abortos</label>
+                    <input type="number" id="formQtdAbortos" min="0" value="0" step="1">
+                </div>
+            </div>
+            <div id="listaAbortosContainer"></div>
+        </div>
         
         <div class="section-title" style="margin-top: 15px;">Histórico de Doenças</div>
         <div id="listaDoencasContainer"></div>   
@@ -351,21 +277,13 @@
         <div class="form-grid">
             <div class="input-group">
                 <label>Tipo de Reprodutor</label>
-        <select id="formTipoMacho" onchange="toggleCamposReprodutor()">
-            <option value="">Selecione...</option>
-            <option value="local">Reprodutor Local (Touro/Bode/Carneiro da fazenda)</option>
-            <option value="laboratorio">Reprodutor de Laboratório (Sêmen de Central/Inseminação)</option>
-            <option value="rufiao">Rufião (Macho modificado)</option>
-            <option value="castrado">Castrado (Não reprodutor)</option>
-        </select>
+                <select id="formTipoMacho">
+                    <option value="">Selecione...</option>
+                    <option value="ativo">Reprodutor Ativo (Touro/Bode/Carneiro)</option>
+                    <option value="rufiao">Rufião (Macho modificado)</option>
+                    <option value="castrado">Castrado (Não reprodutor)</option>
+                </select>
             </div>
-            <div id="campoLaboratorio" style="display: none;">
-    <div class="input-group">
-        <label>Nome da Central/Laboratório</label>
-        <input type="text" id="formLaboratorio" placeholder="Ex: Central GEN, ABS, CRV Lagoa">
-        <div class="help-text">Informe de qual central de sêmen veio o material</div>
-    </div>
-        </div>
             <div class="input-group">
                 <label>Exame Andrológico em Dia</label>
                 <select id="formExameAndrologico">
@@ -375,23 +293,7 @@
                 </select>
             </div>
         </div>
-         <div class="input-group">
-        <label>Escore de Condição Corporal (ECC)</label>
-        <select id="formECCMacho">
-            <option value="">Selecione...</option>
-            <option value="1.0">1.0 - Muito Magro</option>
-            <option value="1.5">1.5</option>
-            <option value="2.0">2.0 - Magro</option>
-            <option value="2.5">2.5</option>
-            <option value="3.0">3.0 - Ideal</option>
-            <option value="3.25">3.25 - Ideal</option>
-            <option value="3.5">3.5 - Ideal</option>
-            <option value="3.75">3.75 - Ideal</option>
-            <option value="4.0">4.0 - Gordo</option>
-            <option value="4.5">4.5</option>
-            <option value="5.0">5.0 - Obeso</option>
-        </select>
-        </div>
+        
         <!-- PAI E MÃE DO MACHO (Genealogia) -->
         <div class="form-grid">
             <div class="input-group datalist-input">
@@ -409,30 +311,18 @@
         </div>
 
         <!-- Descendência / Crias do Macho -->
-       <div class="section-title" style="margin-top: 15px;">Descendência / Crias</div>
-
-<div class="form-grid">
-    <div class="input-group">
-        <label> Este macho já gerou descendentes?</label>
-        <select id="formTemDescendentes" onchange="toggleCamposDescendentes()">
-            <option value="">Selecione...</option>
-            <option value="sim">Sim, já gerou descendentes</option>
-            <option value="nao">Não, nunca gerou descendentes</option>
-        </select>
-        <div class="help-text">Selecione "Sim" para registrar os descendentes</div>
-    </div>
-</div>
-
-<div id="camposQuantidadeDescendentes" style="display: none;">
-    <div class="form-grid">
-        <div class="input-group">
-            <label>Quantidade de Descendentes</label>
-            <input type="number" id="formQtdDescendentes" min="0" max="500" value="0" step="1" oninput="gerarCamposDescendentes()">
-            <div class="help-text">Digite quantos descendentes este macho já gerou</div>
+        <div class="section-title" style="margin-top: 15px;">Descendência / Crias</div>
+        
+        <div class="form-grid">
+            <div class="input-group">
+                <label>Quantidade de Crias/Descendentes</label>
+                <input type="number" id="formQtdCriasMacho" min="0" max="500" value="0" step="1" oninput="buscarCriasPorPai()">
+                <div class="help-text">Digite ou será preenchido automaticamente se o pai for conhecido</div>
+            </div>
         </div>
-    </div>
-    <div id="listaDescendentesContainer" style="margin-top: 15px;"></div>
-</div>
+
+        <!-- Lista de crias do macho -->
+        <div id="listaCriasMachoContainer" style="margin-top: 15px;"></div>
 
         <!-- Histórico de Doenças para Macho -->
         <div class="section-title" style="margin-top: 15px;">Histórico de Doenças</div>
@@ -460,93 +350,21 @@
             <span class="close">&times;</span>
         </div>
         <div class="modal-body">
-    <div class="detail-cards">
-        <div class="d-card green"><span>Status</span><strong id="viewStatus">-</strong></div>
-        <div class="d-card blue"><span>Peso Atual</span><strong id="viewPeso">-</strong></div>
-        <div class="d-card purple"><span>Idade</span><strong id="viewIdade">-</strong></div>
-    </div>
-    
-    <div class="info-block">
-        <p class="block-title"><i class="fa-solid fa-circle-info"></i> Informações Básicas</p>
-        <div class="info-grid">
-            <div><label>Código</label><p id="viewCodigo">-</p></div>
-            <div><label>Nome</label><p id="viewNome">-</p></div>
-            <div><label>Espécie</label><p id="viewEspecie">-</p></div>
-            <div><label>Raça</label><p id="viewRaca">-</p></div>
-            <div><label>Pelagem</label><p id="viewPelagem">-</p></div>
-            <div><label>Lote</label><p id="viewLote">-</p></div>
-            <div><label>Finalidade</label><p id="viewFinalidade">-</p></div>
-            <div><label>Grau de Sangue</label><p id="viewGrauSangue">-</p></div>
-        </div>
-    </div>
-
-    <!-- SEÇÃO ESPECÍFICA PARA FÊMEA -->
-    <div id="viewFemeaInfo" style="display: none;">
-        <div class="info-block">
-            <p class="block-title"><i class="fa-solid fa-venus"></i> Dados Reprodutivos da Fêmea</p>
-            <div class="info-grid">
-                <div><label>Categoria Reprodutiva</label><p id="viewCategoria">-</p></div>
-                <div><label>ECC (Escore Corporal)</label><p id="viewECC">-</p></div>
-                <div><label>Quantidade de Crias</label><p id="viewQtdCrias">-</p></div>
-                <div><label>Histórico de Aborto</label><p id="viewAborto">-</p></div>
+            <div class="detail-cards">
+                <div class="d-card green"><span>Status</span><strong id="viewStatus">-</strong></div>
+                <div class="d-card blue"><span>Peso Atual</span><strong id="viewPeso">-</strong></div>
+                <div class="d-card purple"><span>Idade</span><strong id="viewIdade">-</strong></div>
+            </div>
+            <div class="info-block">
+                <p class="block-title"><i class="fa-solid fa-circle-info"></i> Informações Básicas</p>
+                <div class="info-grid">
+                    <div><label>Código</label><p id="viewCodigo">-</p></div>
+                    <div><label>Nome</label><p id="viewNome">-</p></div>
+                    <div><label>Espécie</label><p id="viewEspecie">-</p></div>
+                    <div><label>Raça</label><p id="viewRaca">-</p></div>
+                </div>
             </div>
         </div>
-        
-        <div class="info-block">
-            <p class="block-title"><i class="fa-solid fa-family"></i> Genealogia</p>
-            <div class="info-grid">
-                <div><label>Mãe</label><p id="viewMae">-</p></div>
-                <div><label>Pai</label><p id="viewPai">-</p></div>
-            </div>
-        </div>
-        
-        <div id="viewAbortosContainer" class="info-block" style="display: none;">
-            <p class="block-title"><i class="fa-solid fa-exclamation-triangle"></i> Histórico de Abortos</p>
-            <div id="viewListaAbortos"></div>
-        </div>
-    </div>
-
-    <!-- SEÇÃO ESPECÍFICA PARA MACHO -->
-<div id="viewMachoInfo" style="display: none;">
-    <div class="info-block">
-        <p class="block-title"><i class="fa-solid fa-mars"></i> Dados Reprodutivos do Macho</p>
-        <div class="info-grid">
-            <div><label>Tipo de Reprodutor</label><p id="viewTipoMacho">-</p></div>
-            <div><label>Exame Andrológico</label><p id="viewExameAndrologico">-</p></div>
-            <div><label>ECC (Escore Corporal)</label><p id="viewECCMacho">-</p></div>
-            <div><label>Quantidade de Descendentes</label><p id="viewQtdDescendentes">-</p></div>
-        </div>
-    </div>
-    
-    <!-- ADICIONE ESTE BLOCO AQUI ↓↓↓ -->
-    <div class="info-block">
-        <p class="block-title"><i class="fa-solid fa-flask"></i> Informações do Laboratório</p>
-        <div class="info-grid">
-            <div><label>Central/Laboratório</label><p id="viewLaboratorio">-</p></div>
-        </div>
-    </div>
-    <!-- ATÉ AQUI ↑↑↑ -->
-    
-    <div class="info-block">
-        <p class="block-title"><i class="fa-solid fa-family"></i> Genealogia</p>
-        <div class="info-grid">
-            <div><label>Mãe</label><p id="viewMaeMacho">-</p></div>
-            <div><label>Pai</label><p id="viewPaiMacho">-</p></div>
-        </div>
-    </div>
-    
-    <div id="viewDescendentesContainer" class="info-block" style="display: none;">
-        <p class="block-title"><i class="fa-solid fa-baby"></i> Descendentes Registrados</p>
-        <div id="viewListaDescendentes"></div>
-    </div>
-</div>
-
-    <!-- SEÇÃO DE DOENÇAS (para ambos) -->
-    <div class="info-block">
-        <p class="block-title"><i class="fa-solid fa-notes-medical"></i> Histórico de Doenças</p>
-        <div id="viewListaDoencas"></div>
-    </div>
-</div>
         <div class="modal-footer">
             <button class="btn-secondary btn-close-modal">Fechar</button>
         </div>
@@ -554,6 +372,1189 @@
 </div>
 
 <!-- SCRIPT PRINCIPAL COM LÓGICA DOS CAMPOS DINÂMICOS -->
+<script>
+    // ============================================
+    // SISTEMA DE ARMAZENAMENTO DE ANIMAIS
+    // ============================================
+    
+    let animais = JSON.parse(localStorage.getItem('potygen_animais') || '[]');
+    // ============================================
+// BANCO DE DOENÇAS POR ESPÉCIE E SEXO
+// ============================================
+
+const bancoDoencas = {
+    'Bovino': {
+        'Macho': [
+            'Brucelose bovina (mal de casco/touro caído)',
+            'Tricomonose (Tritrichomonas foetus - cio repetido)',
+            'Campilobacteriose genital (vibrião - cio sujo)',
+            'Leptospirose (urina de rato)',
+            'Mycoplasma bovis (inflamação reprodutiva)',
+            'Ureaplasma spp.',
+            'Tristeza parasitária bovina (babesiose/anaplasmose)',
+            'Verminoses'
+        ],
+        'Fêmea': [
+            'Brucelose (aborto contagioso)',
+            'Leptospirose',
+            'Campilobacteriose genital bovina',
+            'Tricomonose',
+            'IBR (rinotraqueíte - resfriado bovino reprodutivo)',
+            'BVD (diarreia viral bovina)',
+            'Neosporose (principal causa de aborto no Brasil)',
+            'Endometrite/metrite pós-parto',
+            'Infecção uterina subclínica',
+            'Cetose',
+            'Hipocalcemia',
+            'Tristeza parasitária',
+            'Verminoses'
+        ]
+    },
+    'Ovino': {
+        'Macho': [
+            'Brucella ovis (epididimite ovina)',
+            'Actinobacillus seminis',
+            'Histophilus somni',
+            'Salmonella enterica',
+            'Corynebacterium pseudotuberculosis',
+            'Maedi-visna',
+            'Vírus da língua azul',
+            'Toxoplasmose (impacto indireto via ambiente)',
+            'Pasteurelose (fraqueza geral)'
+        ],
+        'Fêmea': [
+            'Toxoplasmose (aborto das ovelhas)',
+            'Brucella ovis (indireto)',
+            'Maedi-visna',
+            'Clostridioses (enterotoxemia - doença do excesso de ração)',
+            'Pododermatite (podridão dos cascos)',
+            'Verminoses',
+            'Hipocalcemia',
+            'Cetose'
+        ]
+    },
+    'Caprino': {
+        'Macho': [
+            'CAEV (artrite encefalite caprina)',
+            'Brucelose (B. melitensis)',
+            'Clamidiose (Chlamydophila abortus)',
+            'Febre Q (Coxiella burnetii)',
+            'Linfadenite caseosa',
+            'Mycoplasma agalactiae',
+            'Toxoplasmose (importante no sistema extensivo)'
+        ],
+        'Fêmea': [
+            'CAEV',
+            'Brucelose',
+            'Clamidiose (abortos enzoóticos)',
+            'Toxoplasmose (principal causa de aborto em cabras no Nordeste)',
+            'Febre Q',
+            'Linfadenite caseosa',
+            'Enterotoxemia',
+            'Verminoses',
+            'Cetose'
+        ]
+    }
+};
+
+let doencasSelecionadas = [];
+
+// Função para atualizar lista de doenças baseado em espécie e sexo
+// Função para buscar crias de um determinado pai
+function buscarCriasPorPai() {
+    const paiInput = document.getElementById('formPaiMacho');
+    const paiNome = paiInput ? paiInput.value : '';
+    const qtdCriasInput = document.getElementById('formQtdCriasMacho');
+    const container = document.getElementById('listaCriasMachoContainer');
+    
+    if (!paiNome || paiNome === '') {
+        container.innerHTML = '<p style="color: #64748b; font-size: 13px;">Digite o nome/código do pai para buscar suas crias automaticamente</p>';
+        return;
+    }
+    
+    // Buscar todos os animais onde o pai é este macho
+    const crias = animais.filter(animal => {
+        const paiDoAnimal = animal.pai || animal.paiMacho || animal.paiFemea;
+        return paiDoAnimal && paiDoAnimal.includes(paiNome);
+    });
+    
+    if (crias.length > 0) {
+        qtdCriasInput.value = crias.length;
+        
+        let html = '<div class="sub-block"><h4>🐄 Crias/Descendentes Registrados</h4>';
+        html += '<div style="max-height: 200px; overflow-y: auto;">';
+        
+        crias.forEach(cria => {
+            const idade = calcularIdade(cria.dataNascimento);
+            html += `
+                <div style="display: flex; justify-content: space-between; align-items: center; padding: 8px; border-bottom: 1px solid #e2e8f0;">
+                    <div>
+                        <strong>${cria.codigo}</strong> - ${cria.nome || 'Sem nome'}
+                        <span style="color: #64748b; font-size: 12px; margin-left: 10px;">${idade}</span>
+                    </div>
+                    <span style="background: #e2e8f0; padding: 2px 8px; border-radius: 20px; font-size: 11px;">${cria.sexo}</span>
+                </div>
+            `;
+        });
+        
+        html += '</div></div>';
+        container.innerHTML = html;
+    } else {
+        const qtdManual = qtdCriasInput.value;
+        if (qtdManual > 0) {
+            container.innerHTML = `<p style="color: #64748b; font-size: 13px;">${qtdManual} crias registradas manualmente</p>`;
+        } else {
+            container.innerHTML = '<p style="color: #64748b; font-size: 13px;">Nenhuma cria encontrada para este pai</p>';
+        }
+    }
+}
+
+// Função para atualizar lista de doenças para MACHO
+// Função para atualizar lista de doenças para MACHO (Corrigida)
+function atualizarListaDoencasMacho() {
+    const especie = document.getElementById('formEspecie').value;
+    const container = document.getElementById('listaDoencasContainerMacho');
+    
+    console.log("Chamou atualizarListaDoencasMacho - Espécie:", especie);
+    
+    if (!container) {
+        console.log("Container listaDoencasContainerMacho NÃO encontrado no HTML!");
+        return;
+    }
+    
+    if (!especie) {
+        container.innerHTML = '<p style="color: #64748b; font-size: 13px;">Selecione a espécie primeiro</p>';
+        return;
+    }
+    
+    const doencas = bancoDoencas[especie]?.['Macho'] || [];
+    console.log("Doenças de macho encontradas:", doencas);
+    
+    if (doencas.length === 0) {
+        container.innerHTML = '<p style="color: #64748b; font-size: 13px;">Nenhuma doença cadastrada para este macho</p>';
+        return;
+    }
+    
+    let html = '<div class="section-title" style="margin-top: 10px;">Doenças Registradas (Macho)</div>';
+    html += '<div class="form-grid" style="flex-direction: column; gap: 15px;">';
+    
+    doencas.forEach(doenca => {
+        // Correção do ID para evitar duplicação do prefixo
+        const doencaId = 'macho_' + doenca.replace(/[^a-zA-Z0-9]/g, '_');
+        
+        html += `
+            <div class="doenca-card" style="background: #f8fafc; border-radius: 12px; padding: 15px; border: 1px solid #e2e8f0;">
+                <label style="display: flex; align-items: center; gap: 10px; font-weight: 600; cursor: pointer; margin-bottom: 10px;">
+                    <input type="checkbox" value="${doenca.replace(/"/g, '&quot;')}" class="doenca-checkbox-macho" onchange="toggleDoencaDetalhesMacho(this, '${doencaId}')">
+                    ${doenca}
+                </label>
+                
+                <div id="detalhes_${doencaId}" style="display: none; margin-top: 15px; padding-top: 15px; border-top: 1px solid #e2e8f0;">
+                    <div class="form-grid">
+                        <div class="input-group">
+                            <label>Data do Diagnóstico</label>
+                            <input type="date" id="dataDoencaMacho_${doencaId}" style="width: 100%; padding: 10px; border-radius: 8px; border: 1px solid #e2e8f0;">
+                        </div>
+                        <div class="input-group">
+                            <label>Já tratou esta doença?</label>
+                            <select id="tratouDoencaMacho_${doencaId}" onchange="toggleTratamentoCamposMacho(this, '${doencaId}')" style="width: 100%; padding: 10px; border-radius: 8px; border: 1px solid #e2e8f0;">
+                                <option value="">Selecione...</option>
+                                <option value="sim">Sim</option>
+                                <option value="nao">Não</option>
+                            </select>
+                        </div>
+                    </div>
+                    
+                    <div id="tratamentoCamposMacho_${doencaId}" style="display: none; margin-top: 15px;">
+                        <div class="form-grid">
+                            <div class="input-group">
+                                <label>Data do Tratamento</label>
+                                <input type="date" id="dataTratamentoMacho_${doencaId}" style="width: 100%; padding: 10px; border-radius: 8px; border: 1px solid #e2e8f0;">
+                            </div>
+                            <div class="input-group">
+                                <label>Tipo de Tratamento</label>
+                                <input type="text" id="tipoTratamentoMacho_${doencaId}" placeholder="Ex: Antibiótico..." style="width: 100%; padding: 10px; border-radius: 8px; border: 1px solid #e2e8f0;">
+                            </div>
+                        </div>
+                        <div class="input-group" style="margin-top: 10px;">
+                            <label>Observações</label>
+                            <textarea id="obsTratamentoMacho_${doencaId}" rows="2" style="width: 100%; padding: 10px; border-radius: 8px; border: 1px solid #e2e8f0;"></textarea>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        `;
+    });
+    
+    html += '</div>';
+    container.innerHTML = html;
+}
+
+// Função auxiliar corrigida para o Macho abrir a div correta
+function toggleDoencaDetalhesMacho(checkbox, doencaId) {
+    const detalhesDiv = document.getElementById(`detalhes_${doencaId}`);
+    if (detalhesDiv) {
+        detalhesDiv.style.display = checkbox.checked ? 'block' : 'none';
+    }
+}
+
+function toggleTratamentoCamposMacho(select, doencaId) {
+    const tratamentoCampos = document.getElementById(`tratamentoCamposMacho_${doencaId}`);
+    if (select.value === 'sim') {
+        tratamentoCampos.style.display = 'block';
+    } else {
+        tratamentoCampos.style.display = 'none';
+    }
+}
+
+// Função para coletar doenças do MACHO no salvamento
+function coletarDoencasMacho() {
+    const doencasRegistradas = [];
+    const especie = document.getElementById('formEspecie').value;
+    
+    if (!especie) return [];
+    
+    const doencas = bancoDoencas[especie]?.['Macho'] || [];
+    
+    doencas.forEach(doenca => {
+        const doencaId = 'macho_' + doenca.replace(/[^a-zA-Z0-9]/g, '_');
+        const checkbox = document.querySelector(`.doenca-checkbox-macho[value="${doenca.replace(/"/g, '&quot;')}"]`);
+        if (checkbox && checkbox.checked) {
+            doencasRegistradas.push({
+                nome: doenca,
+                dataDiagnostico: document.getElementById(`dataDoencaMacho_${doencaId}`)?.value || null,
+                tratou: document.getElementById(`tratouDoencaMacho_${doencaId}`)?.value === 'sim',
+                dataTratamento: document.getElementById(`dataTratamentoMacho_${doencaId}`)?.value || null,
+                tipoTratamento: document.getElementById(`tipoTratamentoMacho_${doencaId}`)?.value || null,
+                observacoesTratamento: document.getElementById(`obsTratamentoMacho_${doencaId}`)?.value || null
+            });
+        }
+    });
+    
+    return doencasRegistradas;
+}
+function atualizarListaDoencas() {
+    const especie = document.getElementById('formEspecie').value;
+    const sexo = document.getElementById('formSexo').value;
+    const container = document.getElementById('listaDoencasContainer');
+    
+    if (!container) return;
+    
+    if (!especie || !sexo) {
+        container.innerHTML = '<p style="color: #64748b; font-size: 13px;">Selecione espécie e sexo primeiro</p>';
+        return;
+    }
+    
+    const doencas = bancoDoencas[especie]?.[sexo] || [];
+    
+    if (doencas.length === 0) {
+        container.innerHTML = '<p style="color: #64748b; font-size: 13px;">Nenhuma doença cadastrada para esta combinação</p>';
+        return;
+    }
+    
+    let html = '<div class="section-title" style="margin-top: 10px;">Doenças Registradas</div>';
+    html += '<div class="form-grid" style="flex-direction: column; gap: 15px;">';
+    
+    doencas.forEach(doenca => {
+        const doencaId = doenca.replace(/[^a-zA-Z0-9]/g, '_');
+        html += `
+            <div class="doenca-card" style="background: #f8fafc; border-radius: 12px; padding: 15px; border: 1px solid #e2e8f0;">
+                <label style="display: flex; align-items: center; gap: 10px; font-weight: 600; cursor: pointer; margin-bottom: 10px;">
+                    <input type="checkbox" value="${doenca.replace(/"/g, '&quot;')}" class="doenca-checkbox" onchange="toggleDoencaDetalhes(this, '${doencaId}')">
+                    ${doenca}
+                </label>
+                <div id="detalhes_${doencaId}" style="display: none; margin-top: 15px; padding-top: 15px; border-top: 1px solid #e2e8f0;">
+                    <div class="form-grid">
+                        <div class="input-group">
+                            <label>Data do Diagnóstico</label>
+                            <input type="date" id="dataDoenca_${doencaId}" class="doenca-data" style="width: 100%; padding: 10px; border-radius: 8px; border: 1px solid #e2e8f0;">
+                        </div>
+                        <div class="input-group">
+                            <label>Já tratou esta doença?</label>
+                            <select id="tratouDoenca_${doencaId}" class="tratou-select" onchange="toggleTratamentoCampos(this, '${doencaId}')" style="width: 100%; padding: 10px; border-radius: 8px; border: 1px solid #e2e8f0;">
+                                <option value="">Selecione...</option>
+                                <option value="sim">Sim</option>
+                                <option value="nao">Não</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div id="tratamentoCampos_${doencaId}" style="display: none;">
+                        <div class="form-grid">
+                            <div class="input-group">
+                                <label>Data do Tratamento</label>
+                                <input type="date" id="dataTratamento_${doencaId}" style="width: 100%; padding: 10px; border-radius: 8px; border: 1px solid #e2e8f0;">
+                            </div>
+                            <div class="input-group">
+                                <label>Tipo de Tratamento</label>
+                                <input type="text" id="tipoTratamento_${doencaId}" placeholder="Ex: Antibiótico, Anti-inflamatório..." style="width: 100%; padding: 10px; border-radius: 8px; border: 1px solid #e2e8f0;">
+                            </div>
+                        </div>
+                        <div class="input-group">
+                            <label>Observações do Tratamento</label>
+                            <textarea id="obsTratamento_${doencaId}" rows="2" placeholder="Informações adicionais sobre o tratamento..." style="width: 100%; padding: 10px; border-radius: 8px; border: 1px solid #e2e8f0;"></textarea>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        `;
+    });
+    
+    html += '</div>';
+    container.innerHTML = html;
+}
+
+// Função para mostrar/esconder detalhes da doença
+function toggleDoencaDetalhes(checkbox, doencaId) {
+    const detalhesDiv = document.getElementById(`detalhes_${doencaId}`);
+    if (checkbox.checked) {
+        detalhesDiv.style.display = 'block';
+    } else {
+        detalhesDiv.style.display = 'none';
+    }
+}
+
+// Função para mostrar/esconder campos de tratamento
+function toggleTratamentoCampos(select, doencaId) {
+    const tratamentoCampos = document.getElementById(`tratamentoCampos_${doencaId}`);
+    if (select.value === 'sim') {
+        tratamentoCampos.style.display = 'block';
+    } else {
+        tratamentoCampos.style.display = 'none';
+    }
+}
+// Função para coletar doenças no salvamento
+// Função para coletar doenças no salvamento
+function coletarDoencas() {
+    const doencasRegistradas = [];
+    const especie = document.getElementById('formEspecie').value;
+    const sexo = document.getElementById('formSexo').value;
+    
+    if (!especie || !sexo) return [];
+    
+    const doencas = bancoDoencas[especie]?.[sexo] || [];
+    
+    doencas.forEach(doenca => {
+        const doencaId = doenca.replace(/[^a-zA-Z0-9]/g, '_');
+        const checkbox = document.querySelector(`input[value="${doenca.replace(/"/g, '&quot;')}"]`);
+        if (checkbox && checkbox.checked) {
+            doencasRegistradas.push({
+                nome: doenca,
+                dataDiagnostico: document.getElementById(`dataDoenca_${doencaId}`)?.value || null,
+                tratou: document.getElementById(`tratouDoenca_${doencaId}`)?.value === 'sim',
+                dataTratamento: document.getElementById(`dataTratamento_${doencaId}`)?.value || null,
+                tipoTratamento: document.getElementById(`tipoTratamento_${doencaId}`)?.value || null,
+                observacoesTratamento: document.getElementById(`obsTratamento_${doencaId}`)?.value || null
+            });
+        }
+    });
+    
+    return doencasRegistradas;
+}
+    // Função para atualizar as datalists com animais existentes
+    function atualizarDatalists() {
+        const matrizes = animais.filter(a => a.sexo === 'Fêmea');
+        const reprodutores = animais.filter(a => a.sexo === 'Macho');
+        
+        const listaMatrizes = document.getElementById('listaMatrizes');
+        const listaReprodutores = document.getElementById('listaReprodutores');
+        
+        if (listaMatrizes) {
+            listaMatrizes.innerHTML = '';
+            matrizes.forEach(matriz => {
+                const option = document.createElement('option');
+                option.value = `${matriz.codigo} - ${matriz.nome || 'Sem nome'}`;
+                listaMatrizes.appendChild(option);
+            });
+        }
+        
+        if (listaReprodutores) {
+            listaReprodutores.innerHTML = '';
+            reprodutores.forEach(reprodutor => {
+                const option = document.createElement('option');
+                option.value = `${reprodutor.codigo} - ${reprodutor.nome || 'Sem nome'}`;
+                listaReprodutores.appendChild(option);
+            });
+        }
+    }
+    
+    // Função para controlar campos dinâmicos baseado no sexo
+    // Função para calcular idade do animal em tempo real
+function calcularIdadeAnimal() {
+    const dataInput = document.getElementById('formDataNascimento');
+    const idadeDiv = document.getElementById('idadeAnimalPreview');
+    
+    if (!dataInput || !dataInput.value) {
+        idadeDiv.innerHTML = '';
+        return;
+    }
+    
+    const dataNasc = new Date(dataInput.value);
+    const hoje = new Date();
+    
+    // Verificar se a data é válida
+    if (isNaN(dataNasc.getTime())) {
+        idadeDiv.innerHTML = '⚠️ Data inválida';
+        return;
+    }
+    
+    // Calcular diferença em meses
+    const diffMeses = (hoje.getFullYear() - dataNasc.getFullYear()) * 12 + (hoje.getMonth() - dataNasc.getMonth());
+    
+    let idadeTexto = '';
+    
+    if (diffMeses < 0) {
+        idadeTexto = '⚠️ Data futura';
+    } else if (diffMeses < 1) {
+        const diffDias = Math.floor((hoje - dataNasc) / (1000 * 60 * 60 * 24));
+        idadeTexto = `${diffDias} dias`;
+    } else if (diffMeses < 12) {
+        idadeTexto = `${diffMeses} meses`;
+    } else {
+        const anos = Math.floor(diffMeses / 12);
+        const meses = diffMeses % 12;
+        idadeTexto = meses > 0 ? `${anos} anos e ${meses} meses` : `${anos} anos`;
+    }
+    
+    idadeDiv.innerHTML = `<i class="fa-solid fa-calendar"></i> Idade atual: ${idadeTexto}`;
+}
+    function toggleCamposPorSexo() {
+    const sexo = document.getElementById('formSexo').value;
+    const especie = document.getElementById('formEspecie').value;
+    const camposFemea = document.getElementById('camposFemea');
+    const camposMacho = document.getElementById('camposMacho');
+    
+    // Convertendo para checar sem problemas de maiúsculas/minúsculas ou acentos
+    const sexoNormalizado = sexo ? sexo.trim().toLowerCase() : '';
+
+    if (sexoNormalizado === 'fêmea' || sexoNormalizado === 'femea') {
+        if (camposFemea) camposFemea.style.display = 'block';
+        if (camposMacho) camposMacho.style.display = 'none';
+        
+        // Atualizar doenças da fêmea se espécie já estiver selecionada
+        if (especie) {
+            atualizarListaDoencas();
+        }
+    } else if (sexoNormalizado === 'macho') {
+        if (camposFemea) camposFemea.style.display = 'none';
+        if (camposMacho) camposMacho.style.display = 'block';
+        
+        // Atualizar doenças do macho se espécie já estiver selecionada
+        if (especie) {
+            atualizarListaDoencasMacho();
+        }
+    } else {
+        if (camposFemea) camposFemea.style.display = 'none';
+        if (camposMacho) camposMacho.style.display = 'none';
+    }
+}
+    
+    // Controlar subcampos de categoria reprodutiva
+    function toggleCamposCategoria() {
+    const categoria = document.getElementById('formCategoriaFemea').value;
+    const camposECC = document.getElementById('camposECC');
+    
+    if (categoria === 'Reprodutora') {
+        camposECC.style.display = 'block';
+    } else {
+        camposECC.style.display = 'none';
+        document.getElementById('formECC').value = '';
+    }
+}
+    
+    // Controlar subcampos de aborto
+    function toggleCamposAborto() {
+    const temAborto = document.getElementById('formHistoricoAborto').value;
+    const subCampos = document.getElementById('subCamposAborto');
+    
+    if (temAborto === 'sim') {
+        subCampos.style.display = 'block';
+        gerarCamposAborto();
+    } else {
+        subCampos.style.display = 'none';
+        document.getElementById('formQtdAbortos').value = 0;
+        document.getElementById('listaAbortosContainer').innerHTML = '';
+    }
+}
+
+function gerarCamposAborto() {
+    const qtd = parseInt(document.getElementById('formQtdAbortos').value) || 0;
+    const container = document.getElementById('listaAbortosContainer');
+    
+    if (qtd === 0) {
+        container.innerHTML = '<p style="color: #64748b; font-size: 13px; margin-top: 10px;">Nenhum aborto registrado</p>';
+        return;
+    }
+    
+    let html = '<div style="margin-top: 15px;"><label style="font-weight: 600; margin-bottom: 10px; display: block;">Detalhes de cada aborto:</label>';
+    
+    for (let i = 1; i <= qtd; i++) {
+        html += `
+            <div class="sub-block" style="margin-bottom: 15px; border-left-color: #dc3545;">
+                <h4 style="color: #dc3545;">Aborto #${i}</h4>
+                <div class="form-grid">
+                    <div class="input-group">
+                        <label>Data do Aborto</label>
+                        <input type="date" id="abortoData_${i}" class="aborto-data">
+                    </div>
+                    <div class="input-group">
+                        <label>Macho Reprodutor</label>
+                        <input type="text" id="abortoMacho_${i}" class="aborto-macho" 
+                               placeholder="Código/Nome do touro" list="listaReprodutores">
+                    </div>
+                </div>
+                <div class="form-grid">
+                    <div class="input-group">
+                        <label>Gestão Aproximada (dias)</label>
+                        <input type="number" id="abortoDias_${i}" class="aborto-dias" 
+                               placeholder="Ex: 120, 180" step="10">
+                    </div>
+                    <div class="input-group">
+                        <label>Observações</label>
+                        <input type="text" id="abortoObs_${i}" class="aborto-obs" 
+                               placeholder="Ex: Causa desconhecida, trauma...">
+                    </div>
+                </div>
+            </div>
+        `;
+    }
+    
+    html += '</div>';
+    container.innerHTML = html;
+}
+    
+    // Salvar animal no localStorage
+    function salvarAnimal() {
+        // Coletar dados básicos
+        const animal = {
+            id: Date.now(),
+            codigo: document.getElementById('formCodigo').value,
+            nome: document.getElementById('formNome').value || '',
+            especie: document.getElementById('formEspecie').value,
+            raca: document.getElementById('formRaca').value,
+            grauSangue: document.getElementById('formGrauSangue').value,
+            pelagem: document.getElementById('formPelagem').value,
+            dataNascimento: document.getElementById('formDataNascimento').value,
+            pesoNascer: parseFloat(document.getElementById('formPesoNascer').value) || 0,
+            pesoAtual: parseFloat(document.getElementById('formPesoAtual').value) || 0,
+            sexo: document.getElementById('formSexo').value,
+            finalidade: document.getElementById('formFinalidade').value,
+            lote: document.getElementById('formLote').value,
+            observacoes: document.getElementById('formObs').value,
+            dataCadastro: new Date().toISOString(),
+            doencas: []
+        };
+        
+        // Validar campos obrigatórios
+        if (!animal.codigo || !animal.especie || !animal.raca || !animal.sexo || !animal.dataNascimento) {
+            alert('Por favor, preencha todos os campos obrigatórios (*)');
+            return;
+        }
+        
+        // Adicionar campos específicos baseado no sexo
+        if (animal.sexo === 'Fêmea') {
+    animal.categoriaReprodutiva = document.getElementById('formCategoriaFemea').value;
+    animal.ecc = parseFloat(document.getElementById('formECC').value) || null;
+    animal.mae = document.getElementById('formMae').value || null;
+    animal.historicoAborto = document.getElementById('formHistoricoAborto').value === 'sim';
+    
+    if (animal.historicoAborto) {
+        animal.qtdAbortos = parseInt(document.getElementById('formQtdAbortos').value) || 0;
+        const abortosDetalhes = [];
+        for (let i = 1; i <= animal.qtdAbortos; i++) {
+            const data = document.getElementById(`abortoData_${i}`)?.value;
+            const macho = document.getElementById(`abortoMacho_${i}`)?.value;
+            const dias = document.getElementById(`abortoDias_${i}`)?.value;
+            const obs = document.getElementById(`abortoObs_${i}`)?.value;
+            
+            if (data || macho) {
+                abortosDetalhes.push({
+                    numero: i,
+                    data: data || null,
+                    macho: macho || null,
+                    diasGestacao: dias ? parseInt(dias) : null,
+                    observacoes: obs || null
+                });
+            }
+        }
+        animal.abortos = abortosDetalhes;
+    }
+     animal.doencas = coletarDoencas();
+    // Coletar doenças pregressas
+    const doencas = [];
+    document.querySelectorAll('#camposFemea input[type="checkbox"]:checked').forEach(cb => {
+        doencas.push(cb.value);
+    });
+    animal.doencasPregressas = doencas;
+    
+    // ========== NOVO CÓDIGO PARA NASCIMENTOS ==========
+    const categoria = document.getElementById('formCategoriaFemea').value;
+    if (categoria === 'primipara' || categoria === 'multipara') {
+        const qtdNascimentos = parseInt(document.getElementById('formQtdNascimentos').value) || 0;
+        const nascimentos = [];
+        
+        for (let i = 1; i <= qtdNascimentos; i++) {
+            const data = document.getElementById(`nascimentoData_${i}`)?.value;
+            if (data) {
+                nascimentos.push({
+                    numero: i,
+                    data: data,
+                    sexo: document.getElementById(`nascimentoSexo_${i}`)?.value || null,
+                    pai: document.getElementById(`nascimentoPai_${i}`)?.value || null,
+                    peso: parseFloat(document.getElementById(`nascimentoPeso_${i}`)?.value) || null,
+                    observacoes: document.getElementById(`nascimentoObs_${i}`)?.value || null
+                });
+            }
+        }
+        animal.nascimentos = nascimentos;
+        animal.qtdNascimentos = qtdNascimentos;
+    }
+    // ========== FIM DO CÓDIGO PARA NASCIMENTOS ==========
+    
+} else if (animal.sexo === 'Macho') {
+    animal.tipoReprodutor = document.getElementById('formTipoMacho').value;
+    animal.exameAndrologicoDia = document.getElementById('formExameAndrologico').value === 'sim';
+    animal.maeMacho = document.getElementById('formMaeMacho').value || null;
+    animal.paiMacho = document.getElementById('formPaiMacho').value || null;
+    animal.qtdCriasMacho = parseInt(document.getElementById('formQtdCriasMacho').value) || 0;
+    
+    // Coletar doenças do macho
+    animal.doencas = coletarDoencasMacho();
+}
+        
+        // Salvar
+        animais.push(animal);
+        localStorage.setItem('potygen_animais', JSON.stringify(animais));
+        
+        alert('Animal cadastrado com sucesso!');
+        fecharModalCadastro();
+        renderizarTabela();
+        atualizarDatalists();
+    }
+    
+    // Renderizar tabela
+    function renderizarTabela() {
+        const tbody = document.getElementById('tabelaAnimais');
+        if (!tbody) return;
+        
+        if (animais.length === 0) {
+            tbody.innerHTML = '<tr><td colspan="6" style="text-align: center;">Nenhum animal cadastrado</td></tr>';
+            return;
+        }
+        
+        tbody.innerHTML = animais.map(animal => {
+            const idade = calcularIdade(animal.dataNascimento);
+            return `
+                <tr>
+                    <td><strong>${animal.codigo}</strong><br><small>${animal.nome || 'Sem nome'}</small></td>
+                    <td>${animal.raca} - ${animal.especie}</td>
+                    <td>${idade}</td>
+                    <td><span class="weight-tag">${animal.pesoAtual} kg</span></td>
+                    <td><span class="badge blue">${animal.sexo === 'Fêmea' ? 'Fêmea' : 'Macho'}</span></td>
+                    <td class="actions">
+                        <button class="btn-action-view" onclick="visualizarAnimal(${animal.id})">
+                            <i class="fa-solid fa-eye"></i>
+                        </button>
+                        <button class="btn-action-edit" onclick="editarAnimal(${animal.id})">
+                            <i class="fa-solid fa-pen"></i>
+                        </button>
+                        <button class="btn-action-del" onclick="deletarAnimal(${animal.id})">
+                            <i class="fa-solid fa-trash"></i>
+                        </button>
+                    </td>
+                </tr>
+            `;
+        }).join('');
+    }
+    
+    function calcularIdade(dataNascimento) {
+        if (!dataNascimento) return 'N/A';
+        const nasc = new Date(dataNascimento);
+        const hoje = new Date();
+        const idadeMeses = (hoje.getFullYear() - nasc.getFullYear()) * 12 + (hoje.getMonth() - nasc.getMonth());
+        
+        if (idadeMeses < 12) {
+            return `${idadeMeses} meses`;
+        } else {
+            const anos = Math.floor(idadeMeses / 12);
+            const meses = idadeMeses % 12;
+            return meses > 0 ? `${anos} anos e ${meses} meses` : `${anos} anos`;
+        }
+    }
+    
+    function visualizarAnimal(id) {
+        const animal = animais.find(a => a.id === id);
+        if (!animal) return;
+        
+        document.getElementById('viewCodigo').textContent = animal.codigo;
+        document.getElementById('viewNome').textContent = animal.nome || '-';
+        document.getElementById('viewEspecie').textContent = animal.especie;
+        document.getElementById('viewRaca').textContent = animal.raca;
+        document.getElementById('viewPeso').textContent = `${animal.pesoAtual} kg`;
+        document.getElementById('viewIdade').textContent = calcularIdade(animal.dataNascimento);
+        document.getElementById('viewStatus').textContent = animal.sexo;
+        
+        document.getElementById('modalVisualizar').style.display = 'flex';
+    }
+    
+    function deletarAnimal(id) {
+        if (confirm('Tem certeza que deseja excluir este animal?')) {
+            animais = animais.filter(a => a.id !== id);
+            localStorage.setItem('potygen_animais', JSON.stringify(animais));
+            renderizarTabela();
+            atualizarDatalists();
+        }
+    }
+    
+    function fecharModalCadastro() {
+        document.getElementById('modalForm').style.display = 'none';
+        document.getElementById('formCodigo').value = '';
+        document.getElementById('formNome').value = '';
+        document.getElementById('formEspecie').value = '';
+        document.getElementById('formRaca').value = '';
+        document.getElementById('formSexo').value = '';
+        document.getElementById('camposFemea').style.display = 'none';
+        document.getElementById('camposMacho').style.display = 'none';
+         limparRacaSelecionada();
+    }
+    // Atualiza as opções de finalidade baseado na espécie escolhida
+function atualizarFinalidadePorEspecie() {
+    const especie = document.getElementById('formEspecie').value;
+    const selectFinalidade = document.getElementById('formFinalidade');
+    
+    // Mapeamento das finalidades por espécie
+    const finalidades = {
+        'Bovino': ['Corte', 'Leite', 'Dupla Aptidão', 'Melhoramento Genético'],
+        'Ovino': ['Corte', 'Lã', 'Leite', 'Couro', 'Dupla Aptidão'],
+        'Caprino': ['Corte (Carne)', 'Leite', 'Couro', 'Dupla Aptidão']
+    };
+    
+    // Limpa as opções atuais
+    selectFinalidade.innerHTML = '<option value="">Selecione uma finalidade...</option>';
+    
+    // Se a espécie existe no mapeamento, adiciona as opções
+    if (finalidades[especie]) {
+        finalidades[especie].forEach(finalidade => {
+            const option = document.createElement('option');
+            option.value = finalidade;
+            option.textContent = finalidade;
+            selectFinalidade.appendChild(option);
+        });
+    } else {
+        selectFinalidade.innerHTML = '<option value="">Selecione uma espécie primeiro</option>';
+    }
+}
+// ============================================
+// SISTEMA DE BUSCA DE RAÇAS PRÉ-DEFINIDAS
+// ============================================
+
+// Banco de raças pré-definidas (SEM opção de adicionar nova)
+const racasPreDefinidas = {
+    'Bovino': [
+        'Nelore', 'Angus', 'Hereford','Gir', 'Brahman', 'Guzerá', 
+        'Tabapuã', 'Senepol', 'Caracu', 'Holandês', 'Jersey',
+        'Girolando', 'Sindi', 'Bonsmara', 'Brangus', 'Braford',
+        'Canchim', 'Santa Gertrudes', 'Limousin', 'Charolês',
+        'Devon', 'Red Angus', 'Wagyu','Guerande', 'Normanda', 'Pardo Suíço', 'Lavínia'
+    ],
+    'Ovino': [
+        'Dorper', 'Santa Inês', 'Suffolk', 'Hampshire Down','Morada Nova', 'Bergamácia', 'Crioulo',
+        'Texel', 'Morada Nova', 'Somalis Brasileira', 'Ile de France', 'Rabo Largo', 'Lacaune', 'Cordeiro do Marajó',
+        'Katahdin', 'White Dorper','Corriedale', 'Merino', 'Pantaneiro'       
+    ],
+    'Caprino': [
+        'Boer', 'Saanen', 'Anglo-Nubiana', 'Parda Alpina', 
+        'Toggenburg', 'Moxotó', 'Canindé', 'Marota',
+        'Repartida', 'Azul', 'Gurguéia', 'Bhuj', 'Kalahari Red'
+    ]
+};
+
+// Função para obter raças da espécie selecionada
+function getRacasDaEspecie(especie) {
+    return racasPreDefinidas[especie] || [];
+}
+
+// Função para filtrar raças baseado no texto digitado
+function filtrarListaRacas(texto) {
+    const especie = document.getElementById('formEspecie').value;
+    const dropdown = document.getElementById('listaRacasResultados');
+    const buscaInput = document.getElementById('buscaRaca');
+    
+    if (!especie) {
+        dropdown.style.display = 'none';
+        if (buscaInput) {
+            buscaInput.placeholder = 'Selecione a espécie primeiro';
+            buscaInput.disabled = true;
+        }
+        return;
+    }
+    
+    if (buscaInput) buscaInput.disabled = false;
+    const todasRacas = getRacasDaEspecie(especie);
+    const textoLower = texto.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '');
+    
+    let racasFiltradas;
+    
+    if (texto === '') {
+        racasFiltradas = todasRacas;
+    } else {
+        racasFiltradas = todasRacas.filter(raca => {
+            const racaLower = raca.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '');
+            return racaLower.includes(textoLower);
+        });
+    }
+    
+    if (racasFiltradas.length === 0) {
+        dropdown.innerHTML = `
+            <div class="raca-item" style="color: #dc3545; cursor: default;">
+                <i class="fa-solid fa-circle-exclamation"></i> 
+                Nenhuma raça encontrada com "${texto}"
+            </div>
+        `;
+        dropdown.style.display = 'block';
+        return;
+    }
+    
+    dropdown.innerHTML = racasFiltradas.map(raca => `
+        <div class="raca-item" onclick="selecionarRaca('${raca.replace(/'/g, "\\'")}')">
+            <i class="fa-solid fa-paw" style="color: #0d8a4f; margin-right: 8px;"></i>
+            ${raca}
+        </div>
+    `).join('');
+    
+    dropdown.style.display = 'block';
+}
+
+// Função para mostrar todas as raças quando clicar no campo
+function mostrarTodasRacas() {
+    const especie = document.getElementById('formEspecie').value;
+    const buscaInput = document.getElementById('buscaRaca');
+    if (especie && buscaInput) {
+        filtrarListaRacas(buscaInput.value);
+    }
+}
+
+// Função para selecionar uma raça
+function selecionarRaca(raca) {
+    const hiddenInput = document.getElementById('formRaca');
+    const buscaInput = document.getElementById('buscaRaca');
+    const dropdown = document.getElementById('listaRacasResultados');
+    
+    if (hiddenInput) hiddenInput.value = raca;
+    if (buscaInput) buscaInput.value = raca;
+    if (dropdown) dropdown.style.display = 'none';
+    
+    mostrarBadgeRacaSelecionada(raca);
+}
+
+// Mostrar badge visual da raça selecionada
+function mostrarBadgeRacaSelecionada(raca) {
+    let badgeDiv = document.getElementById('racaSelecionadaBadge');
+    if (!badgeDiv) {
+        badgeDiv = document.createElement('div');
+        badgeDiv.id = 'racaSelecionadaBadge';
+        badgeDiv.className = 'raca-selecionada-badge';
+        const container = document.querySelector('.raca-busca-container');
+        if (container && container.parentNode) {
+            container.parentNode.insertBefore(badgeDiv, container.nextSibling);
+        }
+    }
+    badgeDiv.innerHTML = `<i class="fa-solid fa-check-circle"></i> Raça selecionada: ${raca}`;
+    badgeDiv.style.display = 'block';
+}
+
+// Limpar seleção de raça
+function limparRacaSelecionada() {
+    const hiddenInput = document.getElementById('formRaca');
+    const buscaInput = document.getElementById('buscaRaca');
+    const badge = document.getElementById('racaSelecionadaBadge');
+    
+    if (hiddenInput) hiddenInput.value = '';
+    if (buscaInput) buscaInput.value = '';
+    if (badge) badge.style.display = 'none';
+}
+
+// Atualizar raças quando a espécie mudar
+function atualizarRacasPorEspecie() {
+    const especie = document.getElementById('formEspecie').value;
+    const buscaInput = document.getElementById('buscaRaca');
+    const dropdown = document.getElementById('listaRacasResultados');
+    
+    limparRacaSelecionada();
+    
+    if (!especie) {
+        if (buscaInput) {
+            buscaInput.placeholder = 'Selecione a espécie primeiro';
+            buscaInput.disabled = true;
+            buscaInput.value = '';
+        }
+        if (dropdown) dropdown.style.display = 'none';
+    } else {
+        if (buscaInput) {
+            buscaInput.placeholder = 'Digite para buscar raça...';
+            buscaInput.disabled = false;
+            buscaInput.value = '';
+            buscaInput.focus();
+        }
+        filtrarListaRacas('');
+    }
+}
+
+// Fechar dropdown ao clicar fora
+document.addEventListener('click', function(e) {
+    const container = document.querySelector('.raca-busca-container');
+    const dropdown = document.getElementById('listaRacasResultados');
+    if (container && !container.contains(e.target) && dropdown) {
+        dropdown.style.display = 'none';
+    }
+});
+// Função para mostrar/esconder campo de nascimentos baseado na categoria
+function toggleCamposNascimentosPorCategoria() {
+    const categoria = document.getElementById('formCategoriaFemea').value;
+    const subCampos = document.getElementById('subCamposNascimentos');
+    
+    if (categoria === 'primipara' || categoria === 'multipara') {
+        subCampos.style.display = 'block';
+        gerarCamposNascimentos();
+    } else {
+        subCampos.style.display = 'none';
+        document.getElementById('listaNascimentosContainer').innerHTML = '';
+    }
+}
+
+// Função para gerar campos de nascimento
+function gerarCamposNascimentos() {
+    const qtd = parseInt(document.getElementById('formQtdNascimentos').value) || 0;
+    const container = document.getElementById('listaNascimentosContainer');
+    
+    if (qtd === 0) {
+        container.innerHTML = '<p style="color: #64748b; font-size: 13px;">Nenhuma cria registrada</p>';
+        return;
+    }
+    
+    let html = '<div style="margin-top: 15px;"><label style="font-weight: 600;">Detalhes de cada cria:</label>';
+    
+    for (let i = 1; i <= qtd; i++) {
+        html += `
+            <div class="sub-block" style="margin-bottom: 15px;">
+                <h4>🐄 Cria #${i}</h4>
+                <div class="form-grid">
+                    <div class="input-group">
+                        <label>Data do Nascimento</label>
+                        <input type="date" id="nascimentoData_${i}" class="nascimento-data" onchange="calcularIdadeCria(${i})">
+                        <div id="idadeCria_${i}" class="help-text" style="color: #0d8a4f;"></div>
+                    </div>
+                    <div class="input-group">
+                        <label>Gênero da Cria</label>
+                        <select id="nascimentoSexo_${i}" class="nascimento-sexo">
+                            <option value="">Selecione...</option>
+                            <option value="Macho">Macho</option>
+                            <option value="Fêmea">Fêmea</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="form-grid">
+                    <div class="input-group">
+                        <label>Nome do Reprodutor (Pai)</label>
+                        <input type="text" id="nascimentoPai_${i}" class="nascimento-pai" 
+                               placeholder="Código/Nome do touro/carneiro/bode" list="listaReprodutores">
+                    </div>
+                    <div class="input-group">
+                        <label>Peso ao Nascer (kg)</label>
+                        <input type="number" id="nascimentoPeso_${i}" class="nascimento-peso" step="0.1" placeholder="0.0">
+                    </div>
+                </div>
+                <div class="input-group">
+                    <label>Observações</label>
+                    <input type="text" id="nascimentoObs_${i}" class="nascimento-obs" placeholder="Ex: Parto normal, gêmeos, natimorto...">
+                </div>
+            </div>
+        `;
+    }
+    
+    container.innerHTML = html;
+}
+function toggleCamposPorSexo() {
+    const sexo = document.getElementById('formSexo').value;
+    const camposFemea = document.getElementById('camposFemea');
+    const camposMacho = document.getElementById('camposMacho');
+    
+    if (sexo === 'Fêmea') {
+        camposFemea.style.display = 'block';
+        camposMacho.style.display = 'none';
+    } else if (sexo === 'Macho') {
+        camposFemea.style.display = 'none';
+        camposMacho.style.display = 'block';
+    } else {
+        camposFemea.style.display = 'none';
+        camposMacho.style.display = 'none';
+    }
+}
+// Função para calcular idade da cria em tempo real
+function calcularIdadeCria(numero) {
+    const dataInput = document.getElementById(`nascimentoData_${numero}`);
+    const idadeDiv = document.getElementById(`idadeCria_${numero}`);
+    
+    if (!dataInput || !dataInput.value) {
+        idadeDiv.innerHTML = '';
+        return;
+    }
+    
+    const dataNasc = new Date(dataInput.value);
+    const hoje = new Date();
+    const diffMeses = (hoje.getFullYear() - dataNasc.getFullYear()) * 12 + (hoje.getMonth() - dataNasc.getMonth());
+    
+    if (diffMeses < 0) {
+        idadeDiv.innerHTML = '⚠️ Data futura';
+    } else if (diffMeses < 1) {
+        const diffDias = Math.floor((hoje - dataNasc) / (1000 * 60 * 60 * 24));
+        idadeDiv.innerHTML = `📅 Idade atual: ${diffDias} dias`;
+    } else if (diffMeses < 12) {
+        idadeDiv.innerHTML = `📅 Idade atual: ${diffMeses} meses`;
+    } else {
+        const anos = Math.floor(diffMeses / 12);
+        const meses = diffMeses % 12;
+        idadeDiv.innerHTML = meses > 0 ? `📅 Idade atual: ${anos} anos e ${meses} meses` : `📅 Idade atual: ${anos} anos`;
+    }
+}
+    // Event Listeners
+    document.addEventListener('DOMContentLoaded', () => {
+    renderizarTabela();
+    atualizarDatalists();
+    
+    // Evento para espécie (atualiza finalidade, raças e doenças)
+    document.getElementById('formEspecie').addEventListener('change', function() {
+    atualizarFinalidadePorEspecie();
+    atualizarRacasPorEspecie();
+    
+    // Atualizar doenças baseado na espécie e sexo atual
+    const sexo = document.getElementById('formSexo').value;
+    if (sexo === 'Fêmea') {
+        atualizarListaDoencas();
+    } else if (sexo === 'Macho') {
+        atualizarListaDoencasMacho();
+    }
+});
+    
+    // Evento para sexo (mostra campos específicos e atualiza doenças)
+    document.getElementById('formSexo').addEventListener('change', function() {
+        toggleCamposPorSexo();
+        
+        // Atualizar doenças quando mudar o sexo
+        const especie = document.getElementById('formEspecie').value;
+        if (especie) {
+            if (this.value === 'Fêmea') {
+                atualizarListaDoencas();
+            } else if (this.value === 'Macho') {
+                atualizarListaDoencasMacho();
+            }
+        }
+    });
+    
+    // Evento para categoria da fêmea
+    document.getElementById('formCategoriaFemea').addEventListener('change', toggleCamposNascimentosPorCategoria);
+    
+    // Evento para pai do macho (buscar crias)
+    document.getElementById('formPaiMacho')?.addEventListener('input', buscarCriasPorPai);
+    
+    // Evento para quantidade de crias da fêmea
+    document.getElementById('formQtdNascimentos').addEventListener('input', gerarCamposNascimentos);
+    
+    // Evento para histórico de aborto
+    document.getElementById('formHistoricoAborto').addEventListener('change', toggleCamposAborto);
+    document.getElementById('formQtdAbortos').addEventListener('input', gerarCamposAborto);
+    
+    // Botão novo animal
+    document.getElementById('btnNovoAnimal').addEventListener('click', () => {
+        document.getElementById('modalForm').style.display = 'flex';
+    });
+    
+    // Botão salvar
+    document.getElementById('btnSalvar').addEventListener('click', salvarAnimal);
+    
+    // Fechar modais
+    document.querySelectorAll('.close, .btn-close-modal').forEach(btn => {
+        btn.addEventListener('click', () => {
+            document.getElementById('modalForm').style.display = 'none';
+            document.getElementById('modalVisualizar').style.display = 'none';
+        });
+    });
+    
+    // Filtro de busca
+    document.getElementById('busca').addEventListener('input', (e) => {
+        const termo = e.target.value.toLowerCase();
+        const filtrados = animais.filter(a => 
+            a.codigo.toLowerCase().includes(termo) || 
+            (a.nome && a.nome.toLowerCase().includes(termo)) ||
+            (a.lote && a.lote.toLowerCase().includes(termo))
+        );
+        renderizarTabelaFiltrada(filtrados);
+    });
+});
+        document.getElementById('btnNovoAnimal').addEventListener('click', () => {
+            document.getElementById('modalForm').style.display = 'flex';
+        });
+        document.getElementById('formQtdAbortos').addEventListener('input', gerarCamposAborto);
+        document.getElementById('formSexo').addEventListener('change', toggleCamposPorSexo);
+        document.getElementById('formHistoricoAborto').addEventListener('change', toggleCamposAborto);
+        
+        document.getElementById('btnSalvar').addEventListener('click', salvarAnimal);
+        
+        // Fechar modais
+        document.querySelectorAll('.close, .btn-close-modal').forEach(btn => {
+            btn.addEventListener('click', () => {
+                document.getElementById('modalForm').style.display = 'none';
+                document.getElementById('modalVisualizar').style.display = 'none';
+            });
+        });
+        
+        // Filtro de busca
+        document.getElementById('busca').addEventListener('input', (e) => {
+            const termo = e.target.value.toLowerCase();
+            const filtrados = animais.filter(a => 
+                a.codigo.toLowerCase().includes(termo) || 
+                (a.nome && a.nome.toLowerCase().includes(termo)) ||
+                (a.lote && a.lote.toLowerCase().includes(termo))
+            );
+            renderizarTabelaFiltrada(filtrados);
+        });
+    
+    
+    function renderizarTabelaFiltrada(lista) {
+        const tbody = document.getElementById('tabelaAnimais');
+        if (lista.length === 0) {
+            tbody.innerHTML = '<tr><td colspan="6" style="text-align: center;">Nenhum animal encontrado</td></tr>';
+            return;
+        }
+        
+        tbody.innerHTML = lista.map(animal => {
+            const idade = calcularIdade(animal.dataNascimento);
+            return `
+                <tr>
+                    <td><strong>${animal.codigo}</strong><br><small>${animal.nome || 'Sem nome'}</small></td>
+                    <td>${animal.raca} - ${animal.especie}</td>
+                    <td>${idade}</td>
+                    <td><span class="weight-tag">${animal.pesoAtual} kg</span></td>
+                    <td><span class="badge blue">${animal.sexo === 'Fêmea' ? 'Fêmea' : 'Macho'}</span></td>
+                    <td class="actions">
+                        <button class="btn-action-view" onclick="visualizarAnimal(${animal.id})">
+                            <i class="fa-solid fa-eye"></i>
+                        </button>
+                        <button class="btn-action-edit" onclick="editarAnimal(${animal.id})">
+                            <i class="fa-solid fa-pen"></i>
+                        </button>
+                        <button class="btn-action-del" onclick="deletarAnimal(${animal.id})">
+                            <i class="fa-solid fa-trash"></i>
+                        </button>
+                    </td>
+                </tr>
+            `;
+        }).join('');
+    }
+    
+    function editarAnimal(id) {
+        alert('Funcionalidade de edição em desenvolvimento');
+    }
+</script>
 
 <!-- ============================================================ -->
 <!-- MODAL: TROCAR FAZENDA                                        -->
@@ -712,8 +1713,11 @@
 <script src="../backend/fazenda.js"></script>
 <script src="../backend/fazenda-ui.js"></script>
 <script src="../backend/script-gestao.js"></script>
+<!-- Navbar Loading -->
+<script src="../backend/navbar-loader.js"></script>
 <!-- Navbar Script Global -->
 <script src="../backend/navbar-script.js"></script>
 <script src="../backend/logout.js"></script>
+
 </body>
 </html>
