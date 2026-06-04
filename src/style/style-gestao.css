@@ -144,3 +144,406 @@ td { padding: 18px 20px; font-size: 14px; border-bottom: 1px solid #f8fafc; }
 .d-card.blue { background: #eff6ff; color: #1e40af; }
 .d-card.purple { background: #f5f3ff; color: #5b21b6; }
 .info-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 24px; background: #f8fafc; padding: 20px; border-radius: 12px; }
+/* ============================================================
+   POTYGEN — Adições ao style-gestao.css
+   Cole este bloco no FINAL de style/style-gestao.css
+   ============================================================ */
+
+/* Badge da fazenda ativa no header (clicável para trocar) */
+.header-fazenda-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    margin-left: 10px;
+    padding: 2px 10px 2px 8px;
+    background: #e8f5ee;
+    color: #0d8a4f;
+    border: 1px solid #b6dfc7;
+    border-radius: 20px;
+    font-size: 12px;
+    font-weight: 600;
+    cursor: pointer;
+    vertical-align: middle;
+    transition: background .15s ease;
+}
+.header-fazenda-badge:hover {
+    background: #d0eddb;
+}
+.header-fazenda-badge i.fa-tractor {
+    font-size: 11px;
+}
+/* ============================================================
+   POTYGEN — Adições para style-gestao.css
+   Cole este bloco no FINAL do arquivo style/style-gestao.css
+   Corrige: botões de ação (ver/editar/excluir), filtros (dropdown
+   espécie e ordenar), modal de confirmação/mensagem e dropdown
+   de busca de raças.
+   ============================================================ */
+
+/* ---------- BOTÕES DE AÇÃO NA TABELA ---------- */
+.action-buttons {
+    display: flex;
+    gap: 8px;
+    justify-content: flex-end;
+    flex-wrap: wrap;
+}
+.action-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 7px 12px;
+    border-radius: 8px;
+    font-size: 12.5px;
+    font-weight: 600;
+    cursor: pointer;
+    border: 1px solid transparent;
+    background: #f1f5f9;
+    color: #334155;
+    transition: all .18s ease;
+    line-height: 1;
+    font-family: inherit;
+}
+.action-btn i { font-size: 12px; }
+.action-btn:hover { transform: translateY(-1px); }
+
+.action-btn.action-view {
+    background: #ecfdf5;
+    color: #047857;
+    border-color: #a7f3d0;
+}
+.action-btn.action-view:hover { background: #047857; color: #fff; }
+
+.action-btn.action-edit {
+    background: #eff6ff;
+    color: #1d4ed8;
+    border-color: #bfdbfe;
+}
+.action-btn.action-edit:hover { background: #1d4ed8; color: #fff; }
+
+.action-btn.action-delete {
+    background: #fef2f2;
+    color: #b91c1c;
+    border-color: #fecaca;
+}
+.action-btn.action-delete:hover { background: #b91c1c; color: #fff; }
+
+/* ---------- TOOLBAR / FILTROS ---------- */
+.toolbar-premium { align-items: center; flex-wrap: wrap; }
+.filter-group { display: flex; gap: 12px; align-items: center; }
+
+.custom-dropdown { position: relative; }
+.dropdown-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 10px;
+    padding: 12px 18px;
+    background: #fff;
+    border: 1px solid var(--border, #e2e8f0);
+    border-radius: 12px;
+    font-size: 14px;
+    font-weight: 600;
+    color: #334155;
+    cursor: pointer;
+    transition: all .18s ease;
+    font-family: inherit;
+    min-width: 200px;
+}
+.dropdown-btn:hover {
+    border-color: #0d8a4f;
+    color: #0d8a4f;
+}
+.dropdown-btn .fa-chevron-down {
+    margin-left: auto;
+    font-size: 11px;
+    opacity: .7;
+}
+
+.dropdown-menu {
+    display: none;
+    position: absolute;
+    top: calc(100% + 6px);
+    left: 0;
+    right: 0;
+    background: #fff;
+    border: 1px solid #e2e8f0;
+    border-radius: 12px;
+    box-shadow: 0 12px 32px rgba(15,23,42,.12);
+    overflow: hidden;
+    z-index: 100;
+    min-width: 220px;
+}
+.dropdown-item {
+    padding: 10px 16px;
+    cursor: pointer;
+    font-size: 14px;
+    color: #334155;
+    transition: background .15s ease;
+}
+.dropdown-item:hover { background: #f1f5f9; }
+.dropdown-item.selected {
+    background: #ecfdf5;
+    color: #0d8a4f;
+    font-weight: 700;
+}
+
+.btn-ordenar {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    padding: 12px 18px;
+    background: #fff;
+    border: 1px solid var(--border, #e2e8f0);
+    border-radius: 12px;
+    font-size: 14px;
+    font-weight: 600;
+    color: #334155;
+    cursor: pointer;
+    transition: all .18s ease;
+    font-family: inherit;
+}
+.btn-ordenar:hover {
+    border-color: #0d8a4f;
+    color: #0d8a4f;
+    background: #ecfdf5;
+}
+
+/* ---------- DROPDOWN DE RAÇA ---------- */
+.raca-busca-container { position: relative; }
+.lista-racas-dropdown {
+    display: none;
+    position: absolute;
+    top: calc(100% + 4px);
+    left: 0;
+    right: 0;
+    max-height: 220px;
+    overflow-y: auto;
+    background: #fff;
+    border: 1px solid #e2e8f0;
+    border-radius: 10px;
+    box-shadow: 0 8px 24px rgba(15,23,42,.12);
+    z-index: 50;
+}
+.raca-item {
+    padding: 10px 14px;
+    font-size: 14px;
+    color: #334155;
+    cursor: pointer;
+    border-bottom: 1px solid #f1f5f9;
+}
+.raca-item:hover { background: #ecfdf5; color: #0d8a4f; }
+.raca-item:last-child { border-bottom: none; }
+
+.raca-selecionada-badge {
+    display: none;
+    margin-top: 8px;
+    padding: 6px 10px;
+    background: #ecfdf5;
+    color: #0d8a4f;
+    border: 1px solid #a7f3d0;
+    border-radius: 8px;
+    font-size: 12px;
+    font-weight: 600;
+}
+
+.help-text { font-size: 11px; color: #64748b; margin-top: 4px; }
+.required-field::after { content: " *"; color: #dc3545; }
+
+/* ---------- SUB-BLOCOS / CAMPOS DINÂMICOS ---------- */
+.sub-block {
+    margin-top: 12px;
+    padding: 12px 14px;
+    background: #f8fafc;
+    border-left: 3px solid #0d8a4f;
+    border-radius: 8px;
+}
+.sub-block h4 { font-size: 13px; margin-bottom: 10px; color: #1e293b; }
+.dynamic-fields {
+    margin-top: 12px;
+    padding: 14px;
+    background: #f8fafc;
+    border-radius: 10px;
+    border: 1px solid #e2e8f0;
+}
+
+/* ---------- MODAL DE CONFIRMAÇÃO / MENSAGEM ---------- */
+.modal-confirmacao {
+    display: none;
+    position: fixed;
+    inset: 0;
+    background: rgba(15,23,42,.5);
+    backdrop-filter: blur(4px);
+    z-index: 10000;
+    align-items: center;
+    justify-content: center;
+    padding: 20px;
+}
+.modal-confirmacao-content {
+    background: #fff;
+    width: 100%;
+    max-width: 440px;
+    border-radius: 14px;
+    box-shadow: 0 16px 48px rgba(15,23,42,.25);
+    overflow: hidden;
+    animation: zoomIn .18s ease;
+}
+.modal-confirmacao-header {
+    padding: 20px 24px 8px;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+.modal-confirmacao-header h3 {
+    font-size: 17px;
+    font-weight: 700;
+    color: #1e293b;
+}
+.modal-confirmacao-body {
+    padding: 8px 24px 16px;
+    color: #475569;
+    font-size: 14px;
+    line-height: 1.5;
+}
+.modal-confirmacao-footer {
+    padding: 12px 24px 20px;
+    display: flex;
+    gap: 10px;
+    justify-content: flex-end;
+}
+.btn-confirmar-cancelar,
+.btn-confirmar-ok,
+.btn-confirmar-excluir {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    padding: 10px 18px;
+    border-radius: 8px;
+    font-size: 13.5px;
+    font-weight: 600;
+    cursor: pointer;
+    border: 1px solid transparent;
+    font-family: inherit;
+    transition: all .18s ease;
+}
+.btn-confirmar-cancelar {
+    background: #f1f5f9;
+    color: #334155;
+    border-color: #e2e8f0;
+}
+.btn-confirmar-cancelar:hover { background: #e2e8f0; }
+.btn-confirmar-ok {
+    background: #0d8a4f;
+    color: #fff;
+}
+.btn-confirmar-ok:hover { background: #064e2d; }
+.btn-confirmar-excluir {
+    background: #dc3545;
+    color: #fff;
+}
+.btn-confirmar-excluir:hover { background: #991b1b; }
+
+/* ---------- INPUT WITH ICON / FAZENDA FORM ---------- */
+.input-with-icon { position: relative; }
+.input-with-icon i {
+    position: absolute;
+    left: 12px;
+    top: 50%;
+    transform: translateY(-50%);
+    color: #94a3b8;
+    font-size: 13px;
+}
+.input-with-icon input,
+.input-with-icon select { padding-left: 34px !important; }
+
+.input-row-fazenda { display: grid; grid-template-columns: 1fr; gap: 12px; }
+.input-row-fazenda.cols-2 { grid-template-columns: 1fr 1fr; }
+.input-row-fazenda.cols-3 { grid-template-columns: 1fr 1fr 1fr; }
+.input-group-f label {
+    display: block;
+    font-size: 12px;
+    font-weight: 600;
+    color: #1e293b;
+    margin-bottom: 6px;
+}
+.input-group-f input,
+.input-group-f select,
+.input-group-f textarea {
+    width: 100%;
+    padding: 10px 14px;
+    border: 1px solid #e2e8f0;
+    border-radius: 8px;
+    font-size: 14px;
+    color: #334155;
+    background: #fff;
+    outline: none;
+    font-family: inherit;
+}
+.input-group-f input:focus,
+.input-group-f select:focus,
+.input-group-f textarea:focus {
+    border-color: #0d8a4f;
+    box-shadow: 0 0 0 3px rgba(13,138,79,.1);
+}
+.form-section-label {
+    font-size: 12px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: .8px;
+    color: #64748b;
+    margin-bottom: 10px;
+}
+.req { color: #dc3545; }
+
+/* ---------- LISTA DE FAZENDAS ---------- */
+.fazendas-lista { display: flex; flex-direction: column; gap: 8px; margin-bottom: 14px; }
+.fazenda-item {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 12px 14px;
+    background: #f8fafc;
+    border: 1px solid #e2e8f0;
+    border-radius: 10px;
+    cursor: pointer;
+    transition: all .18s ease;
+}
+.fazenda-item:hover { border-color: #0d8a4f; background: #ecfdf5; }
+.fazenda-item.ativa {
+    background: #ecfdf5;
+    border-color: #0d8a4f;
+}
+.fazenda-item .fi-icon {
+    width: 38px; height: 38px;
+    border-radius: 10px;
+    display: grid; place-items: center;
+    background: #0d8a4f; color: #fff;
+}
+.fi-info { flex: 1; }
+.fi-nome { font-weight: 700; color: #1e293b; font-size: 14px; }
+.fi-sub  { font-size: 12px; color: #64748b; margin-top: 2px; }
+.fi-check { color: #0d8a4f; opacity: 0; }
+.fazenda-item.ativa .fi-check { opacity: 1; }
+.fazendas-lista-vazia {
+    padding: 24px;
+    text-align: center;
+    color: #64748b;
+    font-size: 13px;
+    background: #f8fafc;
+    border-radius: 10px;
+}
+.btn-nova-fazenda-lista {
+    width: 100%;
+    padding: 12px;
+    background: #fff;
+    border: 1px dashed #0d8a4f;
+    border-radius: 10px;
+    color: #0d8a4f;
+    font-weight: 600;
+    cursor: pointer;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    font-family: inherit;
+    transition: background .18s ease;
+}
+.btn-nova-fazenda-lista:hover { background: #ecfdf5; }

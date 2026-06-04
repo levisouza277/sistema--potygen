@@ -592,6 +592,7 @@ function renderizarTabela() {
                 <td>${finalidade}</td>
                 <td>${lote}</td>
                 <td>${pelagem}</td>
+                <td>${animal.status || '—'}</td>
                 <td class="action-buttons">
                     <button class="action-btn action-view" onclick="visualizarAnimal('${animal.id}')">
                         <i class="fa-solid fa-eye"></i> Ver características
@@ -733,141 +734,144 @@ function calcularIdadeCria(numero) {
 // ============================================
 function visualizarAnimal(id) {
     const animal = animais.find(a => String(a.id) === String(id));
-    if (!animal) { mostrarMensagem('Animal não encontrado!', 'erro'); return; }
+    if (!animal) {
+        if (typeof mostrarMensagem === 'function') mostrarMensagem('Animal não encontrado!', 'erro');
+        else if (typeof mostrarToast === 'function') mostrarToast('Animal não encontrado!', 'error');
+        return;
+    }
+
+    const setText = (elId, val) => {
+        const el = document.getElementById(elId);
+        if (el) el.textContent = (val === null || val === undefined || val === '') ? '-' : val;
+    };
+    const setHTML = (elId, html) => {
+        const el = document.getElementById(elId);
+        if (el) el.innerHTML = html;
+    };
+    const setDisplay = (elId, display) => {
+        const el = document.getElementById(elId);
+        if (el) el.style.display = display;
+    };
 
     const dataNasc = animal.data_nascimento || animal.dataNascimento;
     const pesoAtual = animal.peso_atual ?? animal.pesoAtual ?? 0;
 
-    document.getElementById('viewCodigo').textContent = animal.codigo || '-';
-    document.getElementById('viewNome').textContent = animal.nome || '-';
-    document.getElementById('viewEspecie').textContent = animal.especie || '-';
-    document.getElementById('viewRaca').textContent = animal.raca || '-';
-    document.getElementById('viewPelagem').textContent = animal.pelagem || '-';
-    document.getElementById('viewLote').textContent = animal.lote || '-';
-    document.getElementById('viewFinalidade').textContent = animal.finalidade || '-';
-    document.getElementById('viewGrauSangue').textContent = animal.grau_sangue || animal.grauSangue || '-';
-    document.getElementById('viewPeso').textContent = pesoAtual ? `${pesoAtual} kg` : '-';
-    document.getElementById('viewIdade').textContent = calcularIdade(dataNasc);
-    document.getElementById('viewStatus').textContent = animal.sexo || '-';
+    setText('viewCodigo', animal.codigo);
+    setText('viewNome', animal.nome);
+    setText('viewEspecie', animal.especie);
+    setText('viewRaca', animal.raca);
+    setText('viewPelagem', animal.pelagem);
+    setText('viewLote', animal.lote);
+    setText('viewFinalidade', animal.finalidade);
+    setText('viewGrauSangue', animal.grau_sangue || animal.grauSangue);
+    setText('viewPeso', pesoAtual ? `${pesoAtual} kg` : '-');
+    setText('viewIdade', calcularIdade(dataNasc));
+    setText('viewStatus', animal.sexo);
 
-    const viewFemeaInfo = document.getElementById('viewFemeaInfo');
-    const viewMachoInfo = document.getElementById('viewMachoInfo');
-    if (viewFemeaInfo) viewFemeaInfo.style.display = 'none';
-    if (viewMachoInfo) viewMachoInfo.style.display = 'none';
+    setDisplay('viewFemeaInfo', 'none');
+    setDisplay('viewMachoInfo', 'none');
+    setDisplay('viewNascimentosContainer', 'none');
+    setDisplay('viewDescendentesContainer', 'none');
+
+    const viewAbortosContainerExistente = document.getElementById('viewAbortosContainer');
+    if (viewAbortosContainerExistente) viewAbortosContainerExistente.style.display = 'none';
 
     if (animal.sexo === 'Fêmea') {
-        if (viewFemeaInfo) viewFemeaInfo.style.display = 'block';
-        document.getElementById('viewCategoria').textContent = animal.categoria_reprodutiva || animal.categoriaReprodutiva || '-';
-        document.getElementById('viewECC').textContent = animal.ecc || '-';
-        document.getElementById('viewQtdCrias').textContent = animal.qtd_nascimentos ?? animal.qtdNascimentos ?? '0';
-        // Usa abortos da tabela relacional
-        const abortos = animal.abortos || [];
-        document.getElementById('viewAborto').textContent = abortos.length > 0 ? `Sim (${abortos.length})` : 'Não';
-        document.getElementById('viewMae').textContent = animal.mae || '-';
-        document.getElementById('viewPai').textContent = animal.pai || '-';
+        setDisplay('viewFemeaInfo', 'block');
+        setText('viewCategoria', animal.categoria_reprodutiva || animal.categoriaReprodutiva);
+        setText('viewECC', animal.ecc);
+        setText('viewQtdCrias', animal.qtd_nascimentos ?? animal.qtdNascimentos ?? '0');
+        setText('viewMae', animal.mae);
+        setText('viewPai', animal.pai);
 
-        // Exibe detalhes dos abortos se existirem
-        let viewAbortosContainer = document.getElementById('viewAbortosContainer');
-        if (!viewAbortosContainer) {
-            viewAbortosContainer = document.createElement('div');
-            viewAbortosContainer.id = 'viewAbortosContainer';
-            viewAbortosContainer.className = 'info-block';
-            const nascimentosBlock = document.getElementById('viewNascimentosContainer');
-            if (viewFemeaInfo && nascimentosBlock) {
-                viewFemeaInfo.insertBefore(viewAbortosContainer, nascimentosBlock);
+        const abortos = animal.abortos || [];
+        setText('viewAborto', abortos.length > 0 ? `Sim (${abortos.length})` : 'Não');
+
+        const femeaInfo = document.getElementById('viewFemeaInfo');
+        if (femeaInfo) {
+            let viewAbortosContainer = document.getElementById('viewAbortosContainer');
+            if (!viewAbortosContainer) {
+                viewAbortosContainer = document.createElement('div');
+                viewAbortosContainer.id = 'viewAbortosContainer';
+                viewAbortosContainer.className = 'info-block';
+                const nascimentosBlock = document.getElementById('viewNascimentosContainer');
+                if (nascimentosBlock) femeaInfo.insertBefore(viewAbortosContainer, nascimentosBlock);
+                else femeaInfo.appendChild(viewAbortosContainer);
             }
-        }
-        if (abortos.length > 0) {
-            viewAbortosContainer.style.display = 'block';
-            viewAbortosContainer.innerHTML = `
-                <p class="block-title"><i class="fa-solid fa-triangle-exclamation" style="color:#dc3545;"></i> Histórico de Abortos</p>
-                <div>
-                    ${abortos.map((ab, i) => `
-                        <div style="padding:8px;border-bottom:1px solid #e2e8f0;">
-                            <strong>Aborto #${i + 1}</strong>
-                            ${ab.data ? '<br>📅 Data: ' + ab.data : ''}
-                            ${ab.diasGestacao ? '<br>🗓️ Dias de gestação: ' + ab.diasGestacao : ''}
-                            ${(ab.causa || ab.macho) ? '<br>🔍 Causa/Reprodutor: ' + (ab.causa || ab.macho) : ''}
-                            ${ab.observacoes ? '<br>📝 Obs: ' + ab.observacoes : ''}
-                        </div>
-                    `).join('')}
-                </div>`;
-        } else {
-            viewAbortosContainer.style.display = 'none';
+
+            if (abortos.length > 0) {
+                viewAbortosContainer.style.display = 'block';
+                viewAbortosContainer.innerHTML = `
+                    <p class="block-title"><i class="fa-solid fa-triangle-exclamation" style="color:#dc3545;"></i> Histórico de Abortos</p>
+                    <div>
+                        ${abortos.map((ab, i) => `
+                            <div style="padding:8px;border-bottom:1px solid #e2e8f0;">
+                                <strong>Aborto #${i + 1}</strong>
+                                ${ab.data ? '<br>📅 Data: ' + ab.data : ''}
+                                ${ab.diasGestacao ? '<br>🗓️ Dias de gestação: ' + ab.diasGestacao : ''}
+                                ${(ab.causa || ab.macho) ? '<br>🔍 Causa/Reprodutor: ' + (ab.causa || ab.macho) : ''}
+                                ${ab.observacoes ? '<br>📝 Obs: ' + ab.observacoes : ''}
+                            </div>`).join('')}
+                    </div>`;
+            } else {
+                viewAbortosContainer.style.display = 'none';
+            }
         }
 
         const nascimentos = animal.nascimentos || [];
-        const nascimentosContainer = document.getElementById('viewNascimentosContainer');
-        const listaNascimentos = document.getElementById('viewListaNascimentos');
-        if (nascimentosContainer && listaNascimentos) {
-            if (nascimentos.length > 0) {
-                nascimentosContainer.style.display = 'block';
-                listaNascimentos.innerHTML = nascimentos.map(n => `
-                    <div style="padding: 8px; border-bottom: 1px solid #e2e8f0;">
-                        <strong>${n.numero}ª cria:</strong> ${n.data || 'Data não registrada'}
-                        ${n.sexo ? `- ${n.sexo}` : ''}
-                        ${n.pai ? `<br>👨 Pai: ${n.pai}` : ''}
-                        ${n.peso ? `<br>⚖️ Peso: ${n.peso} kg` : ''}
-                    </div>
-                `).join('');
-            } else {
-                nascimentosContainer.style.display = 'none';
-            }
+        if (nascimentos.length > 0) {
+            setDisplay('viewNascimentosContainer', 'block');
+            setHTML('viewListaNascimentos', nascimentos.map(n => `
+                <div style="padding: 8px; border-bottom: 1px solid #e2e8f0;">
+                    <strong>${n.numero}ª cria:</strong> ${n.data || 'Data não registrada'}
+                    ${n.sexo ? `- ${n.sexo}` : ''}
+                    ${n.pai ? `<br>👨 Pai: ${n.pai}` : ''}
+                    ${n.peso ? `<br>⚖️ Peso: ${n.peso} kg` : ''}
+                </div>`).join(''));
         }
     }
 
     if (animal.sexo === 'Macho') {
-        if (viewMachoInfo) viewMachoInfo.style.display = 'block';
-
-        const tipoMap = { local: 'Reprodutor Local', laboratorio: 'Reprodutor de Laboratório', rufiao: 'Rufião', castrado: 'Castrado' };
+        setDisplay('viewMachoInfo', 'block');
+        const tipoMap = { local: 'Reprodutor Local', laboratorio: 'Reprodutor de Laboratório', rufiao: 'Rufião', castrado: 'Castrado', ativo: 'Reprodutor Ativo' };
         const tipoReprodutor = animal.tipo_reprodutor || animal.tipoReprodutor;
-        document.getElementById('viewTipoMacho').textContent = tipoMap[tipoReprodutor] || tipoReprodutor || '-';
-        document.getElementById('viewExameAndrologico').textContent = (animal.exame_andrologico || animal.exame_andrologico_dia || animal.exameAndrologicoDia) ? 'Sim - Apto' : 'Não ou Vencido';
-        document.getElementById('viewECCMacho').textContent = animal.ecc_macho || animal.eccMacho || '-';
-        document.getElementById('viewQtdDescendentes').textContent = animal.qtd_descendentes ?? animal.qtdDescendentes ?? '0';
-        document.getElementById('viewMaeMacho').textContent = animal.mae_macho || animal.maeMacho || '-';
-        document.getElementById('viewPaiMacho').textContent = animal.pai_macho || animal.paiMacho || '-';
-        document.getElementById('viewLaboratorio').textContent = animal.laboratorio || '-';
+        setText('viewTipoMacho', tipoMap[tipoReprodutor] || tipoReprodutor);
+        setText('viewExameAndrologico', (animal.exame_andrologico || animal.exame_andrologico_dia || animal.exameAndrologicoDia) ? 'Sim - Apto' : 'Não ou Vencido');
+        setText('viewECCMacho', animal.ecc_macho || animal.eccMacho);
+        setText('viewQtdDescendentes', animal.qtd_descendentes ?? animal.qtdDescendentes ?? '0');
+        setText('viewMaeMacho', animal.mae_macho || animal.maeMacho);
+        setText('viewPaiMacho', animal.pai_macho || animal.paiMacho);
+        setText('viewLaboratorio', animal.laboratorio);
 
         const descendentes = animal.descendentes || [];
-        const descendentesContainer = document.getElementById('viewDescendentesContainer');
-        const listaDescendentes = document.getElementById('viewListaDescendentes');
-        if (descendentesContainer && listaDescendentes) {
-            if (descendentes.length > 0) {
-                descendentesContainer.style.display = 'block';
-                listaDescendentes.innerHTML = descendentes.map(d => `
-                    <div style="padding: 8px; border-bottom: 1px solid #e2e8f0;">
-                        <strong>${d.nome || `Descendente #${d.numero}`}</strong>
-                        ${d.sexo ? `<br>🧬 Sexo: ${d.sexo}` : ''}
-                        ${d.mae ? `<br>🐄 Mãe: ${d.mae}` : ''}
-                        ${d.dataNascimento ? `<br>📅 Nascimento: ${d.dataNascimento}` : ''}
-                    </div>
-                `).join('');
-            } else {
-                descendentesContainer.style.display = 'none';
-            }
+        if (descendentes.length > 0) {
+            setDisplay('viewDescendentesContainer', 'block');
+            setHTML('viewListaDescendentes', descendentes.map(d => `
+                <div style="padding: 8px; border-bottom: 1px solid #e2e8f0;">
+                    <strong>${d.nome || `Descendente #${d.numero || '-'}`}</strong>
+                    ${d.sexo ? `<br>🧬 Sexo: ${d.sexo}` : ''}
+                    ${d.mae ? `<br>🐄 Mãe: ${d.mae}` : ''}
+                    ${d.dataNascimento ? `<br>📅 Nascimento: ${d.dataNascimento}` : ''}
+                </div>`).join(''));
         }
     }
 
-    // Doenças vindas da tabela relacional doencas_animais
-    const listaDoencas = document.getElementById('viewListaDoencas');
-    if (listaDoencas) {
-        const doencas = animal.doencas || [];
-        listaDoencas.innerHTML = doencas.length > 0
-            ? doencas.map(d => `
-                <div style="padding: 8px; border-bottom: 1px solid #e2e8f0;">
-                    <strong>${d.nome}</strong>
-                    ${d.dataDiagnostico ? `<br>📅 Diagnóstico: ${d.dataDiagnostico}` : ''}
-                    ${d.tratou ? `<br>✅ Tratado em: ${d.dataTratamento || 'Data não registrada'}` : '<br>⚠️ Não tratado'}
-                    ${d.tipoTratamento ? `<br>💊 Tratamento: ${d.tipoTratamento}` : ''}
-                </div>
-            `).join('')
-            : '<p style="color: #64748b;">Nenhuma doença registrada</p>';
-    }
+    const doencas = animal.doencas || [];
+    setHTML('viewListaDoencas', doencas.length > 0
+        ? doencas.map(d => `
+            <div style="padding: 8px; border-bottom: 1px solid #e2e8f0;">
+                <strong>${d.nome}</strong>
+                ${d.dataDiagnostico ? `<br>📅 Diagnóstico: ${d.dataDiagnostico}` : ''}
+                ${d.tratou ? `<br>✅ Tratado em: ${d.dataTratamento || 'Data não registrada'}` : '<br>⚠️ Não tratado'}
+                ${d.tipoTratamento ? `<br>💊 Tratamento: ${d.tipoTratamento}` : ''}
+            </div>`).join('')
+        : '<p style="color: #64748b;">Nenhuma doença registrada</p>');
 
     const modalVisualizar = document.getElementById('modalVisualizar');
     if (modalVisualizar) modalVisualizar.style.display = 'flex';
 }
+
+window.visualizarAnimal = visualizarAnimal;
 
 // ============================================
 // EDITAR ANIMAL
