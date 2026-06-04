@@ -103,36 +103,38 @@ const esqueciSenha =
         'esqueciSenha'
     );
 
-if (esqueciSenha) {
+esqueciSenha.addEventListener(
+    'click',
+    async (e) => {
 
-    esqueciSenha.addEventListener(
-        'click',
-        async (e) => {
+        e.preventDefault();
 
-            const { error } =
-                await supabaseClient.auth
-                .resetPasswordForEmail(
-                    email,
-                    {
-                        redirectTo:
-                        'http://127.0.0.1:5500/src/pages/esqueceusenha.html'
-                    }
-                );
+        const email =
+            document.getElementById('email')
+            .value
+            .trim()
+            .toLowerCase();
 
-            if (error) {
+        if (!email) {
+            alert('Digite seu e-mail primeiro.');
+            return;
+        }
 
-                alert(
-                    'Erro: ' + error.message
-                );
-
-                return;
-            }
-
-            alert(
-                'Link enviado para seu e-mail.'
+        const { error } =
+            await supabaseClient.auth
+            .resetPasswordForEmail(
+                email,
+                {
+                    redirectTo:
+                    'http://127.0.0.1:5500/src/pages/esqueceusenha.html'
+                }
             );
 
+        if (error) {
+            alert('Erro: ' + error.message);
+            return;
         }
-    );
 
-}
+        alert('Link enviado para seu e-mail.');
+    }
+);
