@@ -1,11 +1,86 @@
-let todasMatrizes = [];   // fêmeas (sexo = 'Fêmea')
-let todosReprodutores = []; // machos (sexo = 'Macho')
+// ============================================================
+// REGISTRAR INSEMINAÇÃO — integrado ao sistema de Fazendas
+// Mesmo padrão usado em gestao-animais (PotygenFazenda / PotygenFazendaUI)
+// ============================================================
+
+let todasMatrizes = [];     // fêmeas da fazenda atual
+let todosReprodutores = []; // machos da fazenda atual
+
+// ============================================
+// HELPERS DE MODAL/TOAST
+// (definidos aqui porque esta página NÃO carrega script-gestao.js,
+//  que é onde abrirModal/fecharModal/mostrarToast normalmente vivem.
+//  Sem isso, os botões "Cadastrar/Trocar Fazenda" da sidebar lançam
+//  ReferenceError silencioso e nada acontece ao clicar.)
+// ============================================
+if (typeof window.abrirModal !== 'function') {
+    window.abrirModal = function (id) {
+        const el = document.getElementById(id);
+        if (!el) return;
+        el.style.display = el.classList.contains('modal') ? 'flex' : 'block';
+    };
+}
+if (typeof window.fecharModal !== 'function') {
+    window.fecharModal = function (id) {
+        const el = document.getElementById(id);
+        if (el) el.style.display = 'none';
+    };
+}
+if (typeof window.mostrarToast !== 'function') {
+    window.mostrarToast = function (msg, tipo = 'sucesso') {
+        let toast = document.getElementById('_potygenToast');
+        if (!toast) {
+            toast = document.createElement('div');
+            toast.id = '_potygenToast';
+            toast.style.cssText = 'position:fixed;bottom:28px;right:28px;z-index:99999;padding:14px 22px;border-radius:10px;font-size:14px;font-weight:600;color:#fff;max-width:340px;box-shadow:0 4px 18px rgba(0,0,0,.18);display:none;transition:opacity .25s;';
+            document.body.appendChild(toast);
+        }
+        const cores = { sucesso: '#0d8a4f', error: '#dc3545', aviso: '#ff9800' };
+        toast.style.background = cores[tipo] || cores.sucesso;
+        toast.textContent = msg;
+        toast.style.display = 'block';
+        toast.style.opacity = '1';
+        clearTimeout(toast._t);
+        toast._t = setTimeout(() => {
+            toast.style.opacity = '0';
+            setTimeout(() => { toast.style.display = 'none'; }, 260);
+        }, 3200);
+    };
+}
+
+
+// ============================================
+// HELPERS DE FAZENDA
+// ============================================
+function getFazendaIdAtual() {
+    try {
+        return window.PotygenFazenda?.getFazendaId?.() || null;
+    } catch (_) {
+        return null;
+    }
+}
+
+function abrirModalCadastroFazenda() {
+    try {
+        if (typeof window.PotygenFazendaUI?.abrirModalCadastrarFazenda === 'function') {
+            window.PotygenFazendaUI.abrirModalCadastrarFazenda();
+            return true;
+        }
+    } catch (_) {}
+    return false;
+}
+
+function exigirFazendaOuAvisar(msg = 'Você precisa cadastrar uma fazenda antes de registrar uma inseminação.') {
+    if (getFazendaIdAtual()) return true;
+    mostrarMensagem(msg, 'erro', '🏡 Cadastre uma fazenda primeiro');
+    abrirModalCadastroFazenda();
+    return false;
+}
 
 // ============================================
 // INICIALIZAR SUPABASE
 // ============================================
 async function initSupabase() {
-    // supabaseClient já é criado globalmente em database.js
     if (typeof supabaseClient !== 'undefined' && supabaseClient) {
         console.log('✅ Supabase já inicializado via database.js');
     } else {
@@ -15,16 +90,24 @@ async function initSupabase() {
 }
 
 // ============================================
-// CARREGAR MATRIZES (animais do sexo Fêmea, ativos)
+// CARREGAR MATRIZES (fêmeas ativas da fazenda atual)
 // ============================================
 async function carregarMatrizes() {
     if (!supabaseClient) await initSupabase();
-    
+
+    const fazendaId = getFazendaIdAtual();
+    if (!fazendaId) {
+        todasMatrizes = [];
+        console.warn('⚠️ Nenhuma fazenda selecionada — matrizes não carregadas');
+        return [];
+    }
+
     const { data, error } = await supabaseClient
         .from('animais')
         .select('id, codigo, nome, especie, raca, lote')
         .eq('sexo', 'Fêmea')
         .eq('status', 'Ativo')
+        .eq('fazenda_id', fazendaId)
         .order('codigo');
 
     if (error) {
@@ -32,22 +115,30 @@ async function carregarMatrizes() {
         mostrarMensagem('Falha ao carregar matrizes', 'erro');
         return [];
     }
-    todasMatrizes = data;
-    console.log(`✅ ${todasMatrizes.length} matrizes carregadas`);
+    todasMatrizes = data || [];
+    console.log(`✅ ${todasMatrizes.length} matrizes carregadas (fazenda ${fazendaId})`);
     return todasMatrizes;
 }
 
 // ============================================
-// CARREGAR REPRODUTORES (animais do sexo Macho, ativos)
+// CARREGAR REPRODUTORES (machos ativos da fazenda atual)
 // ============================================
 async function carregarReprodutores() {
     if (!supabaseClient) await initSupabase();
-    
+
+    const fazendaId = getFazendaIdAtual();
+    if (!fazendaId) {
+        todosReprodutores = [];
+        console.warn('⚠️ Nenhuma fazenda selecionada — reprodutores não carregados');
+        return [];
+    }
+
     const { data, error } = await supabaseClient
         .from('animais')
         .select('id, codigo, nome, especie, raca')
         .eq('sexo', 'Macho')
         .eq('status', 'Ativo')
+        .eq('fazenda_id', fazendaId)
         .order('codigo');
 
     if (error) {
@@ -55,33 +146,31 @@ async function carregarReprodutores() {
         mostrarMensagem('Falha ao carregar reprodutores', 'erro');
         return [];
     }
-    todosReprodutores = data;
-    console.log(`✅ ${todosReprodutores.length} reprodutores carregados`);
+    todosReprodutores = data || [];
+    console.log(`✅ ${todosReprodutores.length} reprodutores carregados (fazenda ${fazendaId})`);
     return todosReprodutores;
 }
 
 // ============================================
-// EXIBIR LISTA DE MATRIZES (pré-seleção)
+// EXIBIR LISTA DE MATRIZES
 // ============================================
 function exibirListaMatrizes() {
     const dropdown = document.getElementById('listaMatrizesResultados');
     if (!dropdown) return;
 
-    // Verifica se tem matrizes carregadas
     if (!todasMatrizes || todasMatrizes.length === 0) {
-        dropdown.innerHTML = '<div class="animal-item" style="cursor: default; padding: 10px; text-align: center; color: #dc3545;">⚠️ Nenhuma matriz cadastrada</div>';
+        dropdown.innerHTML = '<div class="animal-item" style="cursor: default; padding: 10px; text-align: center; color: #dc3545;">⚠️ Nenhuma matriz cadastrada nesta fazenda</div>';
         dropdown.style.display = 'block';
         return;
     }
 
-    // Mostra todas as matrizes
     dropdown.innerHTML = todasMatrizes.map(matriz => {
         const codigoEscaped = matriz.codigo.replace(/'/g, "\\'");
         const nomeEscaped = (matriz.nome || '').replace(/'/g, "\\'");
         const loteEscaped = (matriz.lote || '').replace(/'/g, "\\'");
-        
+
         return `
-            <div class="animal-item" 
+            <div class="animal-item"
                  style="padding: 12px 15px; cursor: pointer; border-bottom: 1px solid #e9ecef; display: flex; justify-content: space-between; align-items: center; transition: all 0.2s;"
                  onmouseover="this.style.backgroundColor='#f8f9fa'"
                  onmouseout="this.style.backgroundColor='white'"
@@ -102,7 +191,7 @@ function exibirListaMatrizes() {
 }
 
 // ============================================
-// FILTRAR LISTA DE MATRIZES (enquanto digita)
+// FILTRAR LISTA DE MATRIZES
 // ============================================
 function filtrarListaMatriz(texto) {
     const dropdown = document.getElementById('listaMatrizesResultados');
@@ -124,7 +213,6 @@ function filtrarListaMatriz(texto) {
             return codigoLower.includes(textoLower) || nomeLower.includes(textoLower);
         });
     } else {
-        // Se texto estiver vazio, mostra todas
         exibirListaMatrizes();
         return;
     }
@@ -142,9 +230,9 @@ function filtrarListaMatriz(texto) {
         const codigoEscaped = matriz.codigo.replace(/'/g, "\\'");
         const nomeEscaped = (matriz.nome || '').replace(/'/g, "\\'");
         const loteEscaped = (matriz.lote || '').replace(/'/g, "\\'");
-        
+
         return `
-            <div class="animal-item" 
+            <div class="animal-item"
                  style="padding: 12px 15px; cursor: pointer; border-bottom: 1px solid #e9ecef; display: flex; justify-content: space-between; align-items: center; transition: all 0.2s;"
                  onmouseover="this.style.backgroundColor='#f8f9fa'"
                  onmouseout="this.style.backgroundColor='white'"
@@ -165,26 +253,23 @@ function filtrarListaMatriz(texto) {
 }
 
 function mostrarTodasMatrizes() {
+    // Bloqueia se não houver fazenda
+    if (!exigirFazendaOuAvisar('Cadastre uma fazenda antes de registrar inseminações.')) return;
+
     const buscaInput = document.getElementById('buscaMatriz');
     if (buscaInput && todasMatrizes.length > 0) {
         exibirListaMatrizes();
     } else if (todasMatrizes.length === 0) {
-        // Se não tem dados, tenta carregar novamente
-        carregarMatrizes().then(() => {
-            exibirListaMatrizes();
-        });
+        carregarMatrizes().then(() => exibirListaMatrizes());
     }
 }
 
 function selecionarMatriz(id, codigo, nome, especie, raca, lote) {
-    // Salva o ID selecionado
     document.getElementById('matrizSelecionadaId').value = id;
-    
-    // Atualiza o campo de busca com o código e nome
+
     const buscaInput = document.getElementById('buscaMatriz');
     buscaInput.value = `${codigo}${nome ? ` - ${nome}` : ''}`;
-    
-    // Atualiza o feedback visual
+
     const containerFeedback = document.getElementById('containerFeedback');
     const feedbackText = document.getElementById('textoFeedback');
     const loteInput = document.getElementById('localizacao');
@@ -196,44 +281,34 @@ function selecionarMatriz(id, codigo, nome, especie, raca, lote) {
         feedbackText.classList.add('fw-bold');
     }
 
-    // Preenche a localização se tiver lote
-    if (lote && loteInput) {
-        loteInput.value = lote;
-    }
+    if (lote && loteInput) loteInput.value = lote;
 
-    // Fecha o dropdown
     const dropdown = document.getElementById('listaMatrizesResultados');
-    if (dropdown) {
-        dropdown.style.display = 'none';
-    }
-    
-    // Adiciona classe de sucesso ao input
+    if (dropdown) dropdown.style.display = 'none';
+
     buscaInput.classList.add('border-success');
-    
     console.log(`✅ Matriz selecionada: ${codigo} (${nome})`);
 }
 
 // ============================================
-// EXIBIR LISTA DE REPRODUTORES (pré-seleção)
+// EXIBIR / FILTRAR REPRODUTORES
 // ============================================
 function exibirListaReprodutores() {
     const dropdown = document.getElementById('listaReprodutoresResultados');
     if (!dropdown) return;
 
-    // Verifica se tem reprodutores carregados
     if (!todosReprodutores || todosReprodutores.length === 0) {
-        dropdown.innerHTML = '<div class="animal-item" style="cursor: default; padding: 10px; text-align: center; color: #dc3545;">⚠️ Nenhum reprodutor cadastrado</div>';
+        dropdown.innerHTML = '<div class="animal-item" style="cursor: default; padding: 10px; text-align: center; color: #dc3545;">⚠️ Nenhum reprodutor cadastrado nesta fazenda</div>';
         dropdown.style.display = 'block';
         return;
     }
 
-    // Mostra todos os reprodutores
     dropdown.innerHTML = todosReprodutores.map(rep => {
         const codigoEscaped = rep.codigo.replace(/'/g, "\\'");
         const nomeEscaped = (rep.nome || '').replace(/'/g, "\\'");
-        
+
         return `
-            <div class="animal-item" 
+            <div class="animal-item"
                  style="padding: 12px 15px; cursor: pointer; border-bottom: 1px solid #e9ecef; display: flex; justify-content: space-between; align-items: center; transition: all 0.2s;"
                  onmouseover="this.style.backgroundColor='#f8f9fa'"
                  onmouseout="this.style.backgroundColor='white'"
@@ -253,9 +328,6 @@ function exibirListaReprodutores() {
     dropdown.style.display = 'block';
 }
 
-// ============================================
-// FILTRAR LISTA DE REPRODUTORES (enquanto digita)
-// ============================================
 function filtrarListaReprodutor(texto) {
     const dropdown = document.getElementById('listaReprodutoresResultados');
     if (!dropdown) return;
@@ -276,7 +348,6 @@ function filtrarListaReprodutor(texto) {
             return codigoLower.includes(textoLower) || nomeLower.includes(textoLower);
         });
     } else {
-        // Se texto estiver vazio, mostra todas
         exibirListaReprodutores();
         return;
     }
@@ -293,9 +364,9 @@ function filtrarListaReprodutor(texto) {
     dropdown.innerHTML = reprodutoresFiltrados.map(rep => {
         const codigoEscaped = rep.codigo.replace(/'/g, "\\'");
         const nomeEscaped = (rep.nome || '').replace(/'/g, "\\'");
-        
+
         return `
-            <div class="animal-item" 
+            <div class="animal-item"
                  style="padding: 12px 15px; cursor: pointer; border-bottom: 1px solid #e9ecef; display: flex; justify-content: space-between; align-items: center; transition: all 0.2s;"
                  onmouseover="this.style.backgroundColor='#f8f9fa'"
                  onmouseout="this.style.backgroundColor='white'"
@@ -316,26 +387,22 @@ function filtrarListaReprodutor(texto) {
 }
 
 function mostrarTodosReprodutores() {
+    if (!exigirFazendaOuAvisar('Cadastre uma fazenda antes de registrar inseminações.')) return;
+
     const buscaInput = document.getElementById('buscaReprodutor');
     if (buscaInput && todosReprodutores.length > 0) {
         exibirListaReprodutores();
     } else if (todosReprodutores.length === 0) {
-        // Se não tem dados, tenta carregar novamente
-        carregarReprodutores().then(() => {
-            exibirListaReprodutores();
-        });
+        carregarReprodutores().then(() => exibirListaReprodutores());
     }
 }
 
 function selecionarReprodutor(id, codigo, nome, especie, raca) {
-    // Salva o ID selecionado
     document.getElementById('reprodutorSelecionadoId').value = id;
-    
-    // Atualiza o campo de busca com o código e nome
+
     const buscaInput = document.getElementById('buscaReprodutor');
     buscaInput.value = `${codigo}${nome ? ` - ${nome}` : ''}`;
-    
-    // Atualiza o feedback visual
+
     const containerFeedback = document.getElementById('containerFeedbackReprodutor');
     const feedbackText = document.getElementById('textoFeedbackReprodutor');
 
@@ -346,28 +413,21 @@ function selecionarReprodutor(id, codigo, nome, especie, raca) {
         feedbackText.classList.add('fw-bold');
     }
 
-    // Fecha o dropdown
     const dropdown = document.getElementById('listaReprodutoresResultados');
-    if (dropdown) {
-        dropdown.style.display = 'none';
-    }
-    
-    // Adiciona classe de sucesso ao input
+    if (dropdown) dropdown.style.display = 'none';
+
     buscaInput.classList.add('border-success');
-    
     console.log(`✅ Reprodutor selecionado: ${codigo} (${nome})`);
 }
 
 // Fechar dropdowns ao clicar fora
 document.addEventListener('click', function(e) {
-    // Dropdown de matrizes — usa o wrapper .busca-animal-container
     const wrapperMatriz = document.getElementById('buscaMatriz')?.closest('.busca-animal-container');
     const dropdownMatriz = document.getElementById('listaMatrizesResultados');
     if (dropdownMatriz && wrapperMatriz && !wrapperMatriz.contains(e.target)) {
         dropdownMatriz.style.display = 'none';
     }
-    
-    // Dropdown de reprodutores — usa o wrapper .busca-animal-container
+
     const wrapperReprodutor = document.getElementById('buscaReprodutor')?.closest('.busca-animal-container');
     const dropdownReprodutor = document.getElementById('listaReprodutoresResultados');
     if (dropdownReprodutor && wrapperReprodutor && !wrapperReprodutor.contains(e.target)) {
@@ -375,22 +435,24 @@ document.addEventListener('click', function(e) {
     }
 });
 
-// Impedir que o clique dentro do dropdown feche ele
-document.getElementById('listaMatrizesResultados')?.addEventListener('click', (e) => {
-    e.stopPropagation();
-});
-
-document.getElementById('listaReprodutoresResultados')?.addEventListener('click', (e) => {
-    e.stopPropagation();
-});
+document.getElementById('listaMatrizesResultados')?.addEventListener('click', (e) => e.stopPropagation());
+document.getElementById('listaReprodutoresResultados')?.addEventListener('click', (e) => e.stopPropagation());
 
 // ============================================
-// SALVAR REGISTRO (com integração Supabase)
+// SALVAR REGISTRO (com fazenda_id)
 // ============================================
 async function salvarInseminacao(event) {
     event.preventDefault();
 
     if (!supabaseClient) await initSupabase();
+
+    // 🔒 Guarda de fazenda
+    const fazendaId = getFazendaIdAtual();
+    if (!fazendaId) {
+        mostrarMensagem('Você precisa cadastrar uma fazenda antes de registrar uma inseminação.', 'erro', '🏡 Cadastre uma fazenda primeiro');
+        abrirModalCadastroFazenda();
+        return;
+    }
 
     const femeaId = document.getElementById('matrizSelecionadaId').value;
     const reprodutorId = document.getElementById('reprodutorSelecionadoId').value;
@@ -399,25 +461,21 @@ async function salvarInseminacao(event) {
     const dataInseminacao = document.getElementById('data_inseminacao').value;
     const horaInseminacao = document.getElementById('hora_inseminacao').value;
 
-    // Validações
     if (!femeaId) {
         mostrarMensagem('Selecione uma matriz válida na lista de opções.', 'erro', 'Campo obrigatório');
         document.getElementById('buscaMatriz').focus();
         return;
     }
-    
     if (!reprodutorId) {
         mostrarMensagem('Selecione um reprodutor válido na lista de opções.', 'erro', 'Campo obrigatório');
         document.getElementById('buscaReprodutor').focus();
         return;
     }
-    
     if (!tecnico) {
         mostrarMensagem('Informe o nome do profissional responsável.', 'erro', 'Campo obrigatório');
         document.getElementById('tecnico_responsavel').focus();
         return;
     }
-    
     if (!dataInseminacao) {
         mostrarMensagem('Informe a data da inseminação.', 'erro', 'Campo obrigatório');
         return;
@@ -431,16 +489,15 @@ async function salvarInseminacao(event) {
         return;
     }
 
-    // Verifica se o usuário está autenticado
     const { data: { user }, error: userError } = await supabaseClient.auth.getUser();
     if (userError || !user) {
         mostrarMensagem('Você precisa estar logado para registrar uma inseminação.', 'erro', 'Autenticação');
         return;
     }
 
-    // Monta o objeto de acordo com a tabela `inseminacoes`
     const inseminacao = {
         usuario_id: user.id,
+        fazenda_id: fazendaId,
         femea_id: femeaId,
         reprodutor_id: reprodutorId,
         codigo_femea: femea.codigo,
@@ -462,7 +519,6 @@ async function salvarInseminacao(event) {
 
         if (error) throw error;
 
-        // Mensagem de sucesso personalizada
         let tipoFemea = '';
         switch (femea.especie) {
             case 'Bovino': tipoFemea = 'vaca'; break;
@@ -470,7 +526,7 @@ async function salvarInseminacao(event) {
             case 'Caprino': tipoFemea = 'cabra'; break;
             default: tipoFemea = 'fêmea';
         }
-        
+
         let tipoMacho = '';
         switch (reprodutor.especie) {
             case 'Bovino': tipoMacho = 'touro'; break;
@@ -478,9 +534,9 @@ async function salvarInseminacao(event) {
             case 'Caprino': tipoMacho = 'bode'; break;
             default: tipoMacho = 'macho';
         }
-        
+
         const taxaPrenhez = Math.floor(Math.random() * (85 - 45 + 1) + 45);
-        
+
         const mensagemSucesso = `✅ Inseminação registrada com sucesso! 🎉\n\n` +
                                 `🐄 Entre a ${tipoFemea} **${femea.nome || femea.codigo}** e o ${tipoMacho} **${reprodutor.nome || reprodutor.codigo}**\n` +
                                 `👨‍⚕️ Realizado por: **${tecnico}**\n` +
@@ -489,10 +545,8 @@ async function salvarInseminacao(event) {
                                 `📅 Data: ${new Date(dataInseminacao).toLocaleDateString('pt-BR')}`;
 
         mostrarMensagem(mensagemSucesso, 'sucesso', '🎯 Registro Confirmado');
-        
-        // Reset do formulário
         limparFormulario();
-        
+
     } catch (error) {
         console.error('Erro ao registrar:', error);
         mostrarMensagem('Erro ao registrar inseminação: ' + error.message, 'erro', '❌ Falha');
@@ -500,38 +554,32 @@ async function salvarInseminacao(event) {
 }
 
 function limparFormulario() {
-    // Limpa seleções
     document.getElementById('matrizSelecionadaId').value = '';
     document.getElementById('reprodutorSelecionadoId').value = '';
-    
-    // Limpa campos de busca
     document.getElementById('buscaMatriz').value = '';
     document.getElementById('buscaReprodutor').value = '';
     document.getElementById('localizacao').value = '';
     document.getElementById('tecnico_responsavel').value = '';
-    
-    // Remove classes de sucesso
+
     document.getElementById('buscaMatriz').classList.remove('border-success');
     document.getElementById('buscaReprodutor').classList.remove('border-success');
-    
-    // Reseta feedbacks
+
     const containerMatriz = document.getElementById('containerFeedback');
-    if(containerMatriz) {
+    if (containerMatriz) {
         containerMatriz.classList.remove('bg-success', 'text-white', 'border-success');
         containerMatriz.classList.add('bg-light', 'text-secondary', 'border-secondary');
         document.getElementById('textoFeedback').innerHTML = '🔍 Selecione uma matriz acima para validar os dados do animal.';
         document.getElementById('textoFeedback').classList.remove('fw-bold');
     }
-    
+
     const containerReprodutor = document.getElementById('containerFeedbackReprodutor');
-    if(containerReprodutor) {
+    if (containerReprodutor) {
         containerReprodutor.classList.remove('bg-success', 'text-white', 'border-success');
         containerReprodutor.classList.add('bg-light', 'text-secondary', 'border-secondary');
         document.getElementById('textoFeedbackReprodutor').innerHTML = '🔍 Selecione um reprodutor acima para confirmar.';
         document.getElementById('textoFeedbackReprodutor').classList.remove('fw-bold');
     }
 
-    // Recoloca data e hora atuais
     const agora = new Date();
     document.getElementById('data_inseminacao').value = agora.toISOString().split('T')[0];
     document.getElementById('hora_inseminacao').value = `${String(agora.getHours()).padStart(2,'0')}:${String(agora.getMinutes()).padStart(2,'0')}`;
@@ -553,27 +601,18 @@ function mostrarMensagem(mensagem, tipo = 'info', titulo = '') {
                 </div>
                 <div style="padding: 30px;">
                     <p id="modalMensagemTexto" style="white-space: pre-line; margin: 0 0 25px 0; line-height: 1.6; font-size: 1rem;"></p>
-                    <button id="btnOkMensagem" class="btn" style="background: #0d8a4f; color: white; border: none; padding: 12px 35px; border-radius: 50px; cursor: pointer; font-weight: 600; font-size: 1rem; transition: transform 0.2s;" onmouseover="this.style.transform='scale(1.05)'" onmouseout="this.style.transform='scale(1)'">OK</button>
+                    <button id="btnOkMensagem" class="btn" style="background: #0d8a4f; color: white; border: none; padding: 12px 35px; border-radius: 50px; cursor: pointer; font-weight: 600; font-size: 1rem;">OK</button>
                 </div>
             </div>
             <style>
-                @keyframes slideIn {
-                    from {
-                        transform: translateY(-50px);
-                        opacity: 0;
-                    }
-                    to {
-                        transform: translateY(0);
-                        opacity: 1;
-                    }
-                }
+                @keyframes slideIn { from { transform: translateY(-50px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
             </style>`;
         document.body.appendChild(modal);
     }
-    
+
     const header = document.getElementById('modalHeader');
     const tituloElem = document.getElementById('modalMensagemTitulo');
-    
+
     if (tipo === 'sucesso') {
         header.style.backgroundColor = '#28a745';
         tituloElem.innerHTML = '<i class="fa-solid fa-circle-check"></i> ' + (titulo || '✅ Sucesso!');
@@ -584,42 +623,49 @@ function mostrarMensagem(mensagem, tipo = 'info', titulo = '') {
         header.style.backgroundColor = '#17a2b8';
         tituloElem.innerHTML = '<i class="fa-solid fa-circle-info"></i> ' + (titulo || 'ℹ️ Informação');
     }
-    
+
     document.getElementById('modalMensagemTexto').innerHTML = mensagem.replace(/\n/g, '<br>');
     modal.style.display = 'flex';
-    
+
     document.getElementById('btnOkMensagem').onclick = () => {
         modal.style.display = 'none';
         if (tipo === 'sucesso') {
-            // Recarrega as listas após sucesso para garantir dados atualizados
             carregarMatrizes();
             carregarReprodutores();
         }
     };
-    
-    modal.onclick = (e) => {
-        if (e.target === modal) {
-            modal.style.display = 'none';
-        }
-    };
+
+    modal.onclick = (e) => { if (e.target === modal) modal.style.display = 'none'; };
 }
 
 // ============================================
-// VERIFICAR AUTENTICAÇÃO NA CARGA
+// AUTENTICAÇÃO
 // ============================================
 async function verificarAutenticacao() {
     if (!supabaseClient) await initSupabase();
-    
     const { data: { user }, error } = await supabaseClient.auth.getUser();
-    
     if (error || !user) {
         console.warn('⚠️ Usuário não autenticado');
         mostrarMensagem('Você não está logado. Por favor, faça login para continuar.', 'erro', 'Autenticação Necessária');
         return false;
     }
-    
     console.log(`✅ Usuário autenticado: ${user.email}`);
     return true;
+}
+
+// ============================================
+// AGUARDAR PotygenFazendaUI ESTAR DISPONÍVEL
+// (carregado por fazenda-ui.js — pode chegar depois do DOMContentLoaded)
+// ============================================
+async function aguardarFazendaUI(maxMs = 5000) {
+    const intervalo = 100;
+    let esperado = 0;
+    while (esperado < maxMs) {
+        if (typeof window.PotygenFazendaUI?.inicializar === 'function') return true;
+        await new Promise(r => setTimeout(r, intervalo));
+        esperado += intervalo;
+    }
+    return false;
 }
 
 // ============================================
@@ -627,49 +673,74 @@ async function verificarAutenticacao() {
 // ============================================
 window.addEventListener('DOMContentLoaded', async () => {
     console.log('🚀 Inicializando página de registro de inseminação...');
-    
+
     await initSupabase();
     const autenticado = await verificarAutenticacao();
-    
-    if (autenticado) {
+    if (!autenticado) return;
+
+    // Garante que fazenda-ui.js já registrou PotygenFazendaUI
+    const uiPronta = await aguardarFazendaUI();
+    if (!uiPronta) {
+        console.error('❌ PotygenFazendaUI não disponível. Verifique se fazenda.js e fazenda-ui.js foram carregados.');
+        mostrarMensagem('Erro ao inicializar o sistema de fazendas. Recarregue a página.', 'erro');
+        return;
+    }
+
+    // MESMO PADRÃO DO gestao-animais:
+    // PotygenFazendaUI.inicializar() carrega as fazendas do usuário,
+    // restaura a fazenda salva na sessão e popula window.PotygenFazenda.fazendaAtual.
+    // Sem esta chamada, getFazendaIdAtual() sempre retorna null.
+    const fazendaAtiva = await window.PotygenFazendaUI.inicializar({
+        onFazendaTrocada: async (fazenda) => {
+            console.log('🔄 Fazenda alterada — recarregando matrizes/reprodutores', fazenda?.nome);
+            await carregarMatrizes();
+            await carregarReprodutores();
+            exibirListaMatrizes && exibirListaMatrizes();
+            exibirListaReprodutores && exibirListaReprodutores();
+        }
+    });
+
+    if (!fazendaAtiva || !getFazendaIdAtual()) {
+        // PotygenFazendaUI.inicializar() já abre o modal de cadastro quando não há fazenda
+        mostrarMensagem(
+            'Você ainda não cadastrou uma fazenda. Cadastre uma fazenda antes de registrar inseminações.',
+            'erro',
+            '🏡 Cadastre uma fazenda primeiro'
+        );
+    } else {
         await carregarMatrizes();
         await carregarReprodutores();
-        
-        console.log(`📊 Total de matrizes disponíveis: ${todasMatrizes.length}`);
-        console.log(`📊 Total de reprodutores disponíveis: ${todosReprodutores.length}`);
-        
-        // Testa se os dados foram carregados
-        if (todasMatrizes.length > 0) {
-            console.log('Matrizes carregadas:', todasMatrizes.map(m => m.codigo));
-        } else {
-            console.warn('⚠️ Nenhuma matriz encontrada! Verifique se há fêmeas cadastradas com status Ativo');
-            mostrarMensagem('Nenhuma matriz (fêmea) cadastrada. Cadastre animais primeiro.', 'info', 'Atenção');
+
+        console.log(`📊 Matrizes: ${todasMatrizes.length} | Reprodutores: ${todosReprodutores.length}`);
+
+        if (todasMatrizes.length === 0) {
+            mostrarMensagem('Nenhuma matriz (fêmea) cadastrada nesta fazenda. Cadastre animais primeiro.', 'info', 'Atenção');
         }
-        
         if (todosReprodutores.length === 0) {
-            console.warn('⚠️ Nenhum reprodutor encontrado! Verifique se há machos cadastrados com status Ativo');
-            mostrarMensagem('Nenhum reprodutor (macho) cadastrado. Cadastre animais primeiro.', 'info', 'Atenção');
+            mostrarMensagem('Nenhum reprodutor (macho) cadastrado nesta fazenda. Cadastre animais primeiro.', 'info', 'Atenção');
         }
     }
 
-    // Seta data e hora atuais
+    // Data e hora atuais
     const agora = new Date();
     document.getElementById('data_inseminacao').value = agora.toISOString().split('T')[0];
     document.getElementById('hora_inseminacao').value = `${String(agora.getHours()).padStart(2,'0')}:${String(agora.getMinutes()).padStart(2,'0')}`;
 
-    // Adiciona evento de submit
+    // Submit
     const form = document.getElementById('formInseminacao');
     if (form) form.addEventListener('submit', salvarInseminacao);
-    
-    // Adiciona placeholders mais descritivos
+
+    // Placeholders
     const buscaMatriz = document.getElementById('buscaMatriz');
     const buscaReprodutor = document.getElementById('buscaReprodutor');
-    
-    if (buscaMatriz) {
-        buscaMatriz.placeholder = "🔍 Clique para ver todas as matrizes ou digite para filtrar...";
-    }
-    
-    if (buscaReprodutor) {
-        buscaReprodutor.placeholder = "🔍 Clique para ver todos os reprodutores ou digite para filtrar...";
-    }
+    if (buscaMatriz) buscaMatriz.placeholder = "🔍 Clique para ver todas as matrizes ou digite para filtrar...";
+    if (buscaReprodutor) buscaReprodutor.placeholder = "🔍 Clique para ver todos os reprodutores ou digite para filtrar...";
 });
+
+// Expor funções globais usadas em onclick/oninput inline
+window.filtrarListaMatriz = filtrarListaMatriz;
+window.mostrarTodasMatrizes = mostrarTodasMatrizes;
+window.selecionarMatriz = selecionarMatriz;
+window.filtrarListaReprodutor = filtrarListaReprodutor;
+window.mostrarTodosReprodutores = mostrarTodosReprodutores;
+window.selecionarReprodutor = selecionarReprodutor;

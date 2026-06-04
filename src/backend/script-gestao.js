@@ -428,6 +428,22 @@ function mostrarLoading(show) {
 // FUNÇÃO PRINCIPAL - SALVAR ANIMAL (coleta form)
 // ============================================
 function salvarAnimal() {
+    // Defesa: impede salvar se não houver fazenda
+    const _fazendaId = window.PotygenFazenda?.getFazendaId?.() || null;
+    if (!_fazendaId) {
+        if (typeof mostrarMensagem === 'function') {
+            mostrarMensagem(
+                'Cadastre uma fazenda antes de cadastrar um animal.',
+                'aviso',
+                'Nenhuma fazenda cadastrada'
+            );
+        } else {
+            alert('Cadastre uma fazenda antes de cadastrar um animal.');
+        }
+        if (typeof fecharModalCadastroAnimal === 'function') fecharModalCadastroAnimal();
+        return;
+    }
+
     const isEditing = window.animalEmEdicao;
 
     const animal = {
@@ -592,7 +608,6 @@ function renderizarTabela() {
                 <td>${finalidade}</td>
                 <td>${lote}</td>
                 <td>${pelagem}</td>
-                <td>${animal.status || '—'}</td>
                 <td class="action-buttons">
                     <button class="action-btn action-view" onclick="visualizarAnimal('${animal.id}')">
                         <i class="fa-solid fa-eye"></i> Ver características
@@ -1587,6 +1602,25 @@ document.addEventListener('DOMContentLoaded', async () => {
 
     // Botão novo animal
     document.getElementById('btnNovoAnimal').addEventListener('click', () => {
+        // Bloqueia cadastro se não houver fazenda selecionada
+        const fazendaId = window.PotygenFazenda?.getFazendaId?.() || null;
+        if (!fazendaId) {
+            if (typeof mostrarMensagem === 'function') {
+                mostrarMensagem(
+                    'Você precisa cadastrar uma fazenda antes de cadastrar um animal. Clique no nome da fazenda na barra lateral para criar uma agora.',
+                    'aviso',
+                    'Nenhuma fazenda cadastrada'
+                );
+            } else {
+                alert('Você precisa cadastrar uma fazenda antes de cadastrar um animal.');
+            }
+            // Abre o modal de cadastro de fazenda, se disponível
+            if (window.PotygenFazendaUI?.abrirModalCadastrarFazenda) {
+                setTimeout(() => window.PotygenFazendaUI.abrirModalCadastrarFazenda(), 400);
+            }
+            return;
+        }
+
         window.animalEmEdicao = null;
         limparFormulario();
         document.getElementById('modalTitle').innerText = 'Cadastrar Novo Animal';
