@@ -57,9 +57,15 @@
         </nav>
         
         <div class="nav-footer">
+            <button type="button" class="nav-item nav-item-green" onclick="abrirModalCadastrarFazenda()">
+                <i class="fa-solid fa-plus"></i><span>Cadastrar Fazenda</span>
+            </button>
+            <button type="button" class="nav-item nav-item-green" id="btnTrocarFazendaSidebar" onclick="abrirModalTrocarFazenda()">
+                <i class="fa-solid fa-tractor"></i>
+                <span style="flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;" id="sidebarFazendaNome">Carregando...</span>
+            </button>
             <button type="button" id="logoutBtn" class="nav-item logout-btn">
-                <i class="fa-solid fa-right-from-bracket"></i>
-                <span>Sair da Conta</span>
+                <i class="fa-solid fa-right-from-bracket"></i><span>Sair da Conta</span>
             </button>
         </div>
     </aside>
@@ -69,7 +75,20 @@
         <header class="content-header">
             <div class="header-text">
                 <h1>Gestão de Animais</h1>
-                <p>Cadastro e monitoramento do rebanho</p>
+                <p>
+                    Cadastro e monitoramento do rebanho
+                    <span id="headerFazendaBadge" onclick="abrirModalTrocarFazenda()" title="Clique para trocar a fazenda" style="
+                        display: inline-flex; align-items: center; gap: 5px;
+                        margin-left: 10px; padding: 2px 10px 2px 8px;
+                        background: #e8f5ee; color: #0d8a4f;
+                        border: 1px solid #b6dfc7; border-radius: 20px;
+                        font-size: 12px; font-weight: 600; cursor: pointer;
+                        vertical-align: middle; transition: background .15s;
+                    " onmouseenter="this.style.background='#d0eddb'" onmouseleave="this.style.background='#e8f5ee'">
+                        <i class="fa-solid fa-tractor" style="font-size:11px;"></i>
+                        <span>Carregando...</span>
+                    </span>
+                </p>
             </div>
             <button class="btn-primary" id="btnNovoAnimal">
                 <i class="fa-solid fa-plus"></i> Cadastrar Animal
@@ -536,9 +555,162 @@
 
 <!-- SCRIPT PRINCIPAL COM LÓGICA DOS CAMPOS DINÂMICOS -->
 
+<!-- ============================================================ -->
+<!-- MODAL: TROCAR FAZENDA                                        -->
+<!-- ============================================================ -->
+<div class="modal-backdrop" id="modalTrocarFazenda" style="display:none;">
+    <div class="modal-content">
+        <header class="modal-header">
+            <div>
+                <h2>Suas Fazendas</h2>
+                <p>Selecione uma fazenda para gerenciar</p>
+            </div>
+            <button class="btn-close" onclick="fecharModal('modalTrocarFazenda')">&times;</button>
+        </header>
+        <section class="modal-body">
+            <div class="fazendas-lista" id="fazendasLista">
+                <div class="fazendas-lista-vazia">
+                    <i class="fa-solid fa-tractor" style="font-size:28px;margin-bottom:8px;opacity:0.3;display:block;"></i>
+                    Carregando fazendas...
+                </div>
+            </div>
+            <button class="btn-nova-fazenda-lista" onclick="abrirModalCadastrarFazenda()">
+                <i class="fa-solid fa-plus"></i> Cadastrar nova fazenda
+            </button>
+        </section>
+        <div class="modal-footer-actions">
+            <button class="btn-cancel" onclick="fecharModal('modalTrocarFazenda')">Fechar</button>
+        </div>
+    </div>
+</div>
+
+<!-- ============================================================ -->
+<!-- MODAL: CADASTRAR FAZENDA                                     -->
+<!-- ============================================================ -->
+<div class="modal-backdrop" id="modalCadastrarFazenda" style="display:none;">
+    <div class="modal-content">
+        <header class="modal-header">
+            <div>
+                <h2><i class="fa-solid fa-tractor" style="color:#0d8a4f;margin-right:8px;"></i>Cadastrar Nova Fazenda</h2>
+                <p>Preencha os dados da propriedade</p>
+            </div>
+            <button class="btn-close" onclick="fecharModalCadastro()">&times;</button>
+        </header>
+
+        <section class="modal-body">
+            <!-- IDENTIFICAÇÃO -->
+            <p class="form-section-label">Identificação</p>
+            <div class="input-row-fazenda">
+                <div class="input-group-f">
+                    <label>Nome da Fazenda <span class="req">*</span></label>
+                    <input type="text" id="fzNome" placeholder="Ex: Fazenda São João" maxlength="150">
+                </div>
+            </div>
+            <div class="input-row-fazenda cols-2" style="margin-top:12px;">
+                <div class="input-group-f">
+                    <label>Nome do Proprietário</label>
+                    <input type="text" id="fzProprietario" readonly placeholder="—">
+                </div>
+                <div class="input-group-f">
+                    <label>CNPJ / CPF</label>
+                    <input type="text" id="fzCpf" readonly placeholder="—">
+                </div>
+            </div>
+
+            <!-- CARACTERÍSTICAS -->
+            <p class="form-section-label" style="margin-top:20px;">Características</p>
+            <div class="input-row-fazenda cols-3">
+                <div class="input-group-f">
+                    <label>Tipo de Criação <span class="req">*</span></label>
+                    <div class="input-with-icon">
+                        <i class="fa-solid fa-leaf"></i>
+                        <select id="fzTipoCriacao">
+                            <option value="">Selecione...</option>
+                            <option value="Bovinos">Bovinos</option>
+                            <option value="Ovinos">Ovinos</option>
+                            <option value="Caprinos">Caprinos</option>
+                            <option value="Misto">Misto</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="input-group-f">
+                    <label>Área (hectares)</label>
+                    <div class="input-with-icon">
+                        <i class="fa-solid fa-ruler-combined"></i>
+                        <input type="number" id="fzArea" placeholder="0" min="0" step="0.01">
+                    </div>
+                </div>
+                <div class="input-group-f">
+                    <label>Telefone</label>
+                    <div class="input-with-icon">
+                        <i class="fa-solid fa-phone"></i>
+                        <input type="text" id="fzTelefone" placeholder="(00) 00000-0000" maxlength="20">
+                    </div>
+                </div>
+            </div>
+
+            <!-- LOCALIZAÇÃO -->
+            <p class="form-section-label" style="margin-top:20px;">
+                <i class="fa-solid fa-location-dot" style="margin-right:4px;"></i>Localização
+            </p>
+            <div class="input-row-fazenda cols-2">
+                <div class="input-group-f">
+                    <label>CEP</label>
+                    <input type="text" id="fzCep" placeholder="00000-000" maxlength="10">
+                </div>
+                <div class="input-group-f">
+                    <label>Endereço / Localidade</label>
+                    <input type="text" id="fzEndereco" placeholder="Zona rural, estrada, km..." maxlength="200">
+                </div>
+            </div>
+            <div class="input-row-fazenda cols-2" style="margin-top:12px;">
+                <div class="input-group-f">
+                    <label>Cidade</label>
+                    <input type="text" id="fzCidade" placeholder="Crateús" maxlength="100">
+                </div>
+                <div class="input-group-f">
+                    <label>Estado</label>
+                    <select id="fzEstado">
+                        <option value="">Selecione...</option>
+                        <option value="AC">AC</option><option value="AL">AL</option>
+                        <option value="AP">AP</option><option value="AM">AM</option>
+                        <option value="BA">BA</option><option value="CE">CE</option>
+                        <option value="DF">DF</option><option value="ES">ES</option>
+                        <option value="GO">GO</option><option value="MA">MA</option>
+                        <option value="MT">MT</option><option value="MS">MS</option>
+                        <option value="MG">MG</option><option value="PA">PA</option>
+                        <option value="PB">PB</option><option value="PR">PR</option>
+                        <option value="PE">PE</option><option value="PI">PI</option>
+                        <option value="RJ">RJ</option><option value="RN">RN</option>
+                        <option value="RS">RS</option><option value="RO">RO</option>
+                        <option value="RR">RR</option><option value="SC">SC</option>
+                        <option value="SP">SP</option><option value="SE">SE</option>
+                        <option value="TO">TO</option>
+                    </select>
+                </div>
+            </div>
+
+            <!-- DESCRIÇÃO -->
+            <div class="input-group-f" style="margin-top:16px;">
+                <label>Descrição / Observações</label>
+                <textarea id="fzDescricao" placeholder="Informações adicionais sobre a fazenda..." rows="3"></textarea>
+            </div>
+        </section>
+
+        <div class="modal-footer-actions">
+            <button class="btn-cancel" onclick="fecharModalCadastro()">Cancelar</button>
+            <button class="btn-submit-pri" id="btnSalvarFazenda" onclick="salvarFazenda()">
+                <i class="fa-solid fa-tractor"></i> Cadastrar Fazenda
+            </button>
+        </div>
+    </div>
+</div>
+
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script src="../backend/database.js"></script>
 <script src="../backend/auth.js"></script>
+<script src="../backend/fazenda.js"></script>
+<script src="../backend/fazenda-ui.js"></script>
 <script src="../backend/script-gestao.js"></script>
 <!-- Navbar Script Global -->
 <script src="../backend/navbar-script.js"></script>

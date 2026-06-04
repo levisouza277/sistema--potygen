@@ -132,7 +132,7 @@ if (esqueciSenha) {
                     email,
                     {
                         redirectTo:
-                        'http://127.0.0.1:5500/src/pages/redefinir-senha.html'
+                        'http://127.0.0.1:5500/src/pages/esqueceusenha.html'
                     }
                 );
 

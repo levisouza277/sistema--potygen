@@ -5,6 +5,60 @@
 let animais = [];
 
 // ============================================
+// HELPERS GLOBAIS (usados por fazenda-ui.js)
+// ============================================
+
+/**
+ * Abre um modal pelo id. Suporta tanto modais com classe .modal
+ * (display:flex) quanto os modais de fazenda com classe .modal-backdrop
+ * (display:block).
+ */
+function abrirModal(id) {
+    const el = document.getElementById(id);
+    if (!el) return;
+    el.style.display = el.classList.contains('modal') ? 'flex' : 'block';
+}
+
+/**
+ * Fecha um modal pelo id.
+ */
+function fecharModal(id) {
+    const el = document.getElementById(id);
+    if (el) el.style.display = 'none';
+}
+
+/**
+ * Exibe uma notificação toast temporária.
+ * @param {string} msg  - Mensagem a exibir
+ * @param {string} tipo - 'sucesso' | 'error' | 'aviso' (padrão: 'sucesso')
+ */
+function mostrarToast(msg, tipo = 'sucesso') {
+    let toast = document.getElementById('_potygenToast');
+    if (!toast) {
+        toast = document.createElement('div');
+        toast.id = '_potygenToast';
+        toast.style.cssText = `
+            position: fixed; bottom: 28px; right: 28px; z-index: 99999;
+            padding: 14px 22px; border-radius: 10px; font-size: 14px;
+            font-weight: 600; color: #fff; max-width: 340px;
+            box-shadow: 0 4px 18px rgba(0,0,0,.18);
+            display: none; transition: opacity .25s;
+        `;
+        document.body.appendChild(toast);
+    }
+    const cores = { sucesso: '#0d8a4f', error: '#dc3545', aviso: '#ff9800' };
+    toast.style.background = cores[tipo] || cores.sucesso;
+    toast.textContent = msg;
+    toast.style.display = 'block';
+    toast.style.opacity = '1';
+    clearTimeout(toast._t);
+    toast._t = setTimeout(() => {
+        toast.style.opacity = '0';
+        setTimeout(() => { toast.style.display = 'none'; }, 260);
+    }, 3200);
+}
+
+// ============================================
 // BANCO DE DOENÇAS POR ESPÉCIE E SEXO
 // ============================================
 const bancoDoencas = {
@@ -94,22 +148,64 @@ async function carregarAnimais() {
     try {
         mostrarLoading(true);
 
-        const { data, error } = await supabaseClient
+        // Obtém fazenda ativa (se o módulo fazenda.js estiver carregado)
+        const fazendaId = window.PotygenFazenda?.getFazendaId?.() || null;
+
+        let query = supabaseClient
             .from('animais')
-            .select(`
-                *,
-                doencas_animais(*),
-                abortos_animais(*)
-            `)
+            .select('*')
             .order('created_at', { ascending: false });
 
+        // Filtra por fazenda se houver uma selecionada
+        if (fazendaId) {
+            query = query.eq('fazenda_id', fazendaId);
+        }
+
+        const { data: animaisBase, error } = await query;
         if (error) throw error;
 
-        // Normaliza os dados: mapeia as sub-tabelas para os campos esperados
-        animais = (data || []).map(a => ({
+        // Tenta buscar doenças e abortos separadamente (tabelas podem não existir ainda)
+        let doencasMap = {};
+        let abortosMap = {};
+
+        if (animaisBase && animaisBase.length > 0) {
+            const ids = animaisBase.map(a => a.id);
+
+            try {
+                const { data: doencasData } = await supabaseClient
+                    .from('doencas_animais')
+                    .select('*')
+                    .in('animal_id', ids);
+                if (doencasData) {
+                    doencasData.forEach(d => {
+                        if (!doencasMap[d.animal_id]) doencasMap[d.animal_id] = [];
+                        doencasMap[d.animal_id].push(d);
+                    });
+                }
+            } catch (e) {
+                console.warn('Tabela doencas_animais não encontrada, ignorando:', e.message);
+            }
+
+            try {
+                const { data: abortosData } = await supabaseClient
+                    .from('abortos_animais')
+                    .select('*')
+                    .in('animal_id', ids);
+                if (abortosData) {
+                    abortosData.forEach(ab => {
+                        if (!abortosMap[ab.animal_id]) abortosMap[ab.animal_id] = [];
+                        abortosMap[ab.animal_id].push(ab);
+                    });
+                }
+            } catch (e) {
+                console.warn('Tabela abortos_animais não encontrada, ignorando:', e.message);
+            }
+        }
+
+        // Normaliza os dados
+        animais = (animaisBase || []).map(a => ({
             ...a,
-            // Mapeia doencas_animais → formato interno
-            doencas: (a.doencas_animais || []).map(d => ({
+            doencas: (doencasMap[a.id] || []).map(d => ({
                 id: d.id,
                 nome: d.nome_doenca,
                 dataDiagnostico: d.data_diagnostico,
@@ -118,16 +214,13 @@ async function carregarAnimais() {
                 tipoTratamento: d.tipo_tratamento,
                 observacoesTratamento: d.observacoes
             })),
-            // Mapeia abortos_animais → formato interno
-            abortos: (a.abortos_animais || []).map(ab => ({
+            abortos: (abortosMap[a.id] || []).map(ab => ({
                 id: ab.id,
                 data: ab.data_aborto,
                 diasGestacao: ab.idade_gestacional_dias,
                 causa: ab.causa_suspeita,
                 observacoes: ab.observacoes
             })),
-            // nascimentos e descendentes ainda são armazenados como JSON
-            // na tabela animais (campos qtd_nascimentos/qtd_descendentes)
             nascimentos: a.nascimentos || [],
             descendentes: a.descendentes || []
         }));
@@ -163,6 +256,7 @@ async function salvarAnimalDB(animalData) {
     // Payload principal para a tabela animais
     const payload = {
         usuario_id: usuarioId,
+        fazenda_id: window.PotygenFazenda?.getFazendaId?.() || null,
         codigo: animalData.codigo,
         nome: animalData.nome || null,
         especie: animalData.especie,
@@ -224,43 +318,51 @@ async function salvarAnimalDB(animalData) {
             animalId = data.id;
         }
 
-        // Insere doenças na tabela relacional doencas_animais
+        // Insere doenças na tabela relacional doencas_animais (se a tabela existir)
         const doencas = animalData.doencas || [];
         if (doencas.length > 0) {
-            const doencasPayload = doencas.map(d => ({
-                animal_id: animalId,
-                nome_doenca: d.nome,
-                data_diagnostico: d.dataDiagnostico || null,
-                tratou: d.tratou || false,
-                data_tratamento: d.dataTratamento || null,
-                tipo_tratamento: d.tipoTratamento || null,
-                observacoes: d.observacoesTratamento || null
-            }));
-            const { error: errDoencas } = await supabaseClient
-                .from('doencas_animais')
-                .insert(doencasPayload);
-            if (errDoencas) throw errDoencas;
+            try {
+                const doencasPayload = doencas.map(d => ({
+                    animal_id: animalId,
+                    nome_doenca: d.nome,
+                    data_diagnostico: d.dataDiagnostico || null,
+                    tratou: d.tratou || false,
+                    data_tratamento: d.dataTratamento || null,
+                    tipo_tratamento: d.tipoTratamento || null,
+                    observacoes: d.observacoesTratamento || null
+                }));
+                const { error: errDoencas } = await supabaseClient
+                    .from('doencas_animais')
+                    .insert(doencasPayload);
+                if (errDoencas) console.warn('Aviso ao salvar doenças:', errDoencas.message);
+            } catch (e) {
+                console.warn('Tabela doencas_animais indisponível:', e.message);
+            }
         }
 
-        // Insere abortos na tabela relacional abortos_animais
+        // Insere abortos na tabela relacional abortos_animais (se a tabela existir)
         const abortos = animalData.abortos || [];
         if (abortos.length > 0) {
-            const abortosPayload = abortos.map(ab => ({
-                animal_id: animalId,
-                data_aborto: ab.data || null,
-                idade_gestacional_dias: ab.diasGestacao ? parseInt(ab.diasGestacao) : null,
-                causa_suspeita: ab.macho || ab.causa || null,
-                observacoes: ab.observacoes || null
-            }));
-            const { error: errAbortos } = await supabaseClient
-                .from('abortos_animais')
-                .insert(abortosPayload);
-            if (errAbortos) throw errAbortos;
+            try {
+                const abortosPayload = abortos.map(ab => ({
+                    animal_id: animalId,
+                    data_aborto: ab.data || null,
+                    idade_gestacional_dias: ab.diasGestacao ? parseInt(ab.diasGestacao) : null,
+                    causa_suspeita: ab.macho || ab.causa || null,
+                    observacoes: ab.observacoes || null
+                }));
+                const { error: errAbortos } = await supabaseClient
+                    .from('abortos_animais')
+                    .insert(abortosPayload);
+                if (errAbortos) console.warn('Aviso ao salvar abortos:', errAbortos.message);
+            } catch (e) {
+                console.warn('Tabela abortos_animais indisponível:', e.message);
+            }
         }
 
         window.animalEmEdicao = null;
         mostrarMensagem(isEditing ? 'Animal atualizado com sucesso!' : 'Animal cadastrado com sucesso!', 'sucesso');
-        fecharModalCadastro();
+        fecharModalCadastroAnimal();
         await carregarAnimais(); // Recarrega para refletir dados das sub-tabelas
 
     } catch (err) {
@@ -966,7 +1068,7 @@ window.editarAnimal = function(id) {
 // ============================================
 // FECHAR MODAL
 // ============================================
-function fecharModalCadastro() {
+function fecharModalCadastroAnimal() {
     document.getElementById('modalForm').style.display = 'none';
     ['formCodigo','formNome','formEspecie','formRaca','formSexo'].forEach(id => {
         const el = document.getElementById(id); if (el) el.value = '';
@@ -1441,9 +1543,34 @@ function mostrarConfirmacao(mensagem, onConfirm, onCancel) {
 }
 
 // ============================================
+// BADGE DE FAZENDA NO HEADER
+// ============================================
+
+function atualizarBadgeFazendaHeader(fazenda) {
+    const badge = document.getElementById('headerFazendaBadge');
+    if (!badge) return;
+    const textSpan = badge.querySelector('span');
+    if (textSpan) textSpan.textContent = fazenda ? fazenda.nome : 'Nenhuma fazenda';
+}
+
+// ============================================
 // INICIALIZAÇÃO DO DOM
 // ============================================
-document.addEventListener('DOMContentLoaded', () => {
+document.addEventListener('DOMContentLoaded', async () => {
+    // Inicializa o sistema de fazendas via PotygenFazendaUI.
+    // Isso carrega as fazendas, restaura a sessão, atualiza a sidebar
+    // e abre o modal de cadastro se o usuário ainda não tiver fazenda.
+    const fazendaAtiva = await PotygenFazendaUI.inicializar({
+        onFazendaTrocada: (fazenda) => {
+            // Recarrega os animais sempre que a fazenda mudar
+            atualizarBadgeFazendaHeader(fazenda);
+            carregarAnimais();
+        }
+    });
+
+    // Atualiza badge do header com a fazenda inicial
+    atualizarBadgeFazendaHeader(fazendaAtiva);
+
     // Carregar animais do Supabase ao iniciar
     carregarAnimais();
 

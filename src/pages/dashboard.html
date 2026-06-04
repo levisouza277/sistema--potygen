@@ -386,90 +386,6 @@
     </div>
 </div>
 
-<!-- MODAL NOVO ANIMAL -->
-<div class="modal-backdrop" id="modalNovoAnimal" style="display:none;">
-    <div class="modal-content modal-large">
-        <header class="modal-header">
-            <h2>Cadastrar Novo Animal</h2>
-            <button class="btn-close" onclick="fecharModal('modalNovoAnimal')">&times;</button>
-        </header>
-        <section class="modal-body">
-            <div class="form-section" style="border:none;padding-top:0;">
-                <h3>Identificação</h3>
-                <div class="input-row">
-                    <div class="input-group">
-                        <label>Brinco / ID</label>
-                        <input type="text" id="animalCodigo" placeholder="Ex: 1020A">
-                    </div>
-                    <div class="input-group">
-                        <label>Nome do Animal</label>
-                        <input type="text" id="animalNome" placeholder="Ex: Estrela">
-                    </div>
-                </div>
-            </div>
-            <div class="form-section">
-                <h3>Características</h3>
-                <div class="input-row">
-                    <div class="input-group">
-                        <label>Espécie</label>
-                        <select id="animalEspecie">
-                            <option value="Bovino">Bovino</option>
-                            <option value="Ovino">Ovino</option>
-                            <option value="Caprino">Caprino</option>
-                        </select>
-                    </div>
-                    <div class="input-group">
-                        <label>Raça</label>
-                        <input type="text" id="animalRaca" placeholder="Ex: Nelore">
-                    </div>
-                </div>
-                <div class="input-row three-cols">
-                    <div class="input-group">
-                        <label>Data de Nasc.</label>
-                        <input type="date" id="animalNascimento">
-                    </div>
-                    <div class="input-group">
-                        <label>Sexo</label>
-                        <select id="animalSexo">
-                            <option value="Fêmea">Fêmea</option>
-                            <option value="Macho">Macho</option>
-                        </select>
-                    </div>
-                    <div class="input-group">
-                        <label>Peso (kg)</label>
-                        <input type="number" id="animalPeso" placeholder="0.00">
-                    </div>
-                </div>
-            </div>
-            <div class="form-section">
-                <h3>Localização e Fins</h3>
-                <div class="input-row">
-                    <div class="input-group">
-                        <label>Finalidade</label>
-                        <select id="animalFinalidade">
-                            <option value="">Selecione...</option>
-                            <option value="Reprodução">Reprodução</option>
-                            <option value="Corte">Corte</option>
-                            <option value="Leite">Leite</option>
-                        </select>
-                    </div>
-                    <div class="input-group">
-                        <label>Lote</label>
-                        <input type="text" id="animalLote" placeholder="Ex: Lote A, Pasto 1">
-                    </div>
-                </div>
-                <div class="input-group" style="margin-top:15px;">
-                    <label>Observações</label>
-                    <textarea id="animalObs" placeholder="Informações adicionais..." rows="3"></textarea>
-                </div>
-            </div>
-        </section>
-        <div class="modal-footer-actions">
-            <button class="btn-cancel" onclick="fecharModal('modalNovoAnimal')">Cancelar</button>
-            <button class="btn-submit-pri" onclick="salvarAnimal()">Cadastrar Animal</button>
-        </div>
-    </div>
-</div>
 
 <!-- TOAST -->
 <div id="potyToast"></div>
@@ -479,6 +395,7 @@
 <script src="../backend/database.js"></script>
 <script src="../backend/auth.js"></script>
 <script src="../backend/fazenda.js"></script>
+<script src="../backend/fazenda-ui.js"></script>
 <script src="../backend/script-dashboard.js"></script>
 <script src="../backend/navbar-script.js"></script>
 <script src="../backend/logout.js"></script>

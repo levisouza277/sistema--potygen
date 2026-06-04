@@ -156,131 +156,9 @@ function updateDashboardCharts() {
 }
 
 // ============================================================
-// SIDEBAR FAZENDA - ATUALIZAR DISPLAY
+// SIDEBAR FAZENDA / MODAIS DE FAZENDA
+// → Movidos para fazenda-ui.js (reutilizável em todas as páginas)
 // ============================================================
-function atualizarDisplayFazenda(fazenda) {
-    if (!fazenda) return;
-    const nomeEl = document.getElementById('sidebarFazendaNome');
-    const badgeEl = document.getElementById('fazendaBadgeNome');
-    const farmEl  = document.getElementById('userFarmDisplay');
-    if (nomeEl) nomeEl.textContent = fazenda.nome || 'Trocar Fazenda';
-    if (badgeEl) badgeEl.textContent = fazenda.nome || '—';
-    if (farmEl) farmEl.textContent =
-        [fazenda.tipo_criacao, [fazenda.cidade, fazenda.estado].filter(Boolean).join('/')].filter(Boolean).join(' · ') || '—';
-}
-
-// ============================================================
-// MODAL TROCAR FAZENDA
-// ============================================================
-function abrirModalTrocarFazenda() {
-    renderizarListaFazendas();
-    abrirModal('modalTrocarFazenda');
-}
-
-function renderizarListaFazendas() {
-    const lista = document.getElementById('fazendasLista');
-    if (!lista) return;
-    const fazendas = window.PotygenFazenda?.todasFazendas || [];
-    const atualId  = window.PotygenFazenda?.getFazendaId();
-
-    if (fazendas.length === 0) {
-        lista.innerHTML = `
-            <div class="fazendas-lista-vazia">
-                <i class="fa-solid fa-tractor" style="font-size:28px;margin-bottom:8px;opacity:0.3;display:block;"></i>
-                Nenhuma fazenda cadastrada ainda.
-            </div>`;
-        return;
-    }
-    lista.innerHTML = fazendas.map(f => `
-        <div class="fazenda-item ${f.id === atualId ? 'ativa' : ''}" onclick="trocarFazenda('${f.id}')">
-            <div class="fi-icon"><i class="fa-solid fa-tractor"></i></div>
-            <div class="fi-info">
-                <div class="fi-nome">${f.nome}</div>
-                <div class="fi-sub">${[f.tipo_criacao, [f.cidade, f.estado].filter(Boolean).join('/')].filter(Boolean).join(' · ')}</div>
-            </div>
-            <i class="fa-solid fa-check fi-check"></i>
-        </div>
-    `).join('');
-}
-
-function trocarFazenda(fazendaId) {
-    const fazenda = window.PotygenFazenda?.todasFazendas.find(f => f.id === fazendaId);
-    if (!fazenda) return;
-    window.PotygenFazenda.fazendaAtual = fazenda;
-    sessionStorage.setItem('fazenda_atual_id', fazendaId);
-    sessionStorage.setItem('fazenda_atual_json', JSON.stringify(fazenda));
-    atualizarDisplayFazenda(fazenda);
-    fecharModal('modalTrocarFazenda');
-    if (typeof carregarDadosDashboard === 'function') carregarDadosDashboard();
-    mostrarToast(`Fazenda trocada para: ${fazenda.nome}`);
-}
-
-// ============================================================
-// MODAL CADASTRAR FAZENDA
-// ============================================================
-async function abrirModalCadastrarFazenda() {
-    fecharModal('modalTrocarFazenda');
-    if (typeof buscarDadosUsuario === 'function') {
-        const usuario = await buscarDadosUsuario();
-        if (usuario) {
-            const propEl = document.getElementById('fzProprietario');
-            const cpfEl  = document.getElementById('fzCpf');
-            const cidEl  = document.getElementById('fzCidade');
-            const estEl  = document.getElementById('fzEstado');
-            if (propEl) propEl.value = usuario.nome || '';
-            if (cpfEl)  cpfEl.value  = usuario.cpf  || '';
-            if (cidEl && usuario.cidade) cidEl.value = usuario.cidade;
-            if (estEl && usuario.estado) estEl.value = usuario.estado;
-        }
-    }
-    abrirModal('modalCadastrarFazenda');
-}
-
-function fecharModalCadastro() {
-    fecharModal('modalCadastrarFazenda');
-    ['fzNome','fzTipoCriacao','fzArea','fzTelefone','fzCep','fzEndereco','fzCidade','fzDescricao'].forEach(id => {
-        const el = document.getElementById(id);
-        if (el) el.value = '';
-    });
-    const estEl = document.getElementById('fzEstado');
-    if (estEl) estEl.value = '';
-}
-
-async function salvarFazenda() {
-    const nome = document.getElementById('fzNome')?.value.trim();
-    const tipo = document.getElementById('fzTipoCriacao')?.value;
-
-    if (!nome) { mostrarToast('Informe o nome da fazenda.', 'error'); return; }
-    if (!tipo) { mostrarToast('Selecione o tipo de criação.', 'error'); return; }
-
-    const btn = document.getElementById('btnSalvarFazenda');
-    if (btn) { btn.disabled = true; btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Salvando...'; }
-
-    const dados = {
-        nome,
-        tipo_criacao: tipo,
-        area_hectares: document.getElementById('fzArea')?.value || null,
-        telefone:  document.getElementById('fzTelefone')?.value.trim() || null,
-        cep:       document.getElementById('fzCep')?.value.trim() || null,
-        endereco:  document.getElementById('fzEndereco')?.value.trim() || null,
-        cidade:    document.getElementById('fzCidade')?.value.trim() || null,
-        estado:    document.getElementById('fzEstado')?.value || null,
-        descricao: document.getElementById('fzDescricao')?.value.trim() || null,
-    };
-
-    const resultado = await cadastrarFazenda(dados);
-
-    if (btn) { btn.disabled = false; btn.innerHTML = '<i class="fa-solid fa-tractor"></i> Cadastrar Fazenda'; }
-
-    if (resultado.sucesso) {
-        mostrarToast(`Fazenda "${nome}" cadastrada com sucesso!`);
-        fecharModalCadastro();
-        atualizarDisplayFazenda(resultado.fazenda);
-        if (typeof carregarDadosDashboard === 'function') carregarDadosDashboard();
-    } else {
-        mostrarToast('Erro ao cadastrar fazenda: ' + resultado.erro, 'error');
-    }
-}
 
 // ============================================================
 // CARREGAR DADOS DO DASHBOARD (estatísticas + gráficos reais)
@@ -350,6 +228,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     // Só executa lógica Supabase se supabaseClient estiver disponível
     if (typeof supabaseClient === 'undefined') return;
 
+    // Carrega nome do usuário na sidebar
     const { data: { session } } = await supabaseClient.auth.getSession();
     if (session) {
         const { data: usuario } = await supabaseClient
@@ -360,30 +239,21 @@ document.addEventListener('DOMContentLoaded', async () => {
         }
     }
 
-    if (typeof window.inicializarFazenda === 'function') {
-        await window.inicializarFazenda();
-    }
-
-    const fazendaAtual = window.PotygenFazenda?.fazendaAtual;
-    if (fazendaAtual) {
-        atualizarDisplayFazenda(fazendaAtual);
-        carregarDadosDashboard();
-    } else {
-        const nomeEl = document.getElementById('sidebarFazendaNome');
-        const subEl  = document.getElementById('sidebarFazendaSub');
-        if (nomeEl) nomeEl.textContent = 'Cadastrar fazenda';
-        if (subEl)  subEl.textContent  = 'Clique para começar';
-        setTimeout(() => abrirModalCadastrarFazenda(), 700);
-    }
-
-    document.addEventListener('fazendaTrocada', (e) => {
-        atualizarDisplayFazenda(e.detail);
-        if (typeof carregarDadosDashboard === 'function') carregarDadosDashboard();
+    // Inicializa o sistema de fazendas via fazenda-ui.js
+    // onFazendaTrocada: callback chamado sempre que a fazenda mudar (troca ou cadastro)
+    await PotygenFazendaUI.inicializar({
+        onFazendaTrocada: () => carregarDadosDashboard()
     });
 
+    // Carrega dados do dashboard se já houver fazenda ativa
+    if (window.PotygenFazenda?.fazendaAtual) {
+        carregarDadosDashboard();
+    }
+
+    // Fecha modais específicos do dashboard com Escape
     document.addEventListener('keydown', e => {
         if (e.key === 'Escape') {
-            ['modalTrocarFazenda','modalCadastrarFazenda','dashboardFiltersModal','modalNovoAnimal'].forEach(fecharModal);
+            ['dashboardFiltersModal', 'modalNovoAnimal'].forEach(fecharModal);
         }
     });
 });

@@ -194,7 +194,7 @@ document.addEventListener('DOMContentLoaded', () => {
         setTimeout(() => {
 
             window.location.href =
-                '../backend/index.html';
+                '../pages/index.html';
 
         }, 2000);
 
