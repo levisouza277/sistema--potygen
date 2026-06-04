@@ -64,37 +64,55 @@
     <!-- ============================================================= -->
     <div id="painelFinanceiro">
 
-      <!-- Toolbar -->
-      <div class="toolbar">
-        <div class="search-box">
-          <i class="fa-solid fa-magnifying-glass"></i>
-          <input type="text" id="inputBusca" placeholder="Buscar transações..." oninput="filtrarTabela()"/>
+      <!-- Card de filtro unificado -->
+      <div class="prod-filter-card">
+        <div class="prod-filter-row">
+          <div class="search-box">
+            <i class="fa-solid fa-magnifying-glass"></i>
+            <input type="text" id="inputBusca" placeholder="Buscar transações..." oninput="filtrarTabela()"/>
+          </div>
+          <div class="toolbar-actions">
+            <button class="btn-pdf" onclick="abrirModal('modalPDF')">
+              <i class="fa-solid fa-file-pdf"></i> Relatório PDF
+            </button>
+            <button class="btn-csv" onclick="exportarCSVTransacoes()">
+              <i class="fa-solid fa-file-csv"></i> Exportar CSV
+            </button>
+            <button class="btn-nova" onclick="abrirNovaTransacao()">
+              <i class="fa-solid fa-plus"></i> Nova Transação
+            </button>
+          </div>
         </div>
-        <div class="toolbar-actions">
-          <button class="btn-pdf"  onclick="abrirModal('modalPDF')">
-            <i class="fa-solid fa-file-pdf"></i> Relatório PDF
-          </button>
-          <button class="btn-nova" onclick="abrirNovaTransacao()">
-            <i class="fa-solid fa-plus"></i> Nova Transação
-          </button>
-        </div>
-      </div>
 
-      <!-- Filtros de período -->
-      <div class="filtros-periodo">
-        <i class="fa-solid fa-filter" style="color:#94a3b8;"></i>
-        <span class="filtro-label">Período:</span>
-        <button class="filtro-btn active" onclick="setPeriodo(this,'todos')">Todos</button>
-        <button class="filtro-btn"        onclick="abrirModalPeriodo('mes')">Mês</button>
-        <button class="filtro-btn"        onclick="abrirModalPeriodo('semestre')">Semestre</button>
-        <button class="filtro-btn"        onclick="abrirModalPeriodo('ano')">Ano</button>
-        <span class="filtro-ativo" id="filtroAtivoLabel" style="display:none">
-          <i class="fa-solid fa-calendar-check"></i>
-          <span id="filtroAtivoTexto"></span>
-          <button onclick="limparFiltro()" title="Limpar filtro">
-            <i class="fa-solid fa-xmark"></i>
-          </button>
-        </span>
+        <div class="prod-filter-row">
+          <i class="fa-solid fa-filter" style="color:#94a3b8;"></i>
+          <span class="filtro-label">Filtrar por:</span>
+          <button class="filtro-btn active" id="finTipoTodos"    onclick="setFinTipo('todos')">Todos</button>
+          <button class="filtro-btn"        id="finTipoMes"      onclick="setFinTipo('mes')">Mês</button>
+          <button class="filtro-btn"        id="finTipoSemestre" onclick="setFinTipo('semestre')">Semestre</button>
+          <button class="filtro-btn"        id="finTipoAno"      onclick="setFinTipo('ano')">Ano</button>
+
+          <select id="finMes" class="prod-select" style="display:none">
+            <option value="1">Janeiro</option><option value="2">Fevereiro</option>
+            <option value="3">Março</option><option value="4">Abril</option>
+            <option value="5">Maio</option><option value="6">Junho</option>
+            <option value="7">Julho</option><option value="8">Agosto</option>
+            <option value="9">Setembro</option><option value="10">Outubro</option>
+            <option value="11">Novembro</option><option value="12">Dezembro</option>
+          </select>
+
+          <select id="finSemestre" class="prod-select" style="display:none">
+            <option value="1">1º Semestre</option>
+            <option value="2">2º Semestre</option>
+          </select>
+
+          <select id="finAno" class="prod-select" style="display:none"></select>
+
+          <span class="filtro-ativo" id="finPeriodoChip" style="display:none">
+            <i class="fa-solid fa-calendar-check"></i>
+            <span id="finPeriodoLabel">—</span>
+          </span>
+        </div>
       </div>
 
       <!-- Cards de resumo -->
@@ -158,21 +176,35 @@
     <!-- ============================================================= -->
     <div id="painelProducao" style="display:none">
 
-      <!-- Card de filtro + botão registrar -->
+      <!-- Card de filtro unificado (igual ao financeiro) -->
       <div class="prod-filter-card">
         <div class="prod-filter-row">
-          <i class="fa-solid fa-filter" style="color:#94a3b8;"></i>
-          <span class="filtro-label">Filtrar por:</span>
-          <button class="filtro-btn active" id="prodTipoMes"      onclick="setProdTipo('mes')">Mês</button>
-          <button class="filtro-btn"        id="prodTipoSemestre" onclick="setProdTipo('semestre')">Semestre</button>
-          <button class="filtro-btn"        id="prodTipoAno"      onclick="setProdTipo('ano')">Ano</button>
+          <div class="search-box">
+            <i class="fa-solid fa-magnifying-glass"></i>
+            <input type="text" id="inputBuscaProducao" placeholder="Buscar produção..." oninput="filtrarProducao()"/>
+          </div>
+          <div class="toolbar-actions">
+            <button class="btn-pdf" onclick="abrirModal('modalPDFProd')">
+              <i class="fa-solid fa-file-pdf"></i> Relatório PDF
+            </button>
+            <button class="btn-csv" onclick="exportarCSVProducao()">
+              <i class="fa-solid fa-file-csv"></i> Exportar CSV
+            </button>
+            <button class="btn-nova" onclick="abrirNovaProducao()">
+              <i class="fa-solid fa-plus"></i> Registrar Produção
+            </button>
+          </div>
         </div>
 
         <div class="prod-filter-row">
-          <i class="fa-regular fa-calendar" style="color:#94a3b8;"></i>
-          <span class="filtro-label">Período:</span>
+          <i class="fa-solid fa-filter" style="color:#94a3b8;"></i>
+          <span class="filtro-label">Filtrar por:</span>
+          <button class="filtro-btn active" id="prodTipoTodos"    onclick="setProdTipo('todos')">Todos</button>
+          <button class="filtro-btn"        id="prodTipoMes"      onclick="setProdTipo('mes')">Mês</button>
+          <button class="filtro-btn"        id="prodTipoSemestre" onclick="setProdTipo('semestre')">Semestre</button>
+          <button class="filtro-btn"        id="prodTipoAno"      onclick="setProdTipo('ano')">Ano</button>
 
-          <select id="prodMes" class="prod-select">
+          <select id="prodMes" class="prod-select" style="display:none">
             <option value="1">Janeiro</option><option value="2">Fevereiro</option>
             <option value="3">Março</option><option value="4">Abril</option>
             <option value="5">Maio</option><option value="6">Junho</option>
@@ -186,18 +218,12 @@
             <option value="2">2º Semestre</option>
           </select>
 
-          <select id="prodAno" class="prod-select"></select>
+          <select id="prodAno" class="prod-select" style="display:none"></select>
 
-          <span class="filtro-ativo" id="prodPeriodoChip">
+          <span class="filtro-ativo" id="prodPeriodoChip" style="display:none">
             <i class="fa-solid fa-calendar-check"></i>
             <span id="prodPeriodoLabel">—</span>
           </span>
-
-          <div style="flex:1"></div>
-
-          <button class="btn-nova" onclick="abrirNovaProducao()">
-            <i class="fa-solid fa-plus"></i> Registrar Produção
-          </button>
         </div>
       </div>
 
@@ -370,92 +396,27 @@
   </div>
 </div>
 
-<!-- MODAL — Seleção de Período -->
-<div class="modal-overlay" id="modalPeriodo">
-  <div class="modal-box modal-box-sm">
-    <div class="modal-header">
-      <h2 id="modalPeriodoTitulo">Selecionar Mês</h2>
-      <button class="modal-close" onclick="fecharModal('modalPeriodo')">&times;</button>
-    </div>
-    <div class="modal-body">
-      <div id="seletorMes">
-        <div class="form-row">
-          <div class="field-group">
-            <label class="field-label">Mês</label>
-            <select id="periodoMes">
-              <option value="1">Janeiro</option><option value="2">Fevereiro</option>
-              <option value="3">Março</option><option value="4">Abril</option>
-              <option value="5">Maio</option><option value="6">Junho</option>
-              <option value="7">Julho</option><option value="8">Agosto</option>
-              <option value="9">Setembro</option><option value="10">Outubro</option>
-              <option value="11">Novembro</option><option value="12">Dezembro</option>
-            </select>
-          </div>
-          <div class="field-group">
-            <label class="field-label">Ano</label>
-            <select id="periodoAnoMes"></select>
-          </div>
-        </div>
-      </div>
-
-      <div id="seletorSemestre" style="display:none">
-        <div class="form-row">
-          <div class="field-group">
-            <label class="field-label">Semestre</label>
-            <select id="periodoSemestre">
-              <option value="1">1º Semestre (Jan – Jun)</option>
-              <option value="2">2º Semestre (Jul – Dez)</option>
-            </select>
-          </div>
-          <div class="field-group">
-            <label class="field-label">Ano</label>
-            <select id="periodoAnoSemestre"></select>
-          </div>
-        </div>
-      </div>
-
-      <div id="seletorAno" style="display:none">
-        <div class="field-group">
-          <label class="field-label">Ano</label>
-          <select id="periodoAnoAno"></select>
-        </div>
-      </div>
-
-      <div class="pdf-info" style="margin-top:8px;">
-        <i class="fa-solid fa-circle-info"></i>
-        As transações serão filtradas exatamente pelo período selecionado.
-      </div>
-    </div>
-    <div class="modal-footer">
-      <button class="btn-cancelar" onclick="fecharModal('modalPeriodo')">Cancelar</button>
-      <button class="btn-salvar"   onclick="aplicarPeriodo()">
-        <i class="fa-solid fa-check"></i> Aplicar Filtro
-      </button>
-    </div>
-  </div>
-</div>
-
-<!-- MODAL — Relatório PDF -->
+<!-- MODAL — Relatório PDF (Financeiro) -->
 <div class="modal-overlay" id="modalPDF">
   <div class="modal-box modal-box-sm">
     <div class="modal-header">
-      <h2>Gerar Relatório PDF</h2>
+      <h2>Gerar Relatório Financeiro</h2>
       <button class="modal-close" onclick="fecharModal('modalPDF')">&times;</button>
     </div>
     <div class="modal-body">
       <p class="field-label" style="margin-bottom:14px;">Selecione o período do relatório</p>
       <div class="opcoes-pdf">
-        <label class="opcao-pdf active" id="opcaoMensal">
+        <label class="opcao-pdf active">
           <input type="radio" name="periodoRelatorio" value="mensal" checked onchange="selecionarOpcaoPDF(this)"/>
           <i class="fa-regular fa-calendar"></i>
           <div><strong>Relatório Mensal</strong><span>Últimos 30 dias</span></div>
         </label>
-        <label class="opcao-pdf" id="opcaoSemestral">
+        <label class="opcao-pdf">
           <input type="radio" name="periodoRelatorio" value="semestral" onchange="selecionarOpcaoPDF(this)"/>
           <i class="fa-regular fa-calendar"></i>
           <div><strong>Relatório Semestral</strong><span>Últimos 6 meses</span></div>
         </label>
-        <label class="opcao-pdf" id="opcaoAnual">
+        <label class="opcao-pdf">
           <input type="radio" name="periodoRelatorio" value="anual" onchange="selecionarOpcaoPDF(this)"/>
           <i class="fa-regular fa-calendar"></i>
           <div><strong>Relatório Anual</strong><span>Últimos 12 meses</span></div>
@@ -469,6 +430,46 @@
     <div class="modal-footer">
       <button class="btn-cancelar" onclick="fecharModal('modalPDF')">Cancelar</button>
       <button class="btn-salvar"   onclick="gerarPDF()">
+        <i class="fa-solid fa-download"></i> Baixar PDF
+      </button>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL — Relatório PDF (Produção) -->
+<div class="modal-overlay" id="modalPDFProd">
+  <div class="modal-box modal-box-sm">
+    <div class="modal-header">
+      <h2>Gerar Relatório de Produção</h2>
+      <button class="modal-close" onclick="fecharModal('modalPDFProd')">&times;</button>
+    </div>
+    <div class="modal-body">
+      <p class="field-label" style="margin-bottom:14px;">Selecione o período do relatório</p>
+      <div class="opcoes-pdf">
+        <label class="opcao-pdf active">
+          <input type="radio" name="periodoRelatorioProd" value="mensal" checked onchange="selecionarOpcaoPDF(this)"/>
+          <i class="fa-regular fa-calendar"></i>
+          <div><strong>Relatório Mensal</strong><span>Últimos 30 dias</span></div>
+        </label>
+        <label class="opcao-pdf">
+          <input type="radio" name="periodoRelatorioProd" value="semestral" onchange="selecionarOpcaoPDF(this)"/>
+          <i class="fa-regular fa-calendar"></i>
+          <div><strong>Relatório Semestral</strong><span>Últimos 6 meses</span></div>
+        </label>
+        <label class="opcao-pdf">
+          <input type="radio" name="periodoRelatorioProd" value="anual" onchange="selecionarOpcaoPDF(this)"/>
+          <i class="fa-regular fa-calendar"></i>
+          <div><strong>Relatório Anual</strong><span>Últimos 12 meses</span></div>
+        </label>
+      </div>
+      <div class="pdf-info">
+        <i class="fa-solid fa-circle-info"></i>
+        O relatório será gerado em PDF com cabeçalho da fazenda e todos os registros de produção do período.
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn-cancelar" onclick="fecharModal('modalPDFProd')">Cancelar</button>
+      <button class="btn-salvar"   onclick="gerarPDFProducao()">
         <i class="fa-solid fa-download"></i> Baixar PDF
       </button>
     </div>
