@@ -5,13 +5,9 @@
 //   - database.js    (supabaseClient)
 //   - auth.js        (verificarLogin)
 //
-// ⚠️  EDITE APENAS AS LINHAS ABAIXO (dados do PDF):
-//
-const FAZENDA_NOME   = 'Fazenda São João';
-const FAZENDA_CIDADE = 'Crateús - CE';
-const FAZENDA_CNPJ   = '000.000.000-00';
-//
-// ✅ NÃO MEXA EM NADA ABAIXO DESTA LINHA
+// O nome da fazenda e o CPF do produtor agora são carregados
+// dinamicamente das tabelas `fazendas` e `usuarios`,
+// sempre filtrados pelo usuário autenticado (RLS + filtro explícito).
 // =========================================================
 
 const CATEGORIAS = {
@@ -23,11 +19,14 @@ const MESES_NOMES = ['Janeiro','Fevereiro','Março','Abril','Maio','Junho','Julh
 
 // ── Estado ──
 let todasTransacoes  = [];
-let tipoPeriodoAtivo = 'todos';
+let finTipoFiltro    = 'todos';
 let filtroDataInicio = null;
 let filtroDataFim    = null;
 let termoBusca       = '';
 let uidAtual         = null; // preenchido no init
+
+// Dados da fazenda/produtor (carregados do banco)
+let fazendaInfo = { nome: 'Fazenda', cidade: '', cpf: '' };
 
 // =========================================================
 // INIT
@@ -41,11 +40,15 @@ document.addEventListener('DOMContentLoaded', async () => {
   }
   uidAtual = session.user.id;
 
-  // Preenche selects de ano (últimos 5 anos)
+  // Carrega nome da fazenda + CPF do produtor (somente do próprio usuário)
+  await carregarDadosFazenda();
+
+  // Preenche selects de ano (últimos 5 anos) — financeiro e produção
   const anoAtual = new Date().getFullYear();
-  ['periodoAnoMes','periodoAnoSemestre','periodoAnoAno'].forEach(id => {
+  ['finAno','prodAno'].forEach(id => {
     const sel = document.getElementById(id);
     if (!sel) return;
+    sel.innerHTML = '';
     for (let a = anoAtual; a >= anoAtual - 5; a--) {
       const opt = document.createElement('option');
       opt.value = a; opt.textContent = a;
@@ -53,10 +56,21 @@ document.addEventListener('DOMContentLoaded', async () => {
     }
   });
 
-  // Mês e semestre padrão = atual
+  // Mês e semestre padrão = atual (financeiro e produção)
   const mesAtual = new Date().getMonth() + 1;
-  document.getElementById('periodoMes').value       = mesAtual;
-  document.getElementById('periodoSemestre').value  = mesAtual <= 6 ? 1 : 2;
+  const semAtual = mesAtual <= 6 ? 1 : 2;
+  ['finMes','prodMes'].forEach(id => { const el = document.getElementById(id); if (el) el.value = mesAtual; });
+  ['finSemestre','prodSemestre'].forEach(id => { const el = document.getElementById(id); if (el) el.value = semAtual; });
+
+  // Listeners dos selects de período (mudança recarrega automaticamente)
+  ['finMes','finSemestre','finAno'].forEach(id => {
+    const el = document.getElementById(id);
+    if (el) el.addEventListener('change', () => aplicarFiltroFin());
+  });
+  ['prodMes','prodSemestre','prodAno'].forEach(id => {
+    const el = document.getElementById(id);
+    if (el) el.addEventListener('change', () => carregarProducao());
+  });
 
   // Data/hora padrão no modal
   const agora = new Date();
@@ -72,12 +86,65 @@ document.addEventListener('DOMContentLoaded', async () => {
 });
 
 // =========================================================
+// DADOS DA FAZENDA / PRODUTOR
+// =========================================================
+async function carregarDadosFazenda() {
+  if (!uidAtual) return;
+
+  // Fazenda vinculada ao usuário (RLS garante isolamento)
+  const { data: faz } = await supabaseClient
+    .from('fazendas')
+    .select('nome, cidade, estado')
+    .eq('usuario_id', uidAtual)
+    .order('created_at', { ascending: true })
+    .limit(1)
+    .maybeSingle();
+
+  // CPF do produtor (tabela usuarios)
+  const { data: usr } = await supabaseClient
+    .from('usuarios')
+    .select('cpf')
+    .eq('id', uidAtual)
+    .maybeSingle();
+
+  fazendaInfo.nome   = (faz && faz.nome) ? faz.nome : 'Fazenda';
+  fazendaInfo.cidade = faz ? [faz.cidade, faz.estado].filter(Boolean).join(' - ') : '';
+  fazendaInfo.cpf    = (usr && usr.cpf) ? usr.cpf : '';
+}
+
+// =========================================================
+// PERÍODO (helper compartilhado financeiro/produção)
+// =========================================================
+function calcPeriodo(tipo, mes, sem, ano) {
+  if (tipo === 'todos') return { inicio: null, fim: null, label: 'Todos os períodos' };
+  if (tipo === 'mes') {
+    return {
+      inicio: `${ano}-${String(mes).padStart(2,'0')}-01`,
+      fim:    new Date(ano, mes, 0).toISOString().split('T')[0],
+      label:  `${MESES_NOMES[mes-1]} de ${ano}`,
+    };
+  }
+  if (tipo === 'semestre') {
+    return sem === 1
+      ? { inicio:`${ano}-01-01`, fim:`${ano}-06-30`, label:`1º Semestre de ${ano}` }
+      : { inicio:`${ano}-07-01`, fim:`${ano}-12-31`, label:`2º Semestre de ${ano}` };
+  }
+  return { inicio:`${ano}-01-01`, fim:`${ano}-12-31`, label:`Ano ${ano}` };
+}
+
+function toggleSelectsPeriodo(tipo, idMes, idSemestre, idAno) {
+  document.getElementById(idMes).style.display      = tipo === 'mes'      ? '' : 'none';
+  document.getElementById(idSemestre).style.display = tipo === 'semestre' ? '' : 'none';
+  document.getElementById(idAno).style.display      = (tipo === 'mes' || tipo === 'semestre' || tipo === 'ano') ? '' : 'none';
+}
+
+// =========================================================
 // CARREGAR DO SUPABASE (usando supabaseClient + RLS)
 // =========================================================
 async function carregarTransacoes() {
   if (!uidAtual) return;
 
-  // Monta query base — o RLS já garante isolamento por auth.uid()
+  // O RLS já garante isolamento por auth.uid(),
   // mas filtramos explicitamente também para dupla segurança
   let query = supabaseClient
     .from('transacoes')
@@ -86,7 +153,6 @@ async function carregarTransacoes() {
     .order('data', { ascending: false })
     .order('hora', { ascending: false });
 
-  // Aplica filtro de datas se houver
   if (filtroDataInicio) query = query.gte('data', filtroDataInicio);
   if (filtroDataFim)    query = query.lte('data', filtroDataFim);
 
@@ -185,67 +251,32 @@ function renderTabela(lista) {
 }
 
 // =========================================================
-// FILTROS DE PERÍODO
+// FILTROS DE PERÍODO — FINANCEIRO (mesmo padrão da produção)
 // =========================================================
-function setPeriodo(btn, tipo) {
-  tipoPeriodoAtivo = tipo;
-  filtroDataInicio = null;
-  filtroDataFim    = null;
-  document.querySelectorAll('.filtro-btn').forEach(b => b.classList.remove('active'));
-  btn.classList.add('active');
-  document.getElementById('filtroAtivoLabel').style.display = 'none';
-  carregarTransacoes();
+function setFinTipo(tipo) {
+  finTipoFiltro = tipo;
+  ['Todos','Mes','Semestre','Ano'].forEach(t =>
+    document.getElementById('finTipo'+t).classList.toggle('active', t.toLowerCase() === tipo));
+  toggleSelectsPeriodo(tipo, 'finMes', 'finSemestre', 'finAno');
+  aplicarFiltroFin();
 }
 
-function abrirModalPeriodo(tipo) {
-  tipoPeriodoAtivo = tipo;
-  const titulos = { mes: 'Selecionar Mês', semestre: 'Selecionar Semestre', ano: 'Selecionar Ano' };
-  document.getElementById('modalPeriodoTitulo').textContent = titulos[tipo];
-  document.getElementById('seletorMes').style.display      = tipo === 'mes'      ? '' : 'none';
-  document.getElementById('seletorSemestre').style.display = tipo === 'semestre' ? '' : 'none';
-  document.getElementById('seletorAno').style.display      = tipo === 'ano'      ? '' : 'none';
-  abrirModal('modalPeriodo');
-}
-
-function aplicarPeriodo() {
-  let inicio, fim, label;
-
-  if (tipoPeriodoAtivo === 'mes') {
-    const mes = parseInt(document.getElementById('periodoMes').value);
-    const ano = parseInt(document.getElementById('periodoAnoMes').value);
-    inicio = `${ano}-${String(mes).padStart(2,'0')}-01`;
-    fim    = new Date(ano, mes, 0).toISOString().split('T')[0];
-    label  = `${MESES_NOMES[mes-1]} de ${ano}`;
-  } else if (tipoPeriodoAtivo === 'semestre') {
-    const sem = parseInt(document.getElementById('periodoSemestre').value);
-    const ano = parseInt(document.getElementById('periodoAnoSemestre').value);
-    if (sem === 1) { inicio = `${ano}-01-01`; fim = `${ano}-06-30`; }
-    else           { inicio = `${ano}-07-01`; fim = `${ano}-12-31`; }
-    label = `${sem}º Semestre de ${ano}`;
-  } else {
-    const ano = parseInt(document.getElementById('periodoAnoAno').value);
-    inicio = `${ano}-01-01`;
-    fim    = `${ano}-12-31`;
-    label  = `Ano ${ano}`;
-  }
+function aplicarFiltroFin() {
+  const ano = parseInt(document.getElementById('finAno').value) || new Date().getFullYear();
+  const mes = parseInt(document.getElementById('finMes').value) || 1;
+  const sem = parseInt(document.getElementById('finSemestre').value) || 1;
+  const { inicio, fim, label } = calcPeriodo(finTipoFiltro, mes, sem, ano);
 
   filtroDataInicio = inicio;
   filtroDataFim    = fim;
 
-  document.querySelectorAll('.filtro-btn').forEach(b => b.classList.remove('active'));
-  document.getElementById('filtroAtivoTexto').textContent = label;
-  document.getElementById('filtroAtivoLabel').style.display = 'inline-flex';
-
-  fecharModal('modalPeriodo');
-  carregarTransacoes();
-}
-
-function limparFiltro() {
-  filtroDataInicio = null;
-  filtroDataFim    = null;
-  tipoPeriodoAtivo = 'todos';
-  document.getElementById('filtroAtivoLabel').style.display = 'none';
-  document.querySelectorAll('.filtro-btn')[0].classList.add('active');
+  const chip = document.getElementById('finPeriodoChip');
+  if (finTipoFiltro === 'todos') {
+    chip.style.display = 'none';
+  } else {
+    document.getElementById('finPeriodoLabel').textContent = label;
+    chip.style.display = 'inline-flex';
+  }
   carregarTransacoes();
 }
 
@@ -305,8 +336,6 @@ function calcularTotal() {
 // SALVAR (nova ou edição)
 // =========================================================
 async function salvarTransacao() {
-  // Revalida a sessão na hora — evita "sessão expirada" falso
-  // se o token foi renovado depois do load da página.
   const { data: { session } } = await supabaseClient.auth.getSession();
   if (!session) {
     alert('Sessão expirada. Faça login novamente.');
@@ -331,7 +360,6 @@ async function salvarTransacao() {
   if (!descricao)                                        { alert('Preencha a descrição.'); return; }
   if (!preco)                                            { alert('Informe o preço unitário.'); return; }
 
-  // Se edição, verifica se o registro pertence ao usuário logado
   if (editId) {
     const existente = todasTransacoes.find(t => t.id === editId);
     if (!existente || existente.usuario_id !== uidAtual) {
@@ -350,7 +378,6 @@ async function salvarTransacao() {
 
   let error;
   if (editId) {
-    // UPDATE — RLS garante que só edita o próprio registro
     ({ error } = await supabaseClient
       .from('transacoes')
       .update(payload)
@@ -414,20 +441,17 @@ async function excluirTransacao(id) {
 }
 
 // =========================================================
-// PDF
+// PDF — FINANCEIRO
 // =========================================================
 function selecionarOpcaoPDF(radio) {
-  document.querySelectorAll('.opcao-pdf').forEach(el => el.classList.remove('active'));
+  const grupo = radio.closest('.opcoes-pdf');
+  grupo.querySelectorAll('.opcao-pdf').forEach(el => el.classList.remove('active'));
   radio.closest('.opcao-pdf').classList.add('active');
 }
 
-async function gerarPDF() {
-  if (!uidAtual) return;
-
-  const periodo = document.querySelector('input[name="periodoRelatorio"]:checked').value;
-  const hoje    = new Date();
+function periodoCorteRelatorio(periodo) {
+  const hoje = new Date();
   let dataCorte, labelPeriodo;
-
   if (periodo === 'mensal') {
     dataCorte = new Date(hoje); dataCorte.setDate(hoje.getDate() - 30);
     labelPeriodo = 'MENSAL';
@@ -438,6 +462,31 @@ async function gerarPDF() {
     dataCorte = new Date(hoje); dataCorte.setFullYear(hoje.getFullYear() - 1);
     labelPeriodo = 'ANUAL';
   }
+  return { dataCorte, labelPeriodo, hoje };
+}
+
+function _cabecalhoPDF(doc, PW, titulo) {
+  const VERDE = [13, 138, 79];
+  doc.setFillColor(...VERDE);
+  doc.rect(0, 0, PW, 42, 'F');
+  doc.setTextColor(255,255,255);
+  doc.setFont('helvetica','bold'); doc.setFontSize(16);
+  doc.text('POTYGEN - Sistema de Gestão', 14, 14);
+  doc.setFont('helvetica','normal'); doc.setFontSize(10);
+  doc.text(fazendaInfo.nome || 'Fazenda', 14, 22);
+  const linha2 = [fazendaInfo.cidade, fazendaInfo.cpf ? `CPF: ${fazendaInfo.cpf}` : '']
+    .filter(Boolean).join('  |  ');
+  if (linha2) doc.text(linha2, 14, 29);
+  const agora = new Date();
+  doc.setFontSize(9);
+  doc.text(`Gerado em: ${agora.toLocaleDateString('pt-BR')} às ${agora.toLocaleTimeString('pt-BR')}`, PW-14, 29, {align:'right'});
+}
+
+async function gerarPDF() {
+  if (!uidAtual) return;
+
+  const periodo = document.querySelector('input[name="periodoRelatorio"]:checked').value;
+  const { dataCorte, labelPeriodo, hoje } = periodoCorteRelatorio(periodo);
 
   const { data: lista, error } = await supabaseClient
     .from('transacoes')
@@ -466,27 +515,14 @@ async function gerarPDF() {
   const MEDIO  = [100, 116, 139];
   const BORDA  = [226, 232, 240];
 
-  // Cabeçalho verde
-  doc.setFillColor(...VERDE);
-  doc.rect(0, 0, PW, 42, 'F');
-  doc.setTextColor(255,255,255);
-  doc.setFont('helvetica','bold'); doc.setFontSize(16);
-  doc.text('POTYGEN - Sistema de Gestão', 14, 14);
-  doc.setFont('helvetica','normal'); doc.setFontSize(10);
-  doc.text(FAZENDA_NOME, 14, 22);
-  doc.text(`${FAZENDA_CIDADE} | CNPJ: ${FAZENDA_CNPJ}`, 14, 29);
-  const agora = new Date();
-  doc.setFontSize(9);
-  doc.text(`Gerado em: ${agora.toLocaleDateString('pt-BR')} às ${agora.toLocaleTimeString('pt-BR')}`, PW-14, 29, {align:'right'});
+  _cabecalhoPDF(doc, PW, 'Relatório Financeiro');
   y = 52;
 
-  // Título
   doc.setTextColor(...ESCURO);
   doc.setFont('helvetica','bold'); doc.setFontSize(13);
   doc.text(`Relatório Financeiro ${labelPeriodo}`, 14, y);
   y += 10;
 
-  // Resumo
   doc.setFillColor(248,250,252);
   doc.setDrawColor(...BORDA);
   doc.roundedRect(14, y, PW-28, 36, 3, 3, 'FD');
@@ -506,7 +542,6 @@ async function gerarPDF() {
   doc.text(fmtM(Math.abs(saldo)), 90, y+32);
   y += 46;
 
-  // Transações detalhadas
   doc.setTextColor(...ESCURO);
   doc.setFont('helvetica','bold'); doc.setFontSize(12);
   doc.text('Transações Detalhadas', 14, y);
@@ -552,7 +587,6 @@ async function gerarPDF() {
     y += altH + 4;
   });
 
-  // Rodapé em todas as páginas
   const total = doc.internal.getNumberOfPages();
   for (let p = 1; p <= total; p++) {
     doc.setPage(p);
@@ -593,6 +627,111 @@ function fmtD(d) {
 }
 
 // =========================================================
+// EXPORTAÇÃO CSV (compartilhado)
+// =========================================================
+function csvCell(v) {
+  const s = (v == null ? '' : String(v));
+  return /[";\r\n]/.test(s) ? '"' + s.replace(/"/g,'""') + '"' : s;
+}
+function baixarCSV(nomeArquivo, linhas) {
+  const csv = linhas.map(r => r.map(csvCell).join(';')).join('\r\n');
+  // BOM para abrir corretamente acentos no Excel
+  const blob = new Blob(['\uFEFF' + csv], { type: 'text/csv;charset=utf-8;' });
+  const url  = URL.createObjectURL(blob);
+  const a    = document.createElement('a');
+  a.href = url; a.download = nomeArquivo;
+  document.body.appendChild(a); a.click(); a.remove();
+  URL.revokeObjectURL(url);
+}
+function slugFazenda() {
+  return (fazendaInfo.nome || 'fazenda')
+    .toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'')
+    .replace(/[^a-z0-9]+/g,'-').replace(/^-|-$/g,'') || 'fazenda';
+}
+
+async function exportarCSVTransacoes() {
+  const { data: { session } } = await supabaseClient.auth.getSession();
+  if (!session) { alert('Sessão expirada. Faça login novamente.'); window.location.replace('../pages/index.html'); return; }
+  uidAtual = session.user.id;
+
+  const { data, error } = await supabaseClient
+    .from('transacoes')
+    .select('*')
+    .eq('usuario_id', uidAtual)
+    .order('data', { ascending: false })
+    .order('hora', { ascending: false });
+
+  if (error) { alert('Erro ao exportar: ' + error.message); return; }
+
+  const lista = (data || []).filter(t => t.usuario_id === uidAtual);
+  if (!lista.length) { alert('Não há transações para exportar.'); return; }
+
+  const cab = ['Tipo','Descrição','Categoria','Data','Hora','Quantidade','Preço Unitário','Valor Total','Observações'];
+  const linhas = [
+    [`Fazenda: ${fazendaInfo.nome}`],
+    [`CPF: ${fazendaInfo.cpf || '—'}`],
+    [],
+    cab,
+    ...lista.map(t => [
+      t.tipo === 'receita' ? 'Receita' : 'Despesa',
+      t.descricao || '',
+      t.categoria || '',
+      fmtD(t.data),
+      (t.hora || '').slice(0,5),
+      t.quantidade ?? 1,
+      Number(t.preco_unitario || 0).toFixed(2).replace('.', ','),
+      Number(t.valor || 0).toFixed(2).replace('.', ','),
+      t.observacoes || '',
+    ]),
+  ];
+
+  baixarCSV(`transacoes-${slugFazenda()}-${new Date().toISOString().split('T')[0]}.csv`, linhas);
+}
+
+async function exportarCSVProducao() {
+  const { data: { session } } = await supabaseClient.auth.getSession();
+  if (!session) { alert('Sessão expirada. Faça login novamente.'); window.location.replace('../pages/index.html'); return; }
+  uidAtual = session.user.id;
+
+  const { data, error } = await supabaseClient
+    .from('producao')
+    .select('*')
+    .eq('usuario_id', uidAtual)
+    .order('data', { ascending: false })
+    .order('hora', { ascending: false });
+
+  if (error) { alert('Erro ao exportar: ' + error.message); return; }
+
+  const lista = (data || []).filter(p => p.usuario_id === uidAtual);
+  if (!lista.length) { alert('Não há registros de produção para exportar.'); return; }
+
+  const cab = ['Produto','Espécie','Data','Hora','Quantidade','Unidade','Qualidade','Valor','Origem','Destino','Lote','Temperatura','Observações'];
+  const linhas = [
+    [`Fazenda: ${fazendaInfo.nome}`],
+    [`CPF: ${fazendaInfo.cpf || '—'}`],
+    [],
+    cab,
+    ...lista.map(p => [
+      PROD_LABELS[p.produto] || p.produto,
+      ESP_LABELS[p.especie] || p.especie,
+      fmtD(p.data),
+      (p.hora || '').slice(0,5),
+      String(p.quantidade ?? '').replace('.', ','),
+      p.unidade || '',
+      p.qualidade || '',
+      Number(p.valor || 0).toFixed(2).replace('.', ','),
+      p.origem || '',
+      p.destino || '',
+      p.lote || '',
+      p.temperatura != null ? String(p.temperatura).replace('.', ',') : '',
+      p.observacoes || '',
+    ]),
+  ];
+
+  baixarCSV(`producao-${slugFazenda()}-${new Date().toISOString().split('T')[0]}.csv`, linhas);
+}
+
+// =========================================================
 // =========== CONTROLE DE PRODUÇÃO ========================
 // =========================================================
 const PROD_UNIDADES = { leite: 'Litros', carne: 'Kg', couro: 'Unidades', la: 'Kg' };
@@ -600,57 +739,22 @@ const PROD_LABELS   = { leite: 'Leite', carne: 'Carne', couro: 'Couro', la: 'Lã
 const ESP_LABELS    = { bovino: 'Bovino', ovino: 'Ovino', caprino: 'Caprino' };
 
 let producoes      = [];
-let prodTipoFiltro = 'mes';
-
-document.addEventListener('DOMContentLoaded', () => {
-  // Preenche selects de ano
-  const anoAtual = new Date().getFullYear();
-  const selAno = document.getElementById('prodAno');
-  if (selAno) {
-    for (let a = anoAtual; a >= anoAtual - 5; a--) {
-      const opt = document.createElement('option');
-      opt.value = a; opt.textContent = a;
-      selAno.appendChild(opt);
-    }
-  }
-  const m = new Date().getMonth() + 1;
-  const elMes = document.getElementById('prodMes');
-  if (elMes) elMes.value = m;
-  const elSem = document.getElementById('prodSemestre');
-  if (elSem) elSem.value = m <= 6 ? 1 : 2;
-
-  ['prodMes','prodSemestre','prodAno'].forEach(id => {
-    const el = document.getElementById(id);
-    if (el) el.addEventListener('change', () => carregarProducao());
-  });
-});
+let prodTipoFiltro = 'todos';
+let termoBuscaProd = '';
 
 function setProdTipo(tipo) {
   prodTipoFiltro = tipo;
-  document.getElementById('prodTipoMes').classList.toggle('active',      tipo==='mes');
-  document.getElementById('prodTipoSemestre').classList.toggle('active', tipo==='semestre');
-  document.getElementById('prodTipoAno').classList.toggle('active',      tipo==='ano');
-  document.getElementById('prodMes').style.display      = tipo==='mes'      ? '' : 'none';
-  document.getElementById('prodSemestre').style.display = tipo==='semestre' ? '' : 'none';
+  ['Todos','Mes','Semestre','Ano'].forEach(t =>
+    document.getElementById('prodTipo'+t).classList.toggle('active', t.toLowerCase() === tipo));
+  toggleSelectsPeriodo(tipo, 'prodMes', 'prodSemestre', 'prodAno');
   carregarProducao();
 }
 
 function periodoProducao() {
   const ano = parseInt(document.getElementById('prodAno').value) || new Date().getFullYear();
-  let inicio, fim, label;
-  if (prodTipoFiltro === 'mes') {
-    const mes = parseInt(document.getElementById('prodMes').value) || 1;
-    inicio = `${ano}-${String(mes).padStart(2,'0')}-01`;
-    fim    = new Date(ano, mes, 0).toISOString().split('T')[0];
-    label  = `${MESES_NOMES[mes-1]} ${ano}`;
-  } else if (prodTipoFiltro === 'semestre') {
-    const sem = parseInt(document.getElementById('prodSemestre').value) || 1;
-    if (sem === 1) { inicio = `${ano}-01-01`; fim = `${ano}-06-30`; label = `1º Semestre ${ano}`; }
-    else           { inicio = `${ano}-07-01`; fim = `${ano}-12-31`; label = `2º Semestre ${ano}`; }
-  } else {
-    inicio = `${ano}-01-01`; fim = `${ano}-12-31`; label = `Ano ${ano}`;
-  }
-  return { inicio, fim, label };
+  const mes = parseInt(document.getElementById('prodMes').value) || 1;
+  const sem = parseInt(document.getElementById('prodSemestre').value) || 1;
+  return calcPeriodo(prodTipoFiltro, mes, sem, ano);
 }
 
 async function carregarProducao() {
@@ -661,17 +765,26 @@ async function carregarProducao() {
   }
 
   const { inicio, fim, label } = periodoProducao();
-  document.getElementById('prodPeriodoLabel').textContent       = label;
   document.getElementById('prodPeriodoLabelTabela').textContent = label;
+  const chip = document.getElementById('prodPeriodoChip');
+  if (prodTipoFiltro === 'todos') {
+    chip.style.display = 'none';
+  } else {
+    document.getElementById('prodPeriodoLabel').textContent = label;
+    chip.style.display = 'inline-flex';
+  }
 
-  const { data, error } = await supabaseClient
+  let query = supabaseClient
     .from('producao')
     .select('*')
     .eq('usuario_id', uidAtual)
-    .gte('data', inicio)
-    .lte('data', fim)
     .order('data', { ascending: false })
     .order('hora', { ascending: false });
+
+  if (inicio) query = query.gte('data', inicio);
+  if (fim)    query = query.lte('data', fim);
+
+  const { data, error } = await query;
 
   if (error) {
     console.error('Erro ao carregar produção:', error);
@@ -683,33 +796,52 @@ async function carregarProducao() {
   renderProducao();
 }
 
+function filtrarProducao() {
+  termoBuscaProd = document.getElementById('inputBuscaProducao').value.trim();
+  renderProducao();
+}
+
+function listaProducaoFiltrada() {
+  if (!termoBuscaProd) return producoes;
+  const t = termoBuscaProd.toLowerCase();
+  return producoes.filter(p =>
+    (PROD_LABELS[p.produto] || p.produto || '').toLowerCase().includes(t) ||
+    (ESP_LABELS[p.especie] || p.especie || '').toLowerCase().includes(t) ||
+    (p.origem  || '').toLowerCase().includes(t) ||
+    (p.destino || '').toLowerCase().includes(t) ||
+    (p.lote    || '').toLowerCase().includes(t)
+  );
+}
+
 function renderProducao() {
+  const lista = listaProducaoFiltrada();
+
   // Cards por tipo de produto
   const tipos = ['leite','carne','couro','la'];
   const ids   = { leite:'Leite', carne:'Carne', couro:'Couro', la:'La' };
   tipos.forEach(t => {
-    const lista = producoes.filter(p => p.produto === t);
-    const qtd   = lista.reduce((s,p) => s + (+p.quantidade || 0), 0);
-    const val   = lista.reduce((s,p) => s + (+p.valor || 0), 0);
-    const un    = t === 'leite' ? 'L' : (t === 'couro' ? 'Un' : 'Kg');
+    const sub = lista.filter(p => p.produto === t);
+    const qtd = sub.reduce((s,p) => s + (+p.quantidade || 0), 0);
+    const val = sub.reduce((s,p) => s + (+p.valor || 0), 0);
+    const un  = t === 'leite' ? 'L' : (t === 'couro' ? 'Un' : 'Kg');
     document.getElementById(`prodQtd${ids[t]}`).textContent = `${formatNum(qtd)} ${un}`;
     document.getElementById(`prodVal${ids[t]}`).textContent = fmtM(val);
-    document.getElementById(`prodCnt${ids[t]}`).textContent = `${lista.length} registro(s)`;
+    document.getElementById(`prodCnt${ids[t]}`).textContent = `${sub.length} registro(s)`;
   });
 
   // Cards por espécie
   ['bovino','ovino','caprino'].forEach(e => {
-    const lista = producoes.filter(p => p.especie === e);
-    const val   = lista.reduce((s,p) => s + (+p.valor || 0), 0);
-    const cap   = e.charAt(0).toUpperCase() + e.slice(1);
+    const sub = lista.filter(p => p.especie === e);
+    const val = sub.reduce((s,p) => s + (+p.valor || 0), 0);
+    const cap = e.charAt(0).toUpperCase() + e.slice(1);
     document.getElementById(`espVal${cap}`).textContent = fmtM(val);
-    document.getElementById(`espCnt${cap}`).textContent = `${lista.length} registro(s) no período`;
+    document.getElementById(`espCnt${cap}`).textContent = `${sub.length} registro(s) no período`;
   });
 
   // Tabela
-  document.getElementById('prodBadgeTotal').textContent = producoes.length;
+  document.getElementById('prodBadgeTotal').textContent = lista.length;
   const tbody = document.getElementById('tbodyProducao');
-  if (!producoes.length) {
+  if (!lista.length) {
     tbody.innerHTML = `<tr><td colspan="9" class="empty-row">
       <i class="fa-solid fa-inbox" style="font-size:28px;color:#e2e8f0;display:block;margin-bottom:8px;"></i>
       Nenhum registro de produção no período.
@@ -717,7 +849,7 @@ function renderProducao() {
     return;
   }
 
-  tbody.innerHTML = producoes.map(p => {
+  tbody.innerHTML = lista.map(p => {
     const un = p.unidade || PROD_UNIDADES[p.produto] || '';
     const origem  = p.origem  ? `De: ${escHtml(p.origem)}`   : '';
     const destino = p.destino ? `Para: ${escHtml(p.destino)}`: '';
@@ -832,4 +964,126 @@ async function excluirProducao(id) {
     .from('producao').delete().eq('id', id).eq('usuario_id', uidAtual);
   if (error) { alert('Erro ao excluir: ' + error.message); return; }
   await carregarProducao();
+}
+
+// =========================================================
+// PDF — PRODUÇÃO
+// =========================================================
+async function gerarPDFProducao() {
+  if (!uidAtual) return;
+
+  const periodo = document.querySelector('input[name="periodoRelatorioProd"]:checked').value;
+  const { dataCorte, labelPeriodo, hoje } = periodoCorteRelatorio(periodo);
+
+  const { data: lista, error } = await supabaseClient
+    .from('producao')
+    .select('*')
+    .eq('usuario_id', uidAtual)
+    .gte('data', dataCorte.toISOString().split('T')[0])
+    .order('data', { ascending: false })
+    .order('hora', { ascending: false });
+
+  if (error) { alert('Erro ao gerar PDF.'); return; }
+
+  const listaSegura = (lista || []).filter(p => p.usuario_id === uidAtual);
+  const valorTotal  = listaSegura.reduce((s,p) => s + (+p.valor || 0), 0);
+
+  const { jsPDF } = window.jspdf;
+  const doc = new jsPDF({ unit: 'mm', format: 'a4' });
+  const PW  = 210;
+  let y     = 0;
+
+  const VERDE  = [13, 138, 79];
+  const ESCURO = [30, 30, 30];
+  const MEDIO  = [100, 116, 139];
+  const BORDA  = [226, 232, 240];
+
+  _cabecalhoPDF(doc, PW, 'Relatório de Produção');
+  y = 52;
+
+  doc.setTextColor(...ESCURO);
+  doc.setFont('helvetica','bold'); doc.setFontSize(13);
+  doc.text(`Relatório de Produção ${labelPeriodo}`, 14, y);
+  y += 10;
+
+  // Resumo por produto
+  const tipos = ['leite','carne','couro','la'];
+  doc.setFillColor(248,250,252);
+  doc.setDrawColor(...BORDA);
+  doc.roundedRect(14, y, PW-28, 50, 3, 3, 'FD');
+  doc.setFont('helvetica','bold'); doc.setFontSize(10);
+  doc.setTextColor(...VERDE);
+  doc.text('Resumo da Produção', 20, y+9);
+  doc.setFont('helvetica','normal'); doc.setFontSize(9.5);
+  let ry = y + 18;
+  tipos.forEach(t => {
+    const sub = listaSegura.filter(p => p.produto === t);
+    const qtd = sub.reduce((s,p) => s + (+p.quantidade || 0), 0);
+    const val = sub.reduce((s,p) => s + (+p.valor || 0), 0);
+    const un  = PROD_UNIDADES[t] || '';
+    doc.setTextColor(...MEDIO);
+    doc.text(`${PROD_LABELS[t]}:`, 20, ry);
+    doc.setFont('helvetica','bold'); doc.setTextColor(...ESCURO);
+    doc.text(`${formatNum(qtd)} ${un}`, 70, ry);
+    doc.text(fmtM(val), 140, ry);
+    doc.setFont('helvetica','normal');
+    ry += 7;
+  });
+  doc.setFont('helvetica','bold'); doc.setTextColor(...VERDE);
+  doc.text('Valor total estimado:', 20, ry);
+  doc.text(fmtM(valorTotal), 140, ry);
+  y += 60;
+
+  // Registros detalhados
+  doc.setTextColor(...ESCURO);
+  doc.setFont('helvetica','bold'); doc.setFontSize(12);
+  doc.text('Registros Detalhados', 14, y);
+  y += 8;
+
+  listaSegura.forEach((p, i) => {
+    const altH = p.observacoes ? 34 : 28;
+    if (y + altH > 272) {
+      _rodape(doc, PW, MEDIO);
+      doc.addPage();
+      y = 20;
+    }
+
+    doc.setFillColor(240,253,246);
+    doc.setDrawColor(187,247,208);
+    doc.roundedRect(14, y, PW-28, altH, 2, 2, 'FD');
+
+    doc.setFont('helvetica','bold'); doc.setFontSize(9);
+    doc.setTextColor(...VERDE);
+    doc.text(`${i+1}. ${(PROD_LABELS[p.produto] || p.produto).toUpperCase()} — ${ESP_LABELS[p.especie] || p.especie}`, 20, y+7);
+
+    doc.setFont('helvetica','normal'); doc.setFontSize(8.5);
+    doc.setTextColor(...MEDIO);
+    const dtHr = p.hora ? `${fmtD(p.data)} às ${p.hora.slice(0,5)}` : fmtD(p.data);
+    const un   = p.unidade || PROD_UNIDADES[p.produto] || '';
+    doc.text(`Data: ${dtHr}`, 20, y+13);
+    doc.text(`Quantidade: ${formatNum(p.quantidade)} ${un}   |   Qualidade: ${p.qualidade || '—'}`, 20, y+19);
+    const rota = [p.origem ? `De: ${p.origem}` : '', p.destino ? `Para: ${p.destino}` : ''].filter(Boolean).join('  ');
+    doc.text(`${rota || 'Origem/Destino: —'}${p.lote ? `   |   Lote: ${p.lote}` : ''}`, 20, y+24);
+
+    doc.setFont('helvetica','bold'); doc.setFontSize(9);
+    doc.setTextColor(...ESCURO);
+    doc.text(fmtM(p.valor), PW-18, y+13, {align:'right'});
+
+    if (p.observacoes) {
+      doc.setFont('helvetica','italic'); doc.setFontSize(8);
+      doc.setTextColor(...MEDIO);
+      doc.text(`Obs: ${p.observacoes}`, 20, y+30);
+    }
+
+    y += altH + 4;
+  });
+
+  const total = doc.internal.getNumberOfPages();
+  for (let pg = 1; pg <= total; pg++) {
+    doc.setPage(pg);
+    _rodape(doc, PW, MEDIO, pg, total);
+  }
+
+  doc.save(`relatorio-producao-${labelPeriodo.toLowerCase()}-${hoje.toISOString().split('T')[0]}.pdf`);
+  fecharModal('modalPDFProd');
 }
