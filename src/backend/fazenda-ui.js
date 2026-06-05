@@ -23,6 +23,33 @@
     */
    
 
+if (typeof window.abrirModal !== 'function') {
+    window.abrirModal = function(id) {
+        const modal = document.getElementById(id);
+        if (!modal) {
+            console.warn('[Modal] Elemento não encontrado:', id);
+            return;
+        }
+        modal.style.display = 'flex';
+        modal.classList.add('show', 'active');
+        modal.setAttribute('aria-hidden', 'false');
+        document.body.classList.add('modal-open');
+    };
+}
+
+if (typeof window.fecharModal !== 'function') {
+    window.fecharModal = function(id) {
+        const modal = document.getElementById(id);
+        if (!modal) return;
+        modal.style.display = 'none';
+        modal.classList.remove('show', 'active');
+        modal.setAttribute('aria-hidden', 'true');
+        if (!document.querySelector('.modal.show, .modal.active, .modal-parentesco[style*="flex"]')) {
+            document.body.classList.remove('modal-open');
+        }
+    };
+}
+
 window.PotygenFazendaUI = {
 
     // Callback opcional por página (ex: recarregar dados do dashboard, animais, etc.)
@@ -223,3 +250,9 @@ function abrirModalCadastrarFazenda() { PotygenFazendaUI.abrirModalCadastrarFaze
 function fecharModalCadastro()        { PotygenFazendaUI.fecharModalCadastro(); }
 function salvarFazenda()              { PotygenFazendaUI.salvarFazenda(); }
 function trocarFazenda(id)            { PotygenFazendaUI._selecionarFazendaUI(id); }
+
+window.abrirModalTrocarFazenda = abrirModalTrocarFazenda;
+window.abrirModalCadastrarFazenda = abrirModalCadastrarFazenda;
+window.fecharModalCadastro = fecharModalCadastro;
+window.salvarFazenda = salvarFazenda;
+window.trocarFazenda = trocarFazenda;
