@@ -4,7 +4,7 @@ O **Potygen** é uma plataforma web responsiva voltada para a transformação di
 
 ---
 
-## 🛠️ Como a Inteligência Artificial Funciona (Sem Alucinação)
+## 🛠️ Como a Inteligência Artificial Funciona
 
 O assistente inteligente do Potygen funciona como um **Consultor de Dados Seguro** do rebanho, utilizando o modelo **Gemini** com uma trava de contexto para garantir que ele nunca invente informações:
 
@@ -24,36 +24,40 @@ Para garantir estabilidade na apresentação e contornar erros de servidores de 
 2. Certifique-se de ter a extensão **Live Server** instalada.
 3. Abra o arquivo `index.html`.
 4. Clique em **"Go Live"** na barra inferior do VS Code.
-5. A aplicação abrirá no navegador em `http://127.0.0.1:5500`.
+5. A aplicação abrirá no navegador.
 
 ---
 
 ## 🕹️ Manual de Operação da Solução (Passo a Passo das Telas)
 
 ### 1. Acesso e Autenticação
-* **Preencher Cadastro:** Na tela inicial, o usuário clica em "Cadastrar" e insere Nome, Distrito de Crateús, E-mail e Senha para criar seu perfil de acesso.
+* **Preencher Cadastro:** Na tela inicial, o usuário clica em "Cadastrar" e insere as informações para criar seu perfil de acesso.
 * **Fazer Login:** O usuário faz o login com e-mail e senha para acessar o seu painel exclusivo.
 
 ### 2. Gestão do Rebanho e Reprodução
-* **Cadastrar Animal:** No menu "Rebanho", o usuário clica em "Adicionar", preenche a identificação do animal (Brinco/Nome), espécie (Bovino, Ovino ou Caprino) e raça.
+* **Cadastrar Animal:** No menu "Rebanho", o usuário clica em "Adicionar", preenche a identificação do animal;
 * **Registrar Inseminação:** No menu "Reprodução", escolhe o animal, a data do procedimento e o sêmen utilizado. 
-  * *Uso da Voz:* É possível clicar no microfone e falar (Ex: *"Inseminação feita na cabra 02 hoje"*). O sistema preenche o formulário sozinho.
 
 ### 3. Análise Preditiva e Alertas
-* **Ver o Alerta de Clima:** Ao salvar a inseminação, o sistema analisa o calor de Crateús. Se a temperatura estiver perigosa para o animal, a tela exibe na hora um **Alerta Vermelho de Risco de Aborto por Estresse Térmico**, sugerindo adiar o procedimento para não perder o sêmen.
+* **Ver o Alerta de Clima:** Ao usar o simulador de cruzamento, é devolvida uma probabilidade de sucesso, bem como o sistema analisa o calor de Crateús. Se a temperatura estiver perigosa para o animal, a tela exibe na hora um alerta, sugerindo adiar o procedimento para não perder o sêmen.
 
 ### 4. Gestão Financeira e Relatórios (CSV)
-* **Controle Econômico e Produção:** No painel financeiro, registram-se os gastos (vacinas, sêmen, ração) e os ganhos (venda de leite/animais). O sistema calcula o custo real de cada filhote nascido. No painel de produção, registra-se a litragem de leite diária.
-* **Botão de Exportação:** Na aba de relatórios, o usuário clica em **"Exportar Relatório de Rastreabilidade"** e o sistema baixa na hora uma planilha (arquivo .CSV que abre no Excel) com tudo unificado: animais, inseminações, finanças e produção.
+* **Controle Econômico e Produção:** No painel financeiro, registram-se os gastos (vacinas, sêmen, ração) e os ganhos (venda de leite/animais). O sistema calcula o saldo, com possibilidade de exportar relatório em pdf e transações em csv. O mesmo ocorre em controle de produção, onde é possível cadastrar o que foi produzido e o valor daquela produção, com possibilidade de associar uma produção a um animal e também gerar relatórios em pdf e csv.
 
+### 5. Chatbot Inteligente (Consultor do Rebanho)
+* **Como Operar:** Na tela do sistema, clique no ícone do Chat para abrir a janela de conversa com o assistente.
+* **O que fazer:** Digite ou pergunte por voz qualquer dúvida sobre a sua fazenda;
+* **Como ele responde:** O sistema faz uma varredura rápida no banco de dados, pega as informações reais da sua propriedade e entrega para o assistente (Gemini) responder. O robô lê seus dados e te dá o valor exato na tela, sem inventar informações.
+  
 ---
 
-## 🔒 Segurança de Dados (Privacidade das Propriedades)
+## 🔒 Segurança de Dados via RLS (Row Level Security)
 
-A segurança do Potygen foi feita direto na estrutura do banco de dados para garantir que os dados financeiros e estratégicos de uma fazenda fiquem completamente isolados das outras:
+A privacidade das informações estratégicas e financeiras das fazendas é garantida direto na raiz do projeto através do mecanismo de **RLS (Segurança em Nível de Linha)** nativo do banco de dados (**Supabase/PostgreSQL**):
 
-* **Isolamento por Conta:** O banco de dados possui uma trava automática que reconhece o usuário logado através de chaves de segurança (tokens).
-* **Bloqueio de Acesso:** Mesmo que o sistema esteja rodando em ambiente de testes ou localmente na apresentação, um usuário fica totalmente impedido de visualizar, alterar ou interceptar as informações, animais ou relatórios de outra propriedade rural. Cada produtor só enxerga o que é seu.
+* **O que é o RLS:** É uma trava de segurança que funciona direto no banco de dados, e não no visual do site. Ele age como um filtro inteligente em cada linha das tabelas.
+* **Isolamento Total:** Quando o produtor faz o login, o banco identifica o seu ID. A partir desse momento, qualquer comando de busca só traz registros onde o dono seja aquele ID específico. 
+* **Bloqueio de Invasão:** Mesmo que o sistema esteja rodando em ambiente local na apresentação (via VS Code), a proteção do RLS continua blindada na nuvem. Se um usuário tentar alterar o código para espionar o rebanho ou o faturamento de outro produtor, o banco de dados recusa a requisição na hora. Um produtor é matematicamente incapaz de ler ou modificar os dados de outro, garantindo conformidade com a LGPD.
 
 ---
 
