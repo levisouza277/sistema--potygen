@@ -426,12 +426,3 @@ body { background: var(--bg); color: var(--text); }
   .form-row.tres  { grid-template-columns: 1fr; }
   .prod-tipo-grid { grid-template-columns: 1fr; }
 }
-
-/* ── Botão Exportar CSV ── */
-.btn-csv {
-  background: var(--teal); color: #fff; border: none;
-  padding: 11px 18px; border-radius: 10px; font-weight: 700;
-  font-size: 13px; cursor: pointer; display: flex; align-items: center; gap: 8px;
-  transition: background 0.2s;
-}
-.btn-csv:hover { background: #0b766c; }

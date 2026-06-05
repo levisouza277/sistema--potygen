@@ -7,220 +7,62 @@
     <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     
-    <link rel="stylesheet" href="../style/style-dashboard.css">
-    <link rel="stylesheet" href="../style/style-analise.css">
     <link rel="stylesheet" href="../style/navbar-style.css">
+    <link rel="stylesheet" href="../style/style-analise.css">
 
-    <style>
-        /* Estilos mínimos para feedback dinâmico de prenhez e UI */
-        .score-number.text-red-600 { color: #dc2626 !important; }
-        .score-number.text-green-600 { color: #16a34a !important; }
-        .barra-preenchimento.bar-red { background: linear-gradient(90deg,#ef4444,#dc2626) !important; }
-        .barra-preenchimento.bar-green { background: linear-gradient(90deg,#22c55e,#16a34a) !important; }
-        
-        /* Modal Style QuickFix caso não esteja no arquivo CSS */
-        .modal-parentesco {
-            display: none;
-            position: fixed;
-            top: 0; left: 0; width: 100%; height: 100%;
-            background: rgba(0,0,0,0.5);
-            z-index: 1000;
-            align-items: center;
-            justify-content: center;
-        }
-        .modal-content-p {
-            background: white;
-            padding: 24px;
-            border-radius: 12px;
-            max-width: 500px;
-            width: 90%;
-            box-shadow: 0 10px 25px rgba(0,0,0,0.1);
-        }
-        .modal-fazenda {
-            display: none;
-            position: fixed;
-            inset: 0;
-            z-index: 1100;
-            align-items: center;
-            justify-content: center;
-            background: rgba(15, 23, 42, 0.55);
-            padding: 20px;
-        }
-        .modal-fazenda .modal-card {
-            background: #fff;
-            width: min(620px, 100%);
-            max-height: 90vh;
-            overflow-y: auto;
-            border-radius: 18px;
-            box-shadow: 0 24px 70px rgba(15, 23, 42, 0.28);
-            padding: 24px;
-        }
-        .modal-fazenda .modal-header {
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-            gap: 16px;
-            margin-bottom: 18px;
-        }
-        .modal-fazenda .modal-close {
-            border: 0;
-            background: #f1f5f9;
-            color: #475569;
-            width: 36px;
-            height: 36px;
-            border-radius: 999px;
-            cursor: pointer;
-        }
-        .fazendas-lista {
-            display: grid;
-            gap: 10px;
-            margin: 18px 0;
-        }
-        .fazenda-item {
-            display: flex;
-            align-items: center;
-            gap: 12px;
-            padding: 14px;
-            border: 1px solid #e2e8f0;
-            border-radius: 14px;
-            cursor: pointer;
-            transition: 0.2s ease;
-        }
-        .fazenda-item:hover, .fazenda-item.ativa {
-            border-color: #16a34a;
-            background: #f0fdf4;
-        }
-        .fazenda-item .fi-icon {
-            color: #16a34a;
-            font-size: 20px;
-        }
-        .fazenda-item .fi-info { flex: 1; }
-        .fazenda-item .fi-nome { font-weight: 800; color: #0f172a; }
-        .fazenda-item .fi-sub { font-size: 13px; color: #64748b; }
-        .fazenda-item .fi-check { opacity: 0; color: #16a34a; }
-        .fazenda-item.ativa .fi-check { opacity: 1; }
-        .fazendas-lista-vazia {
-            text-align: center;
-            padding: 24px;
-            color: #64748b;
-            border: 1px dashed #cbd5e1;
-            border-radius: 14px;
-        }
-        .form-grid-fazenda {
-            display: grid;
-            grid-template-columns: repeat(2, minmax(0, 1fr));
-            gap: 14px;
-        }
-        .form-grid-fazenda .full { grid-column: 1 / -1; }
-        @media (max-width: 640px) {
-            .form-grid-fazenda { grid-template-columns: 1fr; }
-            .form-grid-fazenda .full { grid-column: auto; }
-        }
-    </style>
+    <script src="https://unpkg.com/brain.js"></script>
 </head>
 <body>
 
 <div class="app-container">
-    <div id="navbar-container"></div>
-
     <main class="main-content" id="mainContent">
         <header class="top-bar">
             <div class="breadcrumb-area">
-                <p class="page-subtitle">Páginas / Análise Genética</p>
                 <h1 class="page-title">Predição Reprodutiva IA</h1>
             </div>
             <div class="user-location-badge">
                 <i class="fa-solid fa-location-dot"></i>
-                <span id="lblLocalizacaoUsuario">Buscando localização...</span>
+                <span id="lblLocalizacaoUsuario">Carregando fazenda...</span>
             </div>
         </header>
 
         <div class="content-wrapper">
+            
             <div class="analysis-grid">
                 
                 <div class="card-analise">
                     <div class="card-header-title">
                         <i class="fa-solid fa-sliders"></i>
-                        <h2>1. Configuração do Acasalamento</h2>
+                        <h2>Configuração do Acasalamento</h2>
                     </div>
                     
                     <form id="formAcoplamento" onsubmit="event.preventDefault();">
                         <div class="input-group">
                             <label for="txtEspecie">Espécie do Rebanho</label>
-                            <select id="txtEspecie" onchange="atualizarFinalidadesPorEspecie()">
+                            <select id="txtEspecie" onchange="atualizarFormulario()">
                                 <option value="Bovino">Bovinos</option>
                                 <option value="Ovino">Ovinos</option>
                                 <option value="Caprino">Caprinos</option>
                             </select>
                         </div>
 
-                        <div class="form-row-double">
+                        <div class="form-row">
                             <div class="input-group">
-                                <label for="dataInseminacao">Data do Manejo</label>
-                                <input type="date" id="dataInseminacao" class="input-busca-potygen">
+                                <label for="txtRaca">Raça da Matriz (Fêmea)</label>
+                                <select id="txtRaca"></select>
                             </div>
                             <div class="input-group">
-                                <label for="horaManejo">Hora do Manejo</label>
-                                <input type="time" id="horaManejo" class="input-busca-potygen">
-                            </div>
-                        </div>
-                        
-                        <div class="input-group-busca">
-                            <label for="buscaFemea">Buscar Matriz (Brinco ou Nome)</label>
-                            <div class="busca-animal-container">
-                                <input type="text" id="buscaFemea" class="input-busca-potygen" 
-                                       placeholder="Digite o brinco ou nome da fêmea..." autocomplete="off"
-                                       oninput="filtrarListaFemea(this.value)" onfocus="mostrarTodasFemeas()">
-                                <div id="listaFemeasResultados" class="lista-animais-dropdown"></div>
-                            </div>
-                            <input type="hidden" id="femeaSelecionadaId" value="">
-                            <div class="help-text"><i class="fa-solid fa-circle-info"></i> Digite para filtrar • Clique no animal para selecionar</div>
-                        </div>
-
-                        <div class="feedback-container-potygen" id="containerFeedbackFemea">
-                            <small class="feedback-label">Dados da Fêmea Confirmada</small>
-                            <span id="textoFeedbackFemea" class="feedback-texto">Nenhuma matriz selecionada.</span>
-                        </div>
-
-                        <div class="input-group-busca" style="margin-top: 15px;">
-                            <label for="buscaMacho">Buscar Reprodutor (Brinco ou Nome)</label>
-                            <div class="busca-animal-container">
-                                <input type="text" id="buscaMacho" class="input-busca-potygen" 
-                                       placeholder="Digite o brinco ou nome do macho..." autocomplete="off"
-                                       oninput="filtrarListaMacho(this.value)" onfocus="mostrarTodosMachos()">
-                                <div id="listaMachosResultados" class="lista-animais-dropdown"></div>
-                            </div>
-                            <input type="hidden" id="machoSelecionadoId" value="">
-                            <div class="help-text"><i class="fa-solid fa-circle-info"></i> Digite para filtrar • Clique no animal para selecionar</div>
-                        </div>
-
-                        <div class="feedback-container-potygen" id="containerFeedbackMacho">
-                            <small class="feedback-label">Dados do Reprodutor Confirmado</small>
-                            <span id="textoFeedbackMacho" class="feedback-texto">Nenhum reprodutor selecionado.</span>
-                        </div>
-
-                        <div class="input-group" style="margin-top: 15px;">
-                            <label for="consanguinidade">
-                                <i class="fa-solid fa-hand-holding-heart"></i> Consanguinidade (COI)
-                            </label>
-                            <div style="display: flex; gap: 12px; align-items: center;">
-                                <input type="text" id="consanguinidade" class="input-busca-potygen" 
-                                       placeholder="Calculado automaticamente" 
-                                       value="0.00" style="flex: 1; background-color: #f9f9f9;" readonly>
-                                <button type="button" class="btn-estimar" onclick="abrirModalParentesco()" style="white-space: nowrap;">
-                                    <i class="fa-solid fa-calculator"></i> Ajustar
-                                </button>
+                                <label for="txtRacaReprodutor">Raça do Reprodutor (Macho)</label>
+                                <select id="txtRacaReprodutor"></select>
                             </div>
                         </div>
 
-                        <div class="input-group" style="margin-top: 15px;">
-                            <label for="txtFinalidade">Finalidade Zootécnica da Análise</label>
-                            <select id="txtFinalidade">
-                                <option value="">Selecione a espécie primeiro</option>
-                            </select>
+                        <div class="input-group">
+                            <label for="txtFinalidade">Finalidade Zootécnica</label>
+                            <select id="txtFinalidade"></select>
                         </div>
 
-                        <button type="button" class="btn-analisar" onclick="executarPredicaoIA()" style="margin-top: 20px;">
+                        <button type="button" class="btn-analisar" onclick="executarPredicaoIA()">
                             <i class="fa-solid fa-brain"></i> Executar Predição da IA
                         </button>
                     </form>
@@ -229,12 +71,13 @@
                 <div class="card-analise weather-card">
                     <div class="card-header-title">
                         <i class="fa-solid fa-temperature-three-quarters"></i>
-                        <h2>2. Bioclimatologia Animal (Open-Meteo)</h2>
+                        <h2>Bioclimatologia Animal Real-Time</h2>
                     </div>
+                    
                     <div id="painelClimatico" class="weather-display">
                         <div class="weather-metrics">
                             <div class="metric-box">
-                                <span class="metric-label">Temperatura no Momento</span>
+                                <span class="metric-label">Temperatura Atual</span>
                                 <span id="lblTemperatura" class="metric-value">--°C</span>
                             </div>
                             <div class="metric-box">
@@ -242,32 +85,29 @@
                                 <span id="lblUmidade" class="metric-value">--%</span>
                             </div>
                         </div>
-                        
-                        <div class="itu-container" style="margin-top: 20px;">
+
+                        <div class="itu-container">
                             <div class="itu-header">
                                 <span>Índice de Temperatura e Umidade (ITU)</span>
                                 <span id="lblITU" class="itu-badge">--</span>
                             </div>
-                            <div id="lblStatusTermico" class="itu-status-text">Aguardando definição da data/animal...</div>
+                            <div id="lblStatusTermico" class="itu-status-text">Carregando dados climáticos...</div>
                         </div>
 
-                        <div id="recomendacaoClima" class="recomendacao-climatica" style="margin-top: 20px;">
-                            <i class="fa-solid fa-circle-info"></i> 
-                            <span>Faixa ideal para a espécie selecionada será exibida aqui após a análise do clima.</span>
-                        </div>
-
-                        <p class="update-timestamp" style="margin-top: 15px;">
-                            <i class="fa-regular fa-clock"></i> Sincronização Clima: <span id="lblAtualizacao">--</span>
+                        <p class="update-timestamp">
+                            <i class="fa-regular fa-clock"></i> Última sincronização: <span id="lblAtualizacao">--</span>
                         </p>
                     </div>
                 </div>
 
-            </div> <div id="painelResultado" class="card-analise result-card" style="display: none; margin-top: 24px;">
+            </div>
+
+            <div id="painelResultado" class="card-analise result-card" style="display: none;">
                 <div class="card-header-title">
                     <i class="fa-solid fa-chart-pie"></i>
-                    <h2>3. Resultado do Motor Preditivo PotyGen</h2>
+                    <h2>Resultado do Motor Preditivo PotyGen</h2>
                 </div>
-                
+
                 <div class="score-flex-container">
                     <div class="score-gauge">
                         <span id="lblScore" class="score-number">0%</span>
@@ -280,31 +120,29 @@
                     </div>
                 </div>
 
-                <div class="eficacia-container" style="margin-top: 25px; border-top: 1px solid #f0f0f0; padding-top: 20px;">
+                <div class="eficacia-container">
                     <div class="eficacia-header">
                         <i class="fa-solid fa-chart-line"></i>
                         <span id="lblTituloEficacia">Taxa de Eficácia para a Finalidade Selecionada</span>
                     </div>
+                    
                     <div class="score-flex-container" style="margin-top: 15px;">
                         <div class="score-gauge">
                             <span id="lblEficacia" class="score-number">0%</span>
                         </div>
                         <div class="progress-bar-wrapper">
                             <div class="barra-fundo">
-                                <div id="lblBarraEficacia" class="barra-preenchimento" style="width: 0%;"></div>
+                                <div id="lblBarraEficacia" class="barra-preenchimento"></div>
                             </div>
                         </div>
                     </div>
                 </div>
 
-                <div class="recomendacao-box" style="margin-top: 20px;">
+                <div class="recomendacao-box" style="margin-top: 24px;">
                     <div class="rec-icon"><i class="fa-solid fa-cow"></i></div>
-                    <div id="lblMelhorAnimal" class="recomendacao-texto">Selecione os dados e execute a predição.</div>
-                </div>
-
-                <div id="lblDetalheGeneticoBox" class="recomendacao-box" style="margin-top: 12px; background: #fff7ed; display: none;">
-                    <div class="rec-icon"><i class="fa-solid fa-dna"></i></div>
-                    <div id="lblDetalheGenetico" class="recomendacao-texto">—</div>
+                    <div id="lblMelhorAnimal" class="recomendacao-texto">
+                        Selecione os dados e execute a predição para ver o melhor animal recomendado.
+                    </div>
                 </div>
             </div>
 
@@ -312,126 +150,13 @@
     </main>
 </div>
 
-<div id="modalParentesco" class="modal-parentesco">
-    <div class="modal-content-p">
-        <h3><i class="fa-solid fa-network-wired"></i> Grau de Parentesco Conhecido</h3>
-        <p style="font-size: 14px; color: #666; margin-bottom: 15px;">Caso a árvore genealógica no banco esteja incompleta, force manualmente o parentesco para calibrar o fator de penalização genética da IA:</p>
-        <div class="input-group">
-            <label for="selGrauParentesco">Grau de Relação Direta</label>
-            <select id="selGrauParentesco">
-                <option value="0">Sem Parentesco Conhecido (0%)</option>
-                <option value="25">Irmãos Inteiros / Pai com Filha / Mãe com Filho (25%)</option>
-                <option value="12.5">Meio-Irmãos / Avô com Neta (12.5%)</option>
-                <option value="6.25">Primos Irmãos (6.25%)</option>
-                <option value="50">Autofecundação / Gêmeos Idênticos (50%)</option>
-            </select>
-        </div>
-        <div style="display: flex; gap: 10px; justify-content: flex-end; margin-top: 20px;">
-            <button type="button" onclick="fecharModalParentesco()" class="btn-estimar" style="background: #e2e8f0; color: #475569;">Cancelar</button>
-            <button type="button" onclick="aplicarParentescoManual()" class="btn-analisar" style="padding: 8px 16px; margin: 0; width: auto;">Aplicar Grau</button>
-        </div>
-    </div>
-</div>
-
-<div id="potyToast" class="poty-toast">
-    <i class="fa-solid fa-circle-check"></i> 
-    <span id="potyToastText">Ação realizada com sucesso!</span>
-</div>
-
-<div id="modalTrocarFazenda" class="modal-fazenda" aria-hidden="true">
-    <div class="modal-card">
-        <div class="modal-header">
-            <div>
-                <h3><i class="fa-solid fa-tractor"></i> Trocar fazenda</h3>
-                <p style="margin: 4px 0 0; color: #64748b; font-size: 14px;">Selecione a fazenda para filtrar os animais desta análise.</p>
-            </div>
-            <button type="button" class="modal-close" onclick="fecharModal('modalTrocarFazenda')" aria-label="Fechar"><i class="fa-solid fa-xmark"></i></button>
-        </div>
-        <div id="fazendasLista" class="fazendas-lista"></div>
-        <button type="button" class="btn-analisar" onclick="abrirModalCadastrarFazenda()" style="margin: 0; width: 100%;">
-            <i class="fa-solid fa-plus"></i> Cadastrar nova fazenda
-        </button>
-    </div>
-</div>
-
-<div id="modalCadastrarFazenda" class="modal-fazenda" aria-hidden="true">
-    <div class="modal-card">
-        <div class="modal-header">
-            <div>
-                <h3><i class="fa-solid fa-seedling"></i> Cadastrar fazenda</h3>
-                <p style="margin: 4px 0 0; color: #64748b; font-size: 14px;">Informe os dados básicos para vincular os animais à fazenda.</p>
-            </div>
-            <button type="button" class="modal-close" onclick="fecharModalCadastro()" aria-label="Fechar"><i class="fa-solid fa-xmark"></i></button>
-        </div>
-        <div class="form-grid-fazenda">
-            <div class="input-group full">
-                <label for="fzNome">Nome da fazenda *</label>
-                <input type="text" id="fzNome" class="input-busca-potygen" placeholder="Ex: Fazenda Santa Clara">
-            </div>
-            <div class="input-group">
-                <label for="fzTipoCriacao">Tipo de criação *</label>
-                <select id="fzTipoCriacao" class="input-busca-potygen">
-                    <option value="">Selecione</option>
-                    <option value="Bovinos">Bovinos</option>
-                    <option value="Ovinos">Ovinos</option>
-                    <option value="Caprinos">Caprinos</option>
-                    <option value="Mista">Mista</option>
-                </select>
-            </div>
-            <div class="input-group">
-                <label for="fzArea">Área (ha)</label>
-                <input type="number" id="fzArea" class="input-busca-potygen" min="0" step="0.01" placeholder="0">
-            </div>
-            <div class="input-group">
-                <label for="fzProprietario">Proprietário</label>
-                <input type="text" id="fzProprietario" class="input-busca-potygen" readonly>
-            </div>
-            <div class="input-group">
-                <label for="fzCpf">CPF</label>
-                <input type="text" id="fzCpf" class="input-busca-potygen" readonly>
-            </div>
-            <div class="input-group">
-                <label for="fzTelefone">Telefone</label>
-                <input type="tel" id="fzTelefone" class="input-busca-potygen" placeholder="(00) 00000-0000">
-            </div>
-            <div class="input-group">
-                <label for="fzCep">CEP</label>
-                <input type="text" id="fzCep" class="input-busca-potygen" placeholder="00000-000">
-            </div>
-            <div class="input-group full">
-                <label for="fzEndereco">Endereço</label>
-                <input type="text" id="fzEndereco" class="input-busca-potygen" placeholder="Estrada, comunidade, lote...">
-            </div>
-            <div class="input-group">
-                <label for="fzCidade">Cidade</label>
-                <input type="text" id="fzCidade" class="input-busca-potygen" placeholder="Cidade">
-            </div>
-            <div class="input-group">
-                <label for="fzEstado">Estado</label>
-                <select id="fzEstado" class="input-busca-potygen">
-                    <option value="">UF</option><option value="AC">AC</option><option value="AL">AL</option><option value="AP">AP</option><option value="AM">AM</option><option value="BA">BA</option><option value="CE">CE</option><option value="DF">DF</option><option value="ES">ES</option><option value="GO">GO</option><option value="MA">MA</option><option value="MT">MT</option><option value="MS">MS</option><option value="MG">MG</option><option value="PA">PA</option><option value="PB">PB</option><option value="PR">PR</option><option value="PE">PE</option><option value="PI">PI</option><option value="RJ">RJ</option><option value="RN">RN</option><option value="RS">RS</option><option value="RO">RO</option><option value="RR">RR</option><option value="SC">SC</option><option value="SP">SP</option><option value="SE">SE</option><option value="TO">TO</option>
-                </select>
-            </div>
-            <div class="input-group full">
-                <label for="fzDescricao">Descrição</label>
-                <textarea id="fzDescricao" class="input-busca-potygen" rows="3" placeholder="Observações da propriedade"></textarea>
-            </div>
-        </div>
-        <div style="display: flex; justify-content: flex-end; gap: 10px; margin-top: 20px;">
-            <button type="button" class="btn-estimar" onclick="fecharModalCadastro()" style="background: #e2e8f0; color: #475569;">Cancelar</button>
-            <button type="button" id="btnSalvarFazenda" class="btn-analisar" onclick="salvarFazenda()" style="padding: 10px 18px; margin: 0; width: auto;"><i class="fa-solid fa-tractor"></i> Cadastrar Fazenda</button>
-        </div>
-    </div>
-</div>
-
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-<script src="https://cdn.jsdelivr.net/npm/brain.js@2.0.0-beta.23/dist/browser.min.js"></script>
-
 <script src="../backend/database.js"></script>
 <script src="../backend/auth.js"></script>
 <script src="../backend/fazenda.js"></script>
 <script src="../backend/fazenda-ui.js"></script>
 <script src="../backend/script-analise.js"></script>
+
 <script src="../backend/navbar-loader.js"></script>
 <script src="../backend/navbar-script.js"></script>
 <script src="../backend/logout.js"></script>

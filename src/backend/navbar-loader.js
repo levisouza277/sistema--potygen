@@ -4,10 +4,12 @@
  */
 
 function loadNavbar() {
+    console.log('🚀 navbar-loader.js inicializado');
+    
     // Verifica se o navbar já foi carregado
     if (document.getElementById('potygen-sidebar')) {
+        console.log('✅ Navbar já existia no DOM');
         window.navbarLoaded = true;
-        // Aguarda um pouco e dispara o evento para quem se registrou depois
         setTimeout(() => {
             const event = new CustomEvent('navbarLoaded');
             document.dispatchEvent(event);
@@ -21,25 +23,31 @@ function loadNavbar() {
 
     // Insere o contenedor no início do body
     document.body.insertAdjacentElement('afterbegin', navContainer);
+    console.log('📦 Contenedor criado e inserido no DOM');
 
-    // Carrega o arquivo navbar.html
-    fetch('../pages/navbar.html')
+    // Path simples e direto que funciona em tudo
+    const navbarPath = '../pages/navbar.html';
+    
+    console.log('🔗 Tentando carregar navbar de:', navbarPath);
+    
+    fetch(navbarPath)
         .then(response => {
+            console.log('📡 Resposta recebida:', response.status);
             if (!response.ok) {
-                throw new Error(`Erro ao carregar navbar: ${response.status}`);
+                console.error('❌ Erro HTTP:', response.status);
+                throw new Error(`HTTP ${response.status}`);
             }
             return response.text();
         })
         .then(html => {
-            // Injeta o HTML da navbar
+            console.log('✅ HTML da navbar recebido');
             navContainer.innerHTML = html;
 
-            // Aguarda um pouco para garantir que o DOM foi atualizado
             setTimeout(() => {
                 window.navbarLoaded = true;
-                console.log('✅ Navbar carregada e injetada');
+                const btn = document.getElementById('navToggleBtn');
+                console.log('✅ Navbar injetada! Botão encontrado:', !!btn);
                 
-                // Dispara evento customizado para indicar que a navbar foi carregada
                 const event = new CustomEvent('navbarLoaded');
                 document.dispatchEvent(event);
             }, 50);
