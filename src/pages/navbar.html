@@ -1,22 +1,3 @@
-<!-- 
-    POTYGEN PRO - NAVBAR GLOBAL UNIFICADA
-    Arquivo: navbar.html
-    
-    Componente HTML puro contendo a estrutura completa da sidebar.
-    
-    ⚠️ IMPORTANTE:
-    - Este arquivo contém APENAS HTML, sem estilos ou scripts embutidos
-    - Os estilos estão centralizados em: navbar-styles.css
-    - A lógica de comportamento está em: navbar-script.js
-    - FontAwesome 6.4.0 deve estar carregado no <head> da página host
-    
-    COMO USAR:
-    1. Copie o CONTEÚDO COMPLETO desta tag <aside> até seu fechamento
-    2. Cole logo após a tag <body> de cada página
-    3. Certifique-se de incluir o button hambúrguer e a div overlay ANTES do <aside>
-    4. Importe navbar-styles.css no <head> de cada página
-    5. Carregue navbar-script.js antes de </body> em cada página
--->
 
 <button class="nav-menu-toggle" id="navToggleBtn" aria-label="Alternar menu lateral">
     <i class="fa-solid fa-bars"></i>
@@ -26,10 +7,10 @@
 
 <aside class="potygen-sidebar" id="potygen-sidebar">
     <div class="nav-logo-wrap">
-        <img src="../assets/logo.png" alt="Potygen" class="nav-logo" 
+        <img src="../assets/logo.png" alt="Potygen" class="nav-logo"
              onerror="this.onerror=null;this.src='https://placehold.co/140x48/ffffff/0d8a4f?text=Potygen';">
     </div>
-    
+
     <nav class="potygen-nav">
         <a href="dashboard.html" class="nav-item">
             <i class="fa-solid fa-house"></i>
@@ -51,17 +32,33 @@
             <i class="fa-solid fa-calendar-days"></i>
             <span>Agenda Reprodutiva</span>
         </a>
-        <a href="relatorio.html" class="nav-item">
-            <i class="fa-solid fa-chart-pie"></i>
-            <span>Relatórios</span>
+        <a href="controle-economico.html" class="nav-item">
+            <i class="fa-solid fa-calendar-days"></i>
+            <span>Controle econômico</span>
         </a>
         <a href="configuracoes.html" class="nav-item">
             <i class="fa-solid fa-gear"></i>
             <span>Configurações</span>
         </a>
     </nav>
-    
+
     <div class="nav-footer">
+        <!-- ============================================ -->
+        <!-- SISTEMA DE FAZENDAS (reutilizável em todas as páginas) -->
+        <!-- Requer: fazenda.js + fazenda-ui.js carregados na página -->
+        <!-- ============================================ -->
+        <button type="button" class="nav-item nav-fazenda-cadastrar"
+                onclick="abrirModalCadastrarFazenda()">
+            <i class="fa-solid fa-plus"></i>
+            <span>Cadastrar Fazenda</span>
+        </button>
+
+        <button type="button" class="nav-item nav-fazenda-trocar" id="sidebarFazendaBtn"
+                onclick="abrirModalTrocarFazenda()">
+            <i class="fa-solid fa-tractor"></i>
+            <span class="nav-fazenda-nome" id="sidebarFazendaNome">Selecionar fazenda</span>
+        </button>
+
         <button type="button" id="logoutBtn" class="nav-item logout-btn">
             <i class="fa-solid fa-right-from-bracket"></i>
             <span>Sair da Conta</span>

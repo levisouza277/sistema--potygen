@@ -7,80 +7,17 @@
     <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     
-    <link rel="stylesheet" href="../style/style-dashboard.css">
-    <link rel="stylesheet" href="../style/style-analise.css">
-    
-    <!-- Estilos padronizados da navbar -->
     <link rel="stylesheet" href="../style/navbar-style.css">
+    <link rel="stylesheet" href="../style/style-analise.css">
 
     <script src="https://unpkg.com/brain.js"></script>
 </head>
 <body>
 
 <div class="app-container">
-    <!-- ============================================ -->
-    <!-- NAVBAR PADRONIZADA -->
-    <!-- ============================================ -->
-    
-    <button class="nav-menu-toggle" id="navToggleBtn" aria-label="Alternar menu lateral">
-        <i class="fa-solid fa-bars"></i>
-    </button>
-    
-    <div class="nav-overlay" id="navOverlay"></div>
-    
-    <aside class="potygen-sidebar" id="potygen-sidebar">
-        <div class="nav-logo-wrap">
-            <img src="../assets/logo.png" alt="Potygen" class="nav-logo" 
-                 onerror="this.onerror=null;this.src='https://placehold.co/140x48/ffffff/0d8a4f?text=Potygen';">
-        </div>
-        
-        <nav class="potygen-nav">
-            <a href="dashboard.html" class="nav-item">
-                <i class="fa-solid fa-house"></i>
-                <span>Dashboard</span>
-            </a>
-            <a href="registrar_inseminacao.html" class="nav-item">
-                <i class="fa-solid fa-syringe"></i>
-                <span>Inseminação</span>
-            </a>
-            <a href="gestao-animais.html" class="nav-item">
-                <i class="fa-solid fa-cow"></i>
-                <span>Gestão de Animais</span>
-            </a>
-            <a href="analise-genetica.html" class="nav-item active">
-                <i class="fa-solid fa-dna"></i>
-                <span>Análise Genética</span>
-            </a>
-            <a href="agenda-reprodutiva.html" class="nav-item">
-                <i class="fa-solid fa-calendar-days"></i>
-                <span>Agenda Reprodutiva</span>
-            </a>
-            <a href="relatorio.html" class="nav-item">
-                <i class="fa-solid fa-chart-pie"></i>
-                <span>Relatórios</span>
-            </a>
-            <a href="configuracoes.html" class="nav-item">
-                <i class="fa-solid fa-gear"></i>
-                <span>Configurações</span>
-            </a>
-        </nav>
-        
-        <div class="nav-footer">
-            <button type="button" id="logoutBtn" class="nav-item logout-btn">
-                <i class="fa-solid fa-right-from-bracket"></i>
-                <span>Sair da Conta</span>
-            </button>
-        </div>
-    </aside>
-    
-    <!-- ============================================ -->
-    <!-- CONTEÚDO PRINCIPAL -->
-    <!-- ============================================ -->
-    
     <main class="main-content" id="mainContent">
         <header class="top-bar">
             <div class="breadcrumb-area">
-                <p class="page-subtitle">Páginas / Análise Genética</p>
                 <h1 class="page-title">Predição Reprodutiva IA</h1>
             </div>
             <div class="user-location-badge">
@@ -183,10 +120,28 @@
                     </div>
                 </div>
 
-                <div class="recomendacao-box">
-                    <div class="rec-icon"><i class="fa-solid fa-comment-medical"></i></div>
-                    <div id="lblRecomendacao" class="recomendacao-texto">
-                        Processando parecer da IA...
+                <div class="eficacia-container">
+                    <div class="eficacia-header">
+                        <i class="fa-solid fa-chart-line"></i>
+                        <span id="lblTituloEficacia">Taxa de Eficácia para a Finalidade Selecionada</span>
+                    </div>
+                    
+                    <div class="score-flex-container" style="margin-top: 15px;">
+                        <div class="score-gauge">
+                            <span id="lblEficacia" class="score-number">0%</span>
+                        </div>
+                        <div class="progress-bar-wrapper">
+                            <div class="barra-fundo">
+                                <div id="lblBarraEficacia" class="barra-preenchimento"></div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="recomendacao-box" style="margin-top: 24px;">
+                    <div class="rec-icon"><i class="fa-solid fa-cow"></i></div>
+                    <div id="lblMelhorAnimal" class="recomendacao-texto">
+                        Selecione os dados e execute a predição para ver o melhor animal recomendado.
                     </div>
                 </div>
             </div>
@@ -198,9 +153,11 @@
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script src="../backend/database.js"></script>
 <script src="../backend/auth.js"></script>
+<script src="../backend/fazenda.js"></script>
+<script src="../backend/fazenda-ui.js"></script>
 <script src="../backend/script-analise.js"></script>
 
-<!-- Navbar Script Global -->
+<script src="../backend/navbar-loader.js"></script>
 <script src="../backend/navbar-script.js"></script>
 <script src="../backend/logout.js"></script>
 

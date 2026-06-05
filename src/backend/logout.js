@@ -1,50 +1,30 @@
-document.addEventListener(
-    'DOMContentLoaded',
-    () => {
+function setupLogout() {
+    const logoutBtn = document.getElementById('logoutBtn');
 
-        const logoutBtn =
-            document.getElementById(
-                'logoutBtn'
-            );
+    if (!logoutBtn) return;
 
-        if (!logoutBtn) return;
+    logoutBtn.addEventListener('click', async () => {
+        const confirmar = confirm('Deseja sair da conta?');
 
-        logoutBtn.addEventListener(
-            'click',
-            async () => {
+        if (!confirmar) return;
 
-                const confirmar =
-                    confirm(
-                        'Deseja sair da conta?'
-                    );
+        localStorage.removeItem('potygen_lembrar_me');
+        sessionStorage.removeItem('sessao_temporaria');
 
-                if (!confirmar) return;
+        const { error } = await supabaseClient.auth.signOut();
 
-                localStorage.removeItem('potygen_lembrar_me');
+        if (error) {
+            console.error(error);
+            alert('Erro ao sair.');
+            return;
+        }
 
-                sessionStorage.removeItem('sessao_temporaria');
+        window.location.href = '../pages/index.html';
+    });
+}
 
-                const { error } =
-                    await supabaseClient.auth.signOut();
+// Aguarda a navbar ser carregada dinamicamente
+document.addEventListener('navbarLoaded', setupLogout);
 
-                if (error) {
-                    console.error(error);
-                }
-
-                if (error) {
-
-                    alert(
-                        'Erro ao sair.'
-                    );
-
-                    return;
-                }
-
-                window.location.href =
-                    '../pages/index.html';
-
-            }
-        );
-
-    }
-);
+// Fallback para DOMContentLoaded (para compatibilidade)
+document.addEventListener('DOMContentLoaded', setupLogout);
