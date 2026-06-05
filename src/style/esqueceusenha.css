@@ -67,7 +67,6 @@ body {
 .mb-5 { margin-bottom: 1.25rem; }
 .mb-6 { margin-bottom: 1.5rem; }
 .mb-8 { margin-bottom: 2rem; }
-.pr-10 { padding-right: 2.5rem !important; }
 
 /* Cores de Texto e Fundos Específicos */
 .text-red { color: #ef4444 !important; }
@@ -287,20 +286,25 @@ body {
   padding-right: 6rem;
 }
 
+/* Botão de Visibilidade da Senha (Corrigido e Unificado) */
 .btn-visibility {
   position: absolute;
   top: 50%;
   right: 0.75rem;
   transform: translateY(-50%);
-  z-index: 2;
+  z-index: 10; /* Garante que o botão fique acima do input */
   border: none;
   background: none;
-  color: #4b5563;
+  color: #9ca3af;
   font-size: 0.875rem;
   font-weight: 700;
   cursor: pointer;
   padding: 0.35rem 0.5rem;
   border-radius: 0.375rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: color 0.2s ease-in-out;
 }
 
 .btn-visibility:hover {
@@ -436,24 +440,6 @@ body {
 }
 
 /* Tela de Criação de Senha e Visibilidade */
-.btn-visibility {
-  position: absolute;
-  top: 0;
-  bottom: 0;
-  right: 0;
-  padding-right: 0.75rem;
-  display: flex;
-  align-items: center;
-  background: none;
-  border: none;
-  cursor: pointer;
-  color: #9ca3af;
-}
-
-.btn-visibility:hover {
-  color: #4b5563;
-}
-
 .eye-icon-container {
   display: flex;
   align-items: center;

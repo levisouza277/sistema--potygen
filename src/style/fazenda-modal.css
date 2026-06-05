@@ -15,7 +15,7 @@
     background: rgba(15, 23, 42, 0.55);
     display: none; align-items: center; justify-content: center;
     z-index: 1000; padding: 16px;
-    backdrop-filter: blur(2px);
+    isolation: isolate;
 }
 .pg-modal-overlay.aberto,
 .pg-modal-overlay.show,
@@ -119,7 +119,8 @@
     background: rgba(15, 23, 42, 0.55);
     display: none; align-items: center; justify-content: center;
     z-index: 1000; padding: 16px;
-    backdrop-filter: blur(2px);
+    /* Removido backdrop-filter — causa stacking context que torna modal-content transparente */
+    isolation: isolate;
 }
 .modal-backdrop.open, .modal-backdrop.aberto, .pg-modal-overlay.aberto { display: flex; }
 
@@ -155,7 +156,14 @@
 /* Regras específicas por ID para garantir prioridade quando necessário */
 #modalTrocarFazenda, #modalCadastrarFazenda {
     position: fixed; inset: 0; display: none; align-items: center; justify-content: center;
-    background: rgba(15,23,42,0.55); z-index: 1000; padding: 16px; backdrop-filter: blur(2px);
+    background: rgba(15,23,42,0.85) !important; z-index: 99999; padding: 16px;
+    /* Removido backdrop-filter para evitar stacking context transparente */
+    isolation: isolate;
+}
+
+#modalTrocarFazenda.modal-backdrop, #modalCadastrarFazenda.modal-backdrop {
+    background: rgba(15,23,42,0.95) !important;
+    z-index: 99999 !important;
 }
 
 #modalTrocarFazenda[style*="display:flex"], #modalTrocarFazenda[style*="display: block"],
@@ -164,13 +172,20 @@
 }
 
 #modalTrocarFazenda .modal-content, #modalCadastrarFazenda .modal-content {
-    background: #fff; border-radius: 18px; width: 100%; max-width: 560px; max-height: 90vh;
+    background: #ffffff !important;
+    background-color: #ffffff !important;
+    opacity: 1 !important;
+    border-radius: 18px; width: 100%; max-width: 560px; max-height: 90vh;
     overflow-y: auto; box-shadow: 0 25px 50px -12px rgba(0,0,0,0.25);
+    isolation: isolate;
+    position: relative;
+    z-index: 1;
 }
 
 /* ===== Estilos específicos do Modal de Cadastro (mantém escopo apenas para o ID) ===== */
 #modalCadastrarFazenda .modal-content {
-    background-color: #ffffff;
+    background-color: #ffffff !important;
+    opacity: 1 !important;
     border-radius: 16px;
     box-shadow: 0 10px 40px rgba(0, 0, 0, 0.15);
     max-width: 650px;
@@ -179,6 +194,9 @@
     display: flex;
     flex-direction: column;
     overflow: hidden;
+    isolation: isolate;
+    position: relative;
+    z-index: 1;
 }
 
 #modalCadastrarFazenda .modal-header {
@@ -250,5 +268,3 @@
     #modalCadastrarFazenda .btn-cancel, #modalCadastrarFazenda .btn-submit-pri { flex: 1; }
     #modalCadastrarFazenda .input-row-fazenda.cols-2, #modalCadastrarFazenda .input-row-fazenda.cols-3 { grid-template-columns: 1fr; }
 }
-
-
