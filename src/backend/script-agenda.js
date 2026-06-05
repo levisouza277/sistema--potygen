@@ -333,7 +333,12 @@ function renderTabela() {
             <td>${fmtBR(a.data_inseminacao)}</td>
             <td>${statusBadge(a.status||'Inseminada')}</td>
             <td>${proximoEvento(a)}</td>
-            <td><button class="btn-ver" onclick="acoesAnimal('${a.id}')">Gerenciar</button></td>
+            <td style="white-space:nowrap;">
+                <button class="btn-ver" onclick="acoesAnimal('${a.id}')">Gerenciar</button>
+                <button class="btn-ver btn-visualizar" style="background:#2563eb;color:#fff;margin-left:6px;" onclick="visualizarAnimal('${a.femea_id}')">
+                    <i class="fa-solid fa-eye"></i> Visualizar
+                </button>
+            </td>
         </tr>`;
     }).join('');
 }
@@ -597,3 +602,11 @@ document.addEventListener('fazendaTrocada', async (e)=>{
     Agenda.fazendaId = e.detail?.id || null;
     await carregarTudo();
 });
+
+// ============================================================
+// VISUALIZAR ANIMAL — redireciona para painel_animal.html
+// ============================================================
+window.visualizarAnimal = function(femeaId) {
+    if (!femeaId) { toast('Animal inválido.'); return; }
+    window.location.href = `painel_animal.html?id=${encodeURIComponent(femeaId)}`;
+};
