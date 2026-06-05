@@ -63,11 +63,17 @@ function mostrarToast(mensagem, tipo = 'success') {
 // ============================================
 function abrirModal(id) {
     const m = document.getElementById(id);
-    if (m) m.classList.add('aberto');
+    if (m) {
+        m.style.display = 'flex';
+        m.classList.add('aberto');
+    }
 }
 function fecharModal(id) {
     const m = document.getElementById(id);
-    if (m) m.classList.remove('aberto');
+    if (m) {
+        m.style.display = 'none';
+        m.classList.remove('aberto');
+    }
 }
 
 // ============================================

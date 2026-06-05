@@ -52,8 +52,8 @@ function toast(msg){
     t.textContent = msg; t.classList.add('show');
     setTimeout(()=>t.classList.remove('show'), 2600);
 }
-function abrirModal(id){ const m=$(id); if(m) m.classList.add('aberto'); }
-function fecharModal(id){ const m=$(id); if(m) m.classList.remove('aberto'); }
+function abrirModal(id){ const m=$(id); if(m) { m.style.display = 'flex'; m.classList.add('aberto'); } }
+function fecharModal(id){ const m=$(id); if(m) { m.style.display = 'none'; m.classList.remove('aberto'); } }
 window.fecharModal = fecharModal;
 
 function addDias(dataStr, dias){
