@@ -8,10 +8,9 @@ O **Potygen** é uma plataforma web responsiva voltada para a transformação di
 
 O assistente inteligente do Potygen funciona como um **Consultor de Dados Seguro** do rebanho, utilizando o modelo **Gemini** com uma trava de contexto para garantir que ele nunca invente informações:
 
-1. **Consulta Automática ao Banco:** Quando o usuário faz uma pergunta no chat, o sistema intercepta o comando e faz uma busca prévia no banco de dados (**Supabase**), puxando o histórico real daquela propriedade.
-2. **Resposta Blindada:** O sistema junta esses dados reais com a pergunta do usuário e envia para o Gemini com uma ordem rígida: *"Você é o Potygen. Responda apenas usando estes dados reais da fazenda. É proibido inventar qualquer informação fora deste bloco"*. Isso garante respostas exatas, seguras e baseadas na realidade do produtor.
-3. **Análise de Clima Local (Brain.js):** Uma inteligência que roda direto no navegador cruza dados de temperatura e umidade para calcular o risco de estresse térmico antes de uma inseminação, avisando o produtor se há risco de perda do sêmen.
-4. **Comandos de Voz:** Integração com a `Web Speech API` para o produtor ditar os manejos no curral sem precisar digitar com as mãos ocupadas.
+1. **Resposta Blindada:** O sistema junta esses dados reais com a pergunta do usuário e envia para o Gemini com uma ordem rígida: *"Você é o Potygen. Responda apenas usando estes dados reais da fazenda. É proibido inventar qualquer informação fora deste bloco"*. Isso garante respostas exatas, seguras e baseadas na realidade do produtor.
+2. **Análise de Clima Local (Brain.js):** Uma inteligência que roda direto no navegador cruza dados de temperatura e umidade para calcular o risco de estresse térmico antes de uma inseminação, avisando o produtor se há risco de perda do sêmen.
+3. **Comandos de Voz:** Integração com a `Web Speech API` para o produtor ditar os manejos no curral sem precisar digitar com as mãos ocupadas.
 
 ---
 
@@ -43,11 +42,6 @@ Para garantir estabilidade na apresentação e contornar erros de servidores de 
 
 ### 4. Gestão Financeira e Relatórios (CSV)
 * **Controle Econômico e Produção:** No painel financeiro, registram-se os gastos (vacinas, sêmen, ração) e os ganhos (venda de leite/animais). O sistema calcula o saldo, com possibilidade de exportar relatório em pdf e transações em csv. O mesmo ocorre em controle de produção, onde é possível cadastrar o que foi produzido e o valor daquela produção, com possibilidade de associar uma produção a um animal e também gerar relatórios em pdf e csv.
-
-### 5. Chatbot Inteligente (Consultor do Rebanho)
-* **Como Operar:** Na tela do sistema, clique no ícone do Chat para abrir a janela de conversa com o assistente.
-* **O que fazer:** Digite ou pergunte por voz qualquer dúvida sobre a sua fazenda;
-* **Como ele responde:** O sistema faz uma varredura rápida no banco de dados, pega as informações reais da sua propriedade e entrega para o assistente (Gemini) responder. O robô lê seus dados e te dá o valor exato na tela, sem inventar informações.
   
 ---
 
