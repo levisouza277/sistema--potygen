@@ -229,15 +229,15 @@ async function atualizarClimaPorDataHora() {
     const especie = document.getElementById('txtEspecie').value;
 
     if (!data || !hora) {
-        document.getElementById('tempEstimada').innerHTML = '--';
-        document.getElementById('ituEstimado').innerHTML = '--';
-        document.getElementById('recomendacaoClima').innerHTML =
-            '<i class="fa-regular fa-clock"></i> <span>Informe a data e a hora para avaliar a adequação térmica.</span>';
+        document.getElementById('lblTemperatura').innerHTML = '--°C';
+        document.getElementById('lblUmidade').innerHTML = '--%';
+        document.getElementById('lblITU').innerHTML = '--';
+        document.getElementById('lblStatusTermico').innerHTML = 'Informe data/hora';
+        document.getElementById('recomendacaoClima').innerHTML = '<i class="fa-regular fa-clock"></i> <span>Informe a data e a hora para avaliar a adequação térmica.</span>';
         return;
     }
     if (!fazendaSelecionada) {
-        document.getElementById('recomendacaoClima').innerHTML =
-            '<i class="fa-solid fa-location-dot"></i> <span>Selecione a matriz para localizar a fazenda e buscar o clima real.</span>';
+        document.getElementById('recomendacaoClima').innerHTML = '<i class="fa-solid fa-location-dot"></i> <span>Selecione a matriz para localizar a fazenda e buscar o clima real.</span>';
         return;
     }
 
@@ -245,16 +245,24 @@ async function atualizarClimaPorDataHora() {
         const coords = await geocodificarFazenda(fazendaSelecionada);
         const clima = await buscarClimaOpenMeteo(coords.lat, coords.lon, data, hora);
         climaAtual = clima;
-        document.getElementById('tempEstimada').innerHTML = clima.temperatura;
-        document.getElementById('ituEstimado').innerHTML = clima.itu;
+        // Atualiza os elementos do card clima
+        document.getElementById('lblTemperatura').innerHTML = `${clima.temperatura}°C`;
+        document.getElementById('lblUmidade').innerHTML = `${clima.umidade}%`;
+        document.getElementById('lblITU').innerHTML = clima.itu;
+
+        let status = 'Conforto térmico';
+        if (clima.itu >= 89) status = 'Estresse severo';
+        else if (clima.itu >= 79) status = 'Estresse moderado';
+        else if (clima.itu >= 72) status = 'Estresse leve';
+        document.getElementById('lblStatusTermico').innerHTML = status;
+        document.getElementById('lblAtualizacao').innerHTML = new Date().toLocaleString('pt-BR');
+
         atualizarRecomendacaoClimatica(especie, clima);
     } catch (e) {
         console.error(e);
-        document.getElementById('recomendacaoClima').innerHTML =
-            `<i class="fa-solid fa-triangle-exclamation"></i> <span>Não foi possível obter o clima (${e.message}).</span>`;
+        document.getElementById('recomendacaoClima').innerHTML = `<i class="fa-solid fa-triangle-exclamation"></i> <span>Erro ao obter clima: ${e.message}</span>`;
     }
 }
-
 function atualizarRecomendacaoClimatica(especie, clima) {
     especie = especie || document.getElementById('txtEspecie').value;
     if (!clima) {
