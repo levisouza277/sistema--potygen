@@ -10,7 +10,6 @@ O assistente inteligente do Potygen funciona como um **Consultor de Dados Seguro
 
 1. **Resposta Blindada:** O sistema junta esses dados reais com a pergunta do usuário e envia para o Gemini com uma ordem rígida: *"Você é o Potygen. Responda apenas usando estes dados reais da fazenda. É proibido inventar qualquer informação fora deste bloco"*. Isso garante respostas exatas, seguras e baseadas na realidade do produtor.
 2. **Análise de Clima Local (Brain.js):** Uma inteligência que roda direto no navegador cruza dados de temperatura e umidade para calcular o risco de estresse térmico antes de uma inseminação, avisando o produtor se há risco de perda do sêmen.
-3. **Comandos de Voz:** Integração com a `Web Speech API` para o produtor ditar os manejos no curral sem precisar digitar com as mãos ocupadas.
 
 ---
 
