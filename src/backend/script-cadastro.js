@@ -68,7 +68,7 @@ if (cadastroForm) {
 
         alert('Conta criada com sucesso!');
         console.log(usuario);
-        window.location.href = '../pages/index.html';
+        window.location.href = '../../index.html';
 
     });
 }
