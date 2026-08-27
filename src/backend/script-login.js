@@ -25,7 +25,7 @@ if (eyeToggle) {
     if (session) {
 
         window.location.href =
-            '../pages/dashboard.html';
+            'src/pages/dashboard.html';
 
     }
 
@@ -89,7 +89,7 @@ if (loginForm) {
 
             }
             console.log('Sucesso:', data);
-            window.location.href = '../pages/dashboard.html';
+            window.location.href = 'src/pages/dashboard.html';
 
         } catch (err) {
             console.error('Erro inesperado:', err);
